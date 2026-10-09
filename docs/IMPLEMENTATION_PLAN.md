@@ -1,32 +1,39 @@
-# Implementation Plan: Competitor Feature Research
+# Implementation Plan: Analytics Dashboard (Phase 1)
 
 _Last updated: 2026-10-09_
 
 ## Goal
-DISCOVERY.md contains a sourced feature comparison table of Hootsuite, Sprout Social, Metricool, Keyhole, and Predis.ai, grouped by our four areas (content creation, scheduling, analytics, competitor analysis), plus a list of gaps our dashboard can fill.
+A responsive `/analytics` page shows headline KPI tiles and a short plain-language summary ("what worked this week"), computed from typed sample data by fully tested functions.
 
 ## Out of scope
-- Any application code (the Analytics Dashboard plan is paused and will be re-planned with /plan later)
-- Hands-on trials of competitor products (research uses public websites, feature pages, and pricing pages only)
-- Detailed pricing breakdowns beyond entry-level price and free tier availability
+- Charts and graphs
+- Connecting real social media accounts or APIs, and authentication
+- Date range picker or filters (the page uses the last 7 days of sample data vs the 7 days before)
+- AI-generated summaries (rule-based only; see DECISIONS.md)
+- App shell / navigation and changes to the home page
+- Persisting data (sample data lives in code)
 
-## Phase 1 - Gather features from live sources
-- [x] 1.1 Research Hootsuite: list features in each of the four areas, entry price, free tier; record source URLs (scratch notes, not committed)
-- [x] 1.2 Research Sprout Social: same fields and sources
-- [x] 1.3 Research Metricool: same fields and sources
-- [x] 1.4 Research Keyhole: same fields and sources
-- [x] 1.5 Research Predis.ai: same fields and sources
+## Phase 1 - Test setup and data layer
+- [x] 1.1 Install Vitest per the Next.js 16 guide (vitest, @vitejs/plugin-react, jsdom, @testing-library/react, @testing-library/dom, vite-tsconfig-paths); add `vitest.config.mts`, `"test": "vitest run"` and `"test:watch": "vitest"` scripts; confirm `npm test` runs (package.json, vitest.config.mts)
+- [x] 1.2 Define types: `Platform` union and `DailyMetrics` record (platform, date, impressions, engagements, clicks, followers) (lib/analytics/types.ts)
+- [x] 1.3 Test-first: deterministic sample data for Instagram, Facebook, TikTok, and LinkedIn over 30 days, with no randomness so tests are stable (lib/analytics/sample-data.ts, lib/analytics/sample-data.test.ts)
 
-## Phase 2 - Write findings into DISCOVERY.md
-- [x] 2.1 Agree on a shared list of feature rows per area so all five competitors are compared on the same features (docs/DISCOVERY.md)
-- [x] 2.2 Add a "Competitor Feature Comparison" table: rows are features grouped by area, columns are the five competitors, cells are Yes / No / Partial (docs/DISCOVERY.md)
-- [x] 2.3 Add a "Sources" list with the URL and date checked for each competitor (docs/DISCOVERY.md)
-- [x] 2.4 Update the one-line competitor summaries to match the research, and remove the "general knowledge" note and the "identify individual features" placeholder line (docs/DISCOVERY.md)
+## Phase 2 - KPI calculations (test-first)
+- [x] 2.1 Totals: impressions, engagements, clicks, and current followers (latest value per platform, summed); empty input returns zeros (lib/analytics/kpis.ts, lib/analytics/kpis.test.ts)
+- [x] 2.2 Engagement rate (engagements / impressions), returning 0 when there are no impressions (lib/analytics/kpis.ts, kpis.test.ts)
+- [x] 2.3 Per-platform breakdown of totals and engagement rate (lib/analytics/kpis.ts, kpis.test.ts)
+- [x] 2.4 Period comparison: last 7 days vs previous 7 days, with percent change per KPI, handling a previous value of 0 (lib/analytics/kpis.ts, kpis.test.ts)
 
-## Phase 3 - Gaps and opportunities
-- [x] 3.1 Add a "Gaps and Opportunities" list: features that are missing, weak, or expensive across competitors, linked to the pain points already in DISCOVERY.md (docs/DISCOVERY.md)
-- [x] 3.2 Review the table and gaps against the research questions in docs/USER_RESEARCH.md, and note any new questions worth asking users
+## Phase 3 - Plain-language summary (test-first)
+- [x] 3.1 Rule: name the platform with the best engagement rate this week (lib/analytics/summary.ts, lib/analytics/summary.test.ts)
+- [x] 3.2 Rule: say whether engagement went up or down vs last week and by how much, with a neutral message for small changes (summary.ts, summary.test.ts)
+- [x] 3.3 Rule: flag the platform with the biggest drop as "worth a look"; return a friendly fallback message when there is no data (summary.ts, summary.test.ts)
+
+## Phase 4 - UI
+- [x] 4.1 Test-first: `KpiTile` component showing label, value, and week-over-week change (app/analytics/kpi-tile.tsx, app/analytics/kpi-tile.test.tsx)
+- [x] 4.2 Test-first: `/analytics` page renders the four KPI tiles and the summary from sample data (app/analytics/page.tsx, app/analytics/page.test.tsx)
+- [ ] 4.3 Responsive layout: tiles in 1 column on phones, 2 on tablets, 4 on desktop; check in `npm run dev` at phone and desktop widths (app/analytics/page.tsx)
 
 ## Open questions
-- Which platforms (Instagram, Facebook, TikTok, LinkedIn, X, YouTube) should the comparison track support for, or is a simple count enough?
-- After this research, should the Analytics Dashboard plan come back unchanged, or be reshaped based on the gaps found?
+- Should the four sample platforms (Instagram, Facebook, TikTok, LinkedIn) change once user research shows which networks users post to most?
+- Which KPI should the next phase chart first (engagement over time is the likely candidate)?
