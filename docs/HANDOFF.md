@@ -13,3 +13,16 @@
 - @types/node was bumped from 20 to 22 (required by Vitest 5; matches the Node 22.19 runtime).
 - `npm audit` reports 5 high-severity issues via eslint-config-next (existing, dev-only). The suggested `npm audit fix --force` would downgrade it to Next 14, so it was not applied.
 - Sample data is fixed to end on 2026-10-09 so tests stay deterministic; the page does not use today's date.
+
+## 2026-10-13 - feat/analytics-dashboard
+
+**Done:** Fixed all /code-review findings on the analytics code (followers change across platforms, drop line using shared weeks, shared tile/summary rounding in lib/analytics/change.ts, rate-based summary wording, clearer zero-data messages, malformed dates ignored). Temporary redirect from / to /analytics. Restored @AGENTS.md in CLAUDE.md. Wrote the Homepage Overview and Navigation plan (no items started) and its app-shell decision. Commits ff1bcba, 73415b8, f388fa7.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 58/58 passed across 7 files; `npm run build` passed (/ and /analytics static). No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/sandbox/pull/new/feat/analytics-dashboard
+
+**Next:** Homepage plan 1.1 (navigation config) on a new branch feat/app-shell; Analytics plan 4.3 (visual layout check) is folded into homepage plan 4.2.
+
+**Notes / risks:**
+- A teammate branch `assignment-2` (TEAMWORK.md, component assignments) now exists on origin, based on main. It does not touch this branch, but check its component assignments before starting the app shell.
+- docs/USER_RESEARCH.md contains non-ASCII characters (from its original commit), which CLAUDE.md disallows; not changed here.
+- docs/competitor-research is still unmerged; merge it before this branch.
