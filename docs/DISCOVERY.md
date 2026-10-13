@@ -125,3 +125,19 @@ How do you track competitors today, and how many competitors do you follow?
 Do you use AI to write posts or captions, and do you trust the results?
 
 Does anyone need to approve your posts before they are published?
+
+
+Dashboard
+Market highlights (click conversion and traffic) & Trend summary (can use Ai for insight summary)
+
+Competitor Activities Overview frequency, engagement, top and bottom posts, hashtags, and active ads (Meta, TikTok, Google ad libraries)
+
+Cross-channel trend detection (Pull from social platforms, search trends, and industry topics. Filter by relevance to the clients business) comparison performance between different social platforms (FB vs IG)
+
+AI in action
+Brainstorm (content/campaign idea follow by trend, captions, hashtags, recommendation etc.)
+
+Planning (what to do next, when to post, set the date and time, schedule auto post calendar)
+
+Performance
+Automated reporting scheduled PDF or dashboard summaries with an executive overview

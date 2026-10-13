@@ -1,3 +1,44 @@
+# Implementation Plan: Homepage Overview and Navigation
+
+_Last updated: 2026-10-13_
+
+## Goal
+Every page sits inside an app shell with a sidebar (a menu button on phones) linking Overview, Analytics, Competitors, AI Studio, and Reports. `/` is a real overview page built from sample data, and sections not built yet show a "Coming soon" page.
+
+## Out of scope
+- Building the Competitors, AI Studio, or Reports features (placeholder pages only)
+- Sample competitor or trend data (the overview shows "Coming soon" cards for these)
+- A public marketing landing page, sign-up, or authentication
+- Charts (the platform comparison is a table)
+- Real social media data (everything uses `createSampleData()`)
+
+## Phase 1 - Data and navigation config (test-first)
+- [ ] 1.1 Navigation config: ordered list of sections with href, label, and status (ready / coming soon) (lib/navigation.ts, lib/navigation.test.ts)
+- [ ] 1.2 Click-through rate (clicks / impressions, 0 when no impressions) for the "market highlights" card (lib/analytics/kpis.ts, kpis.test.ts)
+- [ ] 1.3 Platform comparison: this week's totals, engagement rate, and change vs last week for each platform, using the same weeks as the rest of the dashboard (lib/analytics/kpis.ts, kpis.test.ts)
+
+## Phase 2 - App shell
+- [ ] 2.1 Move analytics into a `(dashboard)` route group so it shares the shell; URL stays `/analytics` and existing tests still pass (app/(dashboard)/analytics/)
+- [ ] 2.2 Test-first: `Sidebar` lists every section, marks the current page with `aria-current="page"`, and labels unbuilt sections "Coming soon" (app/(dashboard)/_components/sidebar.tsx, sidebar.test.tsx)
+- [ ] 2.3 Test-first: on phones a menu button opens and closes the navigation, and choosing a link closes it (sidebar.tsx, sidebar.test.tsx)
+- [ ] 2.4 Dashboard layout renders the sidebar beside the page content on desktop and stacked on phones (app/(dashboard)/layout.tsx)
+
+## Phase 3 - Pages
+- [ ] 3.1 Test-first: `ComingSoon` component; `/competitors`, `/ai-studio`, and `/reports` pages list the features planned in DISCOVERY.md (app/(dashboard)/_components/coming-soon.tsx, app/(dashboard)/competitors/, ai-studio/, reports/)
+- [ ] 3.2 Test-first: overview page at `/` shows the KPI tiles, the plain-English summary, a market highlights card (clicks and click-through rate), the platform comparison table, and "Coming soon" cards for competitor activity and trends; remove the temporary redirect (app/(dashboard)/page.tsx, page.test.tsx; delete app/page.tsx, app/page.test.tsx)
+- [ ] 3.3 Share the KPI tile set between the overview and analytics pages instead of duplicating it (app/(dashboard)/_components/)
+
+## Phase 4 - Polish
+- [ ] 4.1 Replace the "Create Next App" title and description with the product name, and give each page its own title (app/layout.tsx, page metadata)
+- [ ] 4.2 Check by eye in `npm run dev` at phone, tablet, and desktop widths: sidebar, mobile menu, overview, and analytics tiles (also covers Analytics plan item 4.3 below)
+- [ ] 4.3 Delete the unused starter images (public/next.svg, vercel.svg, file.svg, globe.svg, window.svg)
+
+## Open questions
+- What is the product called? Needed for 4.1; "Marketing Dashboard" is a placeholder.
+- After this plan, which section comes next: Competitors (needs sample competitor data), AI Studio, or Reports?
+
+---
+
 # Implementation Plan: Analytics Dashboard (Phase 1)
 
 _Last updated: 2026-10-09_

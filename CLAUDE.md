@@ -1,3 +1,5 @@
+@AGENTS.md
+
 ## Development Process
 Enforce TDD workflow. Use /sync (preflight), /plan (design plan), and /done
 (validate).

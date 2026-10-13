@@ -16,7 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Analytics dashboard at /analytics: KPI tiles (impressions, engagements, engagement rate, followers) with week-over-week change, and a rule-based plain-language summary, computed from deterministic sample data (app/analytics/, lib/analytics/).
 - Vitest and React Testing Library test setup with `npm test` and `npm run test:watch`.
 - Decisions: rule-based analytics summary, and Vitest for tests (docs/DECISIONS.md).
+- Product ideas for the dashboard, AI features, and automated reporting (docs/DISCOVERY.md).
+- Implementation plan and decision for the homepage overview and sidebar navigation (docs/IMPLEMENTATION_PLAN.md, docs/DECISIONS.md).
 
 ### Changed
 - Ignore the editor's local history folder (.history/).
 - Bump @types/node from 20 to 22 to match the Node 22 runtime and Vitest 5 requirements.
+- The home page (/) now redirects to /analytics instead of showing the Next.js starter page (temporary until the overview page exists).
+- The analytics summary now describes the engagement rate, matching the Engagement rate tile.
+- Restore the `@AGENTS.md` import in CLAUDE.md so agents load the Next.js 16 rules.
+
+### Fixed
+- Followers change no longer counts platforms that only have data in one of the two weeks.
+- The "worth a look" drop line uses the same weeks as the rest of the dashboard and skips platforms with no data this week.
+- KPI tiles and the summary now round percentages the same way and agree on what counts as steady.
+- Clearer summary messages when last week had no views or no engagement.
+- Rows with malformed dates are ignored instead of crashing the page.
