@@ -9,6 +9,8 @@ export type KpiTotals = {
   followers: number;
   /** Engagements divided by impressions (0.05 means 5%). */
   engagementRate: number;
+  /** Clicks divided by impressions (0.01 means 1%). */
+  clickThroughRate: number;
 };
 
 export type PlatformTotals = KpiTotals & { platform: Platform };
@@ -24,6 +26,10 @@ export type PeriodComparison = {
 
 export function engagementRate(engagements: number, impressions: number): number {
   return impressions === 0 ? 0 : engagements / impressions;
+}
+
+export function clickThroughRate(clicks: number, impressions: number): number {
+  return impressions === 0 ? 0 : clicks / impressions;
 }
 
 export function computeTotals(rows: readonly DailyMetrics[]): KpiTotals {
@@ -53,6 +59,7 @@ export function computeTotals(rows: readonly DailyMetrics[]): KpiTotals {
     clicks,
     followers,
     engagementRate: engagementRate(engagements, impressions),
+    clickThroughRate: clickThroughRate(clicks, impressions),
   };
 }
 
@@ -139,10 +146,34 @@ export function comparePeriodRows(periods: Periods): PeriodComparison {
       clicks: percentChange(current.clicks, previous.clicks),
       followers: followersChange(periods),
       engagementRate: percentChange(current.engagementRate, previous.engagementRate),
+      clickThroughRate: percentChange(current.clickThroughRate, previous.clickThroughRate),
     },
   };
 }
 
 export function comparePeriods(rows: readonly DailyMetrics[], days = 7): PeriodComparison {
   return comparePeriodRows(splitPeriods(rows, days));
+}
+
+export type PlatformComparison = {
+  platform: Platform;
+  current: KpiTotals;
+  change: KpiChange;
+};
+
+/**
+ * This week's totals and change vs last week for each platform with data
+ * this week, using the same weeks as the rest of the dashboard.
+ */
+export function platformComparison(rows: readonly DailyMetrics[], days = 7): PlatformComparison[] {
+  const periods = splitPeriods(rows, days);
+  return PLATFORMS.flatMap((platform) => {
+    const current = periods.current.filter((row) => row.platform === platform);
+    if (current.length === 0) {
+      return [];
+    }
+    const previous = periods.previous.filter((row) => row.platform === platform);
+    const comparison = comparePeriodRows({ current, previous });
+    return [{ platform, current: comparison.current, change: comparison.change }];
+  });
 }

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  clickThroughRate,
   comparePeriods,
   computeTotals,
   engagementRate,
   percentChange,
   platformBreakdown,
+  platformComparison,
 } from "./kpis";
 import type { DailyMetrics, Platform } from "./types";
 
@@ -35,6 +37,16 @@ describe("engagementRate", () => {
   });
 });
 
+describe("clickThroughRate", () => {
+  it("divides clicks by impressions", () => {
+    expect(clickThroughRate(15, 1000)).toBe(0.015);
+  });
+
+  it("returns 0 when there are no impressions", () => {
+    expect(clickThroughRate(3, 0)).toBe(0);
+  });
+});
+
 describe("computeTotals", () => {
   it("returns zeros for empty input", () => {
     expect(computeTotals([])).toEqual({
@@ -43,7 +55,16 @@ describe("computeTotals", () => {
       clicks: 0,
       followers: 0,
       engagementRate: 0,
+      clickThroughRate: 0,
     });
+  });
+
+  it("includes the click-through rate", () => {
+    const totals = computeTotals([
+      row("instagram", "2026-10-01", { impressions: 400, clicks: 6 }),
+      row("tiktok", "2026-10-01", { impressions: 600, clicks: 4 }),
+    ]);
+    expect(totals.clickThroughRate).toBe(0.01);
   });
 
   it("sums impressions, engagements and clicks", () => {
@@ -174,5 +195,36 @@ describe("comparePeriods", () => {
   it("returns zeros when every date is malformed", () => {
     const result = comparePeriods([row("instagram", "garbage")]);
     expect(result.current.engagements).toBe(0);
+  });
+});
+
+describe("platformComparison", () => {
+  // Instagram: steady 50/1000 per day. LinkedIn: 50/1000 last week, 35/1000 this week.
+  const days = (platform: Platform, lastWeek: number, thisWeek: number) =>
+    Array.from({ length: 14 }, (_, i) =>
+      row(platform, `2026-10-${String(i + 1).padStart(2, "0")}`, {
+        impressions: 1000,
+        engagements: i < 7 ? lastWeek : thisWeek,
+        clicks: 10,
+      }),
+    );
+
+  it("returns this week's totals and change for each platform, in platform order", () => {
+    const result = platformComparison([...days("linkedin", 50, 35), ...days("instagram", 50, 50)]);
+    expect(result.map((p) => p.platform)).toEqual(["instagram", "linkedin"]);
+    expect(result[0].current.engagements).toBe(350);
+    expect(result[0].change.engagementRate).toBe(0);
+    expect(result[1].current.engagementRate).toBeCloseTo(0.035);
+    expect(result[1].change.engagementRate).toBeCloseTo(-0.3);
+  });
+
+  it("uses the dashboard's weeks, not each platform's own latest date", () => {
+    const stale = days("tiktok", 80, 40).map((r) => ({ ...r, date: r.date.replace("2026-10", "2026-09") }));
+    const result = platformComparison([...days("instagram", 50, 50), ...stale]);
+    expect(result.map((p) => p.platform)).toEqual(["instagram"]);
+  });
+
+  it("returns an empty list for empty input", () => {
+    expect(platformComparison([])).toEqual([]);
   });
 });
