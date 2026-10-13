@@ -1,3 +1,5 @@
+import { roundPercent } from "@/lib/analytics/change";
+
 type KpiTileProps = {
   label: string;
   value: string;
@@ -9,7 +11,7 @@ function describeChange(change: number | null): { text: string; className: strin
   if (change === null) {
     return { text: "No data from last week", className: "text-zinc-500 dark:text-zinc-400" };
   }
-  const percent = Math.round(change * 100);
+  const percent = roundPercent(change);
   if (percent === 0) {
     return { text: "No change vs last week", className: "text-zinc-500 dark:text-zinc-400" };
   }

@@ -1,4 +1,4 @@
-import { shiftDate } from "./dates";
+import { isIsoDate, shiftDate } from "./dates";
 import { PLATFORMS, type DailyMetrics, type Platform } from "./types";
 
 export type KpiTotals = {
@@ -72,6 +72,8 @@ export function percentChange(current: number, previous: number): number | null 
   return (current - previous) / previous;
 }
 
+export type Periods = { current: DailyMetrics[]; previous: DailyMetrics[] };
+
 function latestDate(rows: readonly DailyMetrics[]): string | undefined {
   let latest: string | undefined;
   for (const row of rows) {
@@ -87,12 +89,13 @@ function rowsBetween(rows: readonly DailyMetrics[], from: string, to: string): D
   return rows.filter((row) => row.date >= from && row.date <= to);
 }
 
-/** Splits rows into the latest `days` days and the `days` before, relative to the newest date in the data. */
-export function splitPeriods(
-  rows: readonly DailyMetrics[],
-  days = 7,
-): { current: DailyMetrics[]; previous: DailyMetrics[] } {
-  const end = latestDate(rows);
+/**
+ * Splits rows into the latest `days` days and the `days` before, relative to
+ * the newest date in the data. Rows with malformed dates are ignored.
+ */
+export function splitPeriods(rows: readonly DailyMetrics[], days = 7): Periods {
+  const validRows = rows.filter((row) => isIsoDate(row.date));
+  const end = latestDate(validRows);
   if (end === undefined) {
     return { current: [], previous: [] };
   }
@@ -100,13 +103,31 @@ export function splitPeriods(
   const previousEnd = shiftDate(currentStart, -1);
   const previousStart = shiftDate(previousEnd, -(days - 1));
   return {
-    current: rowsBetween(rows, currentStart, end),
-    previous: rowsBetween(rows, previousStart, previousEnd),
+    current: rowsBetween(validRows, currentStart, end),
+    previous: rowsBetween(validRows, previousStart, previousEnd),
   };
 }
 
-export function comparePeriods(rows: readonly DailyMetrics[], days = 7): PeriodComparison {
-  const periods = splitPeriods(rows, days);
+/**
+ * Follower change counting only platforms present in both periods, so
+ * connecting or losing a platform is not reported as a gain or loss.
+ */
+function followersChange({ current, previous }: Periods): number | null {
+  const shared = new Set(current.map((row) => row.platform));
+  const previousShared = previous.filter((row) => shared.has(row.platform));
+  if (previousShared.length === 0) {
+    return null;
+  }
+  const sharedPlatforms = new Set(previousShared.map((row) => row.platform));
+  const currentShared = current.filter((row) => sharedPlatforms.has(row.platform));
+  return percentChange(
+    computeTotals(currentShared).followers,
+    computeTotals(previousShared).followers,
+  );
+}
+
+/** Compares already-split periods; use this to avoid splitting the same rows twice. */
+export function comparePeriodRows(periods: Periods): PeriodComparison {
   const current = computeTotals(periods.current);
   const previous = computeTotals(periods.previous);
   return {
@@ -116,8 +137,12 @@ export function comparePeriods(rows: readonly DailyMetrics[], days = 7): PeriodC
       impressions: percentChange(current.impressions, previous.impressions),
       engagements: percentChange(current.engagements, previous.engagements),
       clicks: percentChange(current.clicks, previous.clicks),
-      followers: percentChange(current.followers, previous.followers),
+      followers: followersChange(periods),
       engagementRate: percentChange(current.engagementRate, previous.engagementRate),
     },
   };
+}
+
+export function comparePeriods(rows: readonly DailyMetrics[], days = 7): PeriodComparison {
+  return comparePeriodRows(splitPeriods(rows, days));
 }

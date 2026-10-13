@@ -21,6 +21,11 @@ describe("KpiTile", () => {
     expect(screen.getByText("-8% vs last week")).toBeDefined();
   });
 
+  it("rounds halves away from zero, matching the summary", () => {
+    render(<KpiTile label="Impressions" value="1" change={-0.125} />);
+    expect(screen.getByText("-13% vs last week")).toBeDefined();
+  });
+
   it("shows no change when the change rounds to 0%", () => {
     render(<KpiTile label="Impressions" value="1" change={0.004} />);
     expect(screen.getByText("No change vs last week")).toBeDefined();

@@ -142,4 +142,37 @@ describe("comparePeriods", () => {
     expect(result.current.engagements).toBe(0);
     expect(result.change.engagements).toBe(0);
   });
+
+  it("compares followers only across platforms present in both weeks", () => {
+    const withNewPlatform = [
+      ...rows,
+      // LinkedIn is connected this week only: its 900 followers are not a gain.
+      row("linkedin", "2026-10-14", { followers: 900 }),
+    ];
+    const result = comparePeriods(withNewPlatform);
+    expect(result.current.followers).toBe(513 + 900);
+    expect(result.change.followers).toBeCloseTo((513 - 506) / 506);
+  });
+
+  it("reports no followers change when no platform is in both weeks", () => {
+    const result = comparePeriods(rows.slice(7));
+    expect(result.change.followers).toBeNull();
+  });
+
+  it("ignores rows with malformed dates instead of crashing", () => {
+    const withBadDates = [
+      ...rows,
+      row("instagram", "2026-10-9", { engagements: 9999 }),
+      row("instagram", "", { engagements: 9999 }),
+      row("instagram", "not-a-date", { engagements: 9999 }),
+    ];
+    const result = comparePeriods(withBadDates);
+    expect(result.current.engagements).toBe(1050);
+    expect(result.previous.engagements).toBe(700);
+  });
+
+  it("returns zeros when every date is malformed", () => {
+    const result = comparePeriods([row("instagram", "garbage")]);
+    expect(result.current.engagements).toBe(0);
+  });
 });
