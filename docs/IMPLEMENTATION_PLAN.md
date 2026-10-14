@@ -1,3 +1,52 @@
+# Implementation Plan: AI Studio v1
+
+_Last updated: 2026-10-13_
+
+## Goal
+/ai-studio guides a cafe owner through one flow: pick a content idea based on trends, get caption and hashtag suggestions in a chosen tone, see the best time to post, and add the post to a content calendar that is saved in the browser. Each step also works on its own, and all suggestions are smart templates labelled "Suggestions".
+
+## Out of scope
+- Real AI (Claude API), API keys, or server routes (see DECISIONS.md: rule-based suggestions)
+- Actually publishing posts to social platforms, or reminders and notifications
+- Saving across devices or sharing a calendar between people (browser storage only)
+- A "Your business" settings box (captions use a placeholder cafe name)
+- The team's shared UI components (Tabs, Dropdown, Buttons, Checkbox, Badge, Carousel); plain in-feature markup only
+- The date bar on AI Studio (it plans forward; best times use recent sample data)
+
+## Phase 1 - Suggestion logic (test-first)
+- [x] 1.1 Types: `ContentIdea` (title, angle, trend, suggested platforms, format), `CaptionTone` (friendly / playful / professional), `CaptionSuggestion`, `PlannedPost` (id, date, time, platform, caption, hashtags, idea title) (lib/ai-studio/types.ts)
+- [x] 1.2 Idea generator: ideas built from the sample trends (relevant first) and the user's best platforms by engagement rate; deterministic for the same inputs; a "Show different ideas" option rotates through templates (lib/ai-studio/ideas.ts, ideas.test.ts)
+- [x] 1.3 Captions: three caption options per idea in the chosen tone, within each platform's length limit, plain ASCII, no repeated sentences (lib/ai-studio/captions.ts, captions.test.ts)
+- [x] 1.4 Hashtags: 5-8 suggested hashtags mixing the trend, the idea, and the cafe's best-performing tags, no duplicates, valid `#word` format (lib/ai-studio/hashtags.ts, hashtags.test.ts)
+- [x] 1.5 Sample engagement by weekday and hour for each platform, generated deterministically like the other sample data (lib/ai-studio/sample-timing.ts, sample-timing.test.ts)
+- [x] 1.6 Best time to post: top 3 weekday-and-hour slots per platform, and the next upcoming date and time for a chosen platform (never in the past) (lib/ai-studio/best-time.ts, best-time.test.ts)
+- [x] 1.7 Test-first: a content brief for every idea ("how to make it"): what to film or photograph as a shot list, ideal length, and practical tips, so the user can create the photo or video themselves (lib/ai-studio/types.ts, ideas.ts, ideas.test.ts)
+
+## Phase 2 - Content calendar storage (test-first)
+- [x] 2.1 Planned post validation and helpers: add, update, delete, sort by date and time, group by day; reject invalid dates, times, or platforms (lib/ai-studio/planned-posts.ts, planned-posts.test.ts)
+- [x] 2.2 Browser storage: save and load planned posts under a versioned key; corrupted or old data is ignored safely; works when storage is unavailable (private mode) (lib/ai-studio/storage.ts, storage.test.ts)
+- [x] 2.3 `usePlannedPosts` hook built on `useSyncExternalStore`, with an empty list on the server so pages render without hydration errors, and updates shared across components and browser tabs (app/(dashboard)/ai-studio/_components/use-planned-posts.ts, use-planned-posts.test.tsx)
+
+## Phase 3 - UI (test-first)
+- [x] 3.1 Step 1 "Ideas": idea cards with the trend, platforms, and format; choosing one moves to step 2 (app/(dashboard)/ai-studio/_components/idea-picker.tsx)
+- [x] 3.2 Step 2 "Caption": tone choice, three caption options, hashtag list, and Copy buttons with "Copied" feedback (app/(dashboard)/ai-studio/_components/caption-studio.tsx)
+- [x] 3.3 Step 3 "Schedule": platform and date/time fields prefilled with the next best time, showing the top times for that platform; "Add to calendar" saves the post (app/(dashboard)/ai-studio/_components/schedule-form.tsx)
+- [x] 3.4 Content calendar: month grid on desktop and a date-ordered list on phones, with previous and next month, posts shown on their day, and edit and delete for each post (app/(dashboard)/ai-studio/_components/content-calendar.tsx)
+- [x] 3.5 /ai-studio page replaces "Coming soon": step indicator, the three steps, a standalone "Best times to post" card, and the calendar; mark AI Studio as ready in the sidebar (app/(dashboard)/ai-studio/page.tsx, lib/navigation.ts)
+- [x] 3.6 Test-first: "How to make it" section in the Caption step showing the idea's shot list, length, and tips (app/(dashboard)/ai-studio/_components/caption-studio.tsx)
+
+## Phase 4 - Polish
+- [x] 4.1 Labels and notices: "Suggestions" (not AI), "Sample data", and "Planned posts are saved in this browser only"
+- [x] 4.2 Keyboard and screen reader pass: steps, Copy buttons, and calendar days are reachable and announced
+- [ ] 4.3 Check by eye at phone, tablet, and desktop widths
+
+## Open questions
+- Should planned posts also appear on the Overview page (e.g. "Next 3 posts")?
+- When accounts exist, should the calendar move to a real database so it works across devices?
+- Should a "Your business" box (name, type, tone) come next, so captions stop using a placeholder?
+
+---
+
 # Implementation Plan: Date Range Selection
 
 _Last updated: 2026-10-13_

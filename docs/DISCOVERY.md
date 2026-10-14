@@ -139,5 +139,7 @@ Brainstorm (content/campaign idea follow by trend, captions, hashtags, recommend
 
 Planning (what to do next, when to post, set the date and time, schedule auto post calendar)
 
+Update (2026-10-14): No auto-posting. The site helps plan content (ideas, trends, captions, hashtags, best times, and a content plan), and the business creates and posts its own photos and videos. See docs/DECISIONS.md.
+
 Performance
 Automated reporting scheduled PDF or dashboard summaries with an executive overview

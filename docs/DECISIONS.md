@@ -77,3 +77,21 @@ Decision: Store the selection in URL search parameters (`period`, `from`, `to`, 
 Alternatives considered: Keeping the selection in React state or browser storage was rejected because it would not carry across server-rendered pages or be shareable. A date-picker library was rejected to avoid a dependency and because native date inputs are accessible and work on phones. The team's Dropdown component was not used because shared UI components are assigned to teammates.
 
 Supersedes: "Sample data ends on today's date; dashboard pages refresh hourly" (2026-10-13) - pages now render per request and sample data covers any past date.
+
+## 2026-10-13 - AI Studio: template-based suggestions; planned posts saved in browser storage
+
+Context: AI Studio needs content ideas, captions, hashtags, best posting times, and a calendar of planned posts. There is no database or user accounts yet, and the earlier decision to keep plain-language text rule-based (2026-10-09) still applies.
+
+Decision: Generate ideas, captions, and hashtags with deterministic templates in tested TypeScript modules (lib/ai-studio/), labelled "Suggestions" in the UI. Store planned posts in the browser's localStorage under a versioned key, validated on load so corrupted or old data is ignored. Read them through a `usePlannedPosts` hook built on React's `useSyncExternalStore`, which returns an empty list during server rendering (browser storage is not available there, per the Next.js 16 server and client components guide) so pages render without hydration errors, and keeps open tabs in sync.
+
+Alternatives considered: Real AI via the Claude API was rejected for now (API key, server route, per-use cost, and output that is hard to test); the template output can later be passed to a model as a starting point. A database was rejected because there are no accounts yet; browser storage is enough for a single-user prototype and will be replaced when accounts exist. Reading localStorage in a `useEffect` was rejected because it causes a render-then-update flash and duplicated state across components; an inline pre-paint script (from the Next.js "preventing flash" guide) was rejected as unnecessary for a list that is not visible above the fold.
+
+## 2026-10-14 - No auto-posting: the site plans content; the business creates and posts it
+
+Context: DISCOVERY.md originally described a "schedule auto post calendar". A caption alone is not a post: the photos and videos have to be made by the business, and publishing captions without content (or posting automatically) would not work for them.
+
+Decision: The dashboard is a planning assistant. It suggests ideas, trends, captions, hashtags, and best times to post, gives a content brief (shot list, length, tips) for each idea, and keeps a content plan (the calendar). The business creates its own photos and videos and posts them itself. No feature publishes to social platforms.
+
+Alternatives considered: Auto-posting captions on a schedule was rejected because posts need photos or videos the business makes. AI-generated images or videos were rejected for now: they would not show the real cafe, products, or people, and add cost and review effort. Publishing user-uploaded media through platform APIs was deferred; it needs account connections and approval from each platform, and can be revisited once accounts exist.
+
+Supersedes: the "schedule auto post calendar" idea in DISCOVERY.md (2026-10-13), which was a product note rather than a recorded decision.

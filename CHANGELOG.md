@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Every dashboard page states exactly which dates "this week" and "last week" cover.
 - Date bar on Overview, Analytics, Competitors, and competitor pages: choose the period to show (this week, last 7 days, last 30 days, or custom dates) and what to compare it with (previous period, same period last year, or custom dates). The choice is kept in the page address, carries across pages, and can be bookmarked; future dates are blocked and invalid dates show a notice.
 - Sample data for any past date, so comparisons with last year work.
+- AI Studio at /ai-studio: a step-by-step flow from trend-based content ideas to captions (friendly, playful, or professional) and hashtags with copy buttons, to scheduling at the platform's next best time; a content calendar (month grid and list with edit and delete) saved in the browser; and best times to post per platform. Suggestions are template-based and labelled as such.
+- A "How to make it" content brief for every idea: shot list, ideal length, and tips, since the business creates its own photos and videos.
+- Decisions: template-based AI Studio suggestions with planned posts in browser storage, and no auto-posting (the site plans content; the business creates and posts it).
 
 ### Removed
 - The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
