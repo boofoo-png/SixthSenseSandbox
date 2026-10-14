@@ -25,8 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Competitors section with sample data for four fictional cafes: comparison table, engagement-over-time chart (hand-written SVG with legend, hover labels, and table view), and a page per competitor with posts by platform, top and lowest posts, most used hashtags, and active ads.
 - Overview cards for competitor activity and trending topics and hashtags, replacing the coming soon cards.
 - Every dashboard page states exactly which dates "this week" and "last week" cover.
+- Date bar on Overview, Analytics, Competitors, and competitor pages: choose the period to show (this week, last 7 days, last 30 days, or custom dates) and what to compare it with (previous period, same period last year, or custom dates). The choice is kept in the page address, carries across pages, and can be bookmarked; future dates are blocked and invalid dates show a notice.
+- Sample data for any past date, so comparisons with last year work.
 
 ### Removed
+- The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
 - Unused Next.js starter images in public/.
 
 ### Changed
@@ -38,6 +41,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Restore the `@AGENTS.md` import in CLAUDE.md so agents load the Next.js 16 rules.
 - Weeks are now Sunday-to-Saturday calendar weeks; an unfinished week is compared with the same days of last week (previously a rolling 7-day window).
 - Sample data now ends on today's date so the dashboard looks current; dashboard pages refresh at most hourly. Tests use a fixed clock (2026-10-09).
+- Dashboard pages now render on each request (they read the date selection from the address); the hourly refresh is removed.
+- Tiles, summaries, tables, and the competitor chart follow the selected dates; tiles say "vs <dates>" instead of "vs last week", and the summary heading is "In plain English".
+- Sample follower counts grow by a realistic yearly percentage instead of a fixed daily amount.
 
 ### Fixed
 - Followers change no longer counts platforms that only have data in one of the two weeks.

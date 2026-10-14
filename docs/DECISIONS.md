@@ -67,3 +67,13 @@ Decision: "This week" is the Sunday-to-Saturday week containing the newest data.
 Alternatives considered: Comparing the full current week with the full previous week was rejected because totals look misleadingly low until Saturday. Showing only the last complete week was rejected because it hides the current week's activity for up to six days. Weeks starting on Monday were rejected because the user expects Sunday starts.
 
 Supersedes: the rolling 7-day comparison used since 2026-10-09 (not previously recorded as a decision).
+
+## 2026-10-13 - Date range selection lives in the page address; dashboard pages render per request
+
+Context: Users want to choose both the period shown and the period it is compared with (quick options or custom dates), on every dashboard page, instead of a fixed "this week vs the same days last week". The selection should carry across pages and be shareable.
+
+Decision: Store the selection in URL search parameters (`period`, `from`, `to`, `compare`, `compareFrom`, `compareTo`), parsed and validated in one tested module (lib/date-range.ts). No parameters keeps the current default (this calendar week vs the same days last week). Pages read `searchParams` in thin async wrappers and render synchronous, unit-tested content components; using `searchParams` makes these pages render on each request, so the hourly `revalidate` is removed. The date bar is a client component built from native `<select>` and `<input type="date">` elements that updates the URL; client parts that read the URL are wrapped in `Suspense` per the Next.js 16 docs. Sample data is generated deterministically per day so any past range has data.
+
+Alternatives considered: Keeping the selection in React state or browser storage was rejected because it would not carry across server-rendered pages or be shareable. A date-picker library was rejected to avoid a dependency and because native date inputs are accessible and work on phones. The team's Dropdown component was not used because shared UI components are assigned to teammates.
+
+Supersedes: "Sample data ends on today's date; dashboard pages refresh hourly" (2026-10-13) - pages now render per request and sample data covers any past date.
