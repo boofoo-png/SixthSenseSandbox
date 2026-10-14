@@ -1,12 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { roundPercent } from "@/lib/analytics/change";
-import { comparePeriods, platformComparison } from "@/lib/analytics/kpis";
+import { formatChange } from "@/lib/analytics/change";
+import { describePeriods, todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods, periodRanges, platformComparison } from "@/lib/analytics/kpis";
 import { createSampleData } from "@/lib/analytics/sample-data";
 import { buildSummary, formatPercent } from "@/lib/analytics/summary";
 import { PLATFORM_LABELS } from "@/lib/analytics/types";
+import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
+import {
+  SAMPLE_COMPETITORS,
+  SAMPLE_TRENDS,
+  createSampleAds,
+  createSamplePosts,
+} from "@/lib/competitors/sample-data";
+import { topTrends } from "@/lib/competitors/trends";
+import type { TrendSource } from "@/lib/competitors/types";
 import { KpiTile } from "./_components/kpi-tile";
 import { KpiTiles } from "./_components/kpi-tiles";
+import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "./_components/styles";
 import { SummaryCard } from "./_components/summary-card";
 
 export const metadata: Metadata = {
@@ -15,50 +26,69 @@ export const metadata: Metadata = {
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
-const cardClass =
-  "rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900";
-const headingClass = "text-lg font-semibold text-zinc-950 dark:text-zinc-50";
+const SOURCE_LABELS: Record<TrendSource, string> = {
+  social: "Social",
+  search: "Search",
+  industry: "Industry",
+};
 
-function formatChange(change: number | null): string {
-  if (change === null) {
-    return "No data";
-  }
-  const percent = roundPercent(change);
-  return percent > 0 ? `+${percent}%` : `${percent}%`;
+function CompetitorActivityCard({ today }: { today: string }) {
+  const highlights = competitorHighlights(
+    competitorActivity(SAMPLE_COMPETITORS, createSamplePosts(today), createSampleAds(today)),
+  );
+  const { mostActive, bestEngagement } = highlights;
+
+  return (
+    <section aria-labelledby="competitor-activity" className={cardClass}>
+      <h2 id="competitor-activity" className={cardHeadingClass}>Competitor activity</h2>
+      {mostActive === null || bestEngagement === null ? (
+        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No competitor posts this week.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-zinc-700 dark:text-zinc-300">
+          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts this week)`}</li>
+          <li>{`Best engagement: ${bestEngagement.competitor.name} (${formatPercent(bestEngagement.engagementRate, 1)})`}</li>
+          <li>{`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`}</li>
+        </ul>
+      )}
+      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Sample data: fictional competitors.</p>
+      <Link href="/competitors" className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
+    </section>
+  );
 }
 
-function ComingSoonCard({ title, description, href }: { title: string; description: string; href?: string }) {
-  const id = `card-${title.toLowerCase().replace(/\s+/g, "-")}`;
+function TrendsCard() {
+  const trends = topTrends(SAMPLE_TRENDS);
   return (
-    <section aria-labelledby={id} className={cardClass}>
-      <div className="flex items-center justify-between gap-2">
-        <h2 id={id} className={headingClass}>{title}</h2>
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">Coming soon</span>
-      </div>
-      <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{description}</p>
-      {href && (
-        <Link href={href} className="mt-3 inline-block text-sm font-medium text-zinc-700 underline underline-offset-4 dark:text-zinc-300">
-          See what is planned
-        </Link>
-      )}
+    <section aria-labelledby="trends" className={cardClass}>
+      <h2 id="trends" className={cardHeadingClass}>Trends</h2>
+      <ul className="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
+        {trends.map((trend) => (
+          <li key={trend.label} className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
+            <span className="font-medium text-zinc-900 dark:text-zinc-100">{trend.label}</span>
+            <span className="flex gap-3 text-sm text-zinc-500 dark:text-zinc-400">
+              {trend.relevant && <span className="text-emerald-700 dark:text-emerald-400">Relevant to you</span>}
+              <span>{SOURCE_LABELS[trend.source]}</span>
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">{`+${formatPercent(trend.growth)}`}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Sample trends, growth over the last week.</p>
     </section>
   );
 }
 
 export default function OverviewPage() {
   // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
-  const rows = createSampleData();
+  const today = todayIsoDate();
+  const rows = createSampleData(today);
   const comparison = comparePeriods(rows);
   const platforms = platformComparison(rows);
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl dark:text-zinc-50">
-        Overview
-      </h1>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        How your marketing did this week. Showing sample data.
-      </p>
+    <main className={pageClass}>
+      <h1 className={titleClass}>Overview</h1>
+      <p className={subtitleClass}>{`${describePeriods(periodRanges(rows))} Showing sample data.`}</p>
 
       <div className="mt-6">
         <KpiTiles comparison={comparison} />
@@ -69,7 +99,7 @@ export default function OverviewPage() {
           <SummaryCard lines={buildSummary(rows)} />
         </div>
         <section aria-labelledby="market-highlights" className={cardClass}>
-          <h2 id="market-highlights" className={headingClass}>Market highlights</h2>
+          <h2 id="market-highlights" className={cardHeadingClass}>Market highlights</h2>
           <div className="mt-3 grid gap-3">
             <KpiTile label="Clicks" value={numberFormat.format(comparison.current.clicks)} change={comparison.change.clicks} />
             <KpiTile
@@ -82,7 +112,7 @@ export default function OverviewPage() {
       </div>
 
       <section className={`mt-8 ${cardClass}`}>
-        <h2 id="platform-comparison" className={headingClass}>Platform comparison</h2>
+        <h2 id="platform-comparison" className={cardHeadingClass}>Platform comparison</h2>
         <div className="mt-3 overflow-x-auto">
           <table aria-labelledby="platform-comparison" className="w-full min-w-md text-left text-sm">
             <thead className="text-zinc-500 dark:text-zinc-400">
@@ -108,23 +138,11 @@ export default function OverviewPage() {
       </section>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <ComingSoonCard
-          title="Competitor activity"
-          description="Posting frequency, engagement, top posts, hashtags, and active ads for the competitors you follow."
-          href="/competitors"
-        />
-        <ComingSoonCard
-          title="Trends"
-          description="Trends across social platforms, search, and your industry, filtered for your business."
-        />
+        <CompetitorActivityCard today={today} />
+        <TrendsCard />
       </div>
 
-      <Link
-        href="/analytics"
-        className="mt-8 inline-block text-sm font-medium text-zinc-700 underline underline-offset-4 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
-      >
-        View full analytics
-      </Link>
+      <Link href="/analytics" className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
     </main>
   );
 }

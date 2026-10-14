@@ -19,6 +19,32 @@
   }
 }
 
+/* Chart colors: categorical slots 1-4 from the validated reference palette,
+   with separate steps for dark mode (validated against each surface). */
+.viz-root {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --viz-surface: #ffffff;
+  --viz-grid: #e4e4e7;
+  --viz-axis: #71717a;
+  --viz-label: #3f3f46;
+}
+
+@media (prefers-color-scheme: dark) {
+  .viz-root {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --viz-surface: #18181b;
+    --viz-grid: #27272a;
+    --viz-axis: #a1a1aa;
+    --viz-label: #d4d4d8;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

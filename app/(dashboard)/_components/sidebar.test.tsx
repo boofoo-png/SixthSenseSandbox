@@ -46,10 +46,10 @@ describe("Sidebar", () => {
 
   it("labels sections that are not built yet", () => {
     render(<Sidebar />);
-    const competitors = within(nav()).getByRole("link", { name: /Competitors/ });
-    expect(competitors.textContent).toContain("Coming soon");
-    const analytics = within(nav()).getByRole("link", { name: "Analytics" });
-    expect(analytics.textContent).not.toContain("Coming soon");
+    const reports = within(nav()).getByRole("link", { name: /Reports/ });
+    expect(reports.textContent).toContain("Coming soon");
+    const competitors = within(nav()).getByRole("link", { name: "Competitors" });
+    expect(competitors.textContent).not.toContain("Coming soon");
   });
 
   describe("mobile menu", () => {

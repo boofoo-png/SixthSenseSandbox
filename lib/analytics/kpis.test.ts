@@ -4,9 +4,12 @@ import {
   comparePeriods,
   computeTotals,
   engagementRate,
+  latestValidDate,
   percentChange,
+  periodRanges,
   platformBreakdown,
   platformComparison,
+  splitPeriods,
 } from "./kpis";
 import type { DailyMetrics, Platform } from "./types";
 
@@ -123,16 +126,16 @@ describe("percentChange", () => {
 });
 
 describe("comparePeriods", () => {
-  // 14 days: days 1-7 have 100 engagements each, days 8-14 have 150.
+  // Two calendar weeks, Sun Oct 4 to Sat Oct 17: the first has 100 engagements a day, the second 150.
   const rows: DailyMetrics[] = Array.from({ length: 14 }, (_, i) =>
-    row("instagram", `2026-10-${String(i + 1).padStart(2, "0")}`, {
+    row("instagram", `2026-10-${String(i + 4).padStart(2, "0")}`, {
       impressions: 1000,
       engagements: i < 7 ? 100 : 150,
       followers: 500 + i,
     }),
   );
 
-  it("splits data into the latest 7 days and the 7 days before", () => {
+  it("splits data into this calendar week and last week", () => {
     const result = comparePeriods(rows);
     expect(result.current.engagements).toBe(1050);
     expect(result.previous.engagements).toBe(700);
@@ -168,7 +171,7 @@ describe("comparePeriods", () => {
     const withNewPlatform = [
       ...rows,
       // LinkedIn is connected this week only: its 900 followers are not a gain.
-      row("linkedin", "2026-10-14", { followers: 900 }),
+      row("linkedin", "2026-10-17", { followers: 900 }),
     ];
     const result = comparePeriods(withNewPlatform);
     expect(result.current.followers).toBe(513 + 900);
@@ -192,9 +195,73 @@ describe("comparePeriods", () => {
     expect(result.previous.engagements).toBe(700);
   });
 
+  it("compares an unfinished week with the same days of last week", () => {
+    // Sun Oct 4 to Tue Oct 13: this week so far (Oct 11-13) vs Oct 4-6.
+    const partial = Array.from({ length: 10 }, (_, i) =>
+      row("instagram", `2026-10-${String(i + 4).padStart(2, "0")}`, { impressions: 1000, engagements: 100 }),
+    );
+    const result = comparePeriods(partial);
+    expect(result.current.impressions).toBe(3000);
+    expect(result.previous.impressions).toBe(3000);
+    expect(result.change.impressions).toBe(0);
+  });
+
   it("returns zeros when every date is malformed", () => {
     const result = comparePeriods([row("instagram", "garbage")]);
     expect(result.current.engagements).toBe(0);
+  });
+});
+
+describe("splitPeriods", () => {
+  it("works for any rows with a date, not only daily metrics", () => {
+    const posts = [
+      { id: 1, date: "2026-10-05" },
+      { id: 2, date: "2026-10-12" },
+      { id: 3, date: "2026-10-17" },
+      { id: 4, date: "bad" },
+    ];
+    const { current, previous } = splitPeriods(posts);
+    expect(current.map((p) => p.id)).toEqual([2, 3]);
+    expect(previous.map((p) => p.id)).toEqual([1]);
+  });
+});
+
+describe("periodRanges", () => {
+  it("uses Sunday-to-Saturday weeks; a finished week is compared with all of last week", () => {
+    // 2026-10-17 is a Saturday.
+    expect(periodRanges([{ date: "2026-10-05" }, { date: "2026-10-17" }, { date: "bad" }])).toEqual({
+      week: { start: "2026-10-11", end: "2026-10-17" },
+      current: { start: "2026-10-11", end: "2026-10-17" },
+      previous: { start: "2026-10-04", end: "2026-10-10" },
+      complete: true,
+    });
+  });
+
+  it("compares an unfinished week with the same days of last week", () => {
+    // 2026-10-13 is a Tuesday: this week so far is Sun-Tue.
+    expect(periodRanges([{ date: "2026-10-13" }])).toEqual({
+      week: { start: "2026-10-11", end: "2026-10-17" },
+      current: { start: "2026-10-11", end: "2026-10-13" },
+      previous: { start: "2026-10-04", end: "2026-10-06" },
+      complete: false,
+    });
+  });
+
+  it("handles a week that has only reached Sunday", () => {
+    const ranges = periodRanges([{ date: "2026-10-11" }]);
+    expect(ranges?.current).toEqual({ start: "2026-10-11", end: "2026-10-11" });
+    expect(ranges?.previous).toEqual({ start: "2026-10-04", end: "2026-10-04" });
+  });
+
+  it("returns null when there are no valid dates", () => {
+    expect(periodRanges([])).toBeNull();
+  });
+});
+
+describe("latestValidDate", () => {
+  it("returns the newest valid date and ignores malformed ones", () => {
+    expect(latestValidDate([{ date: "2026-10-01" }, { date: "2026-10-9" }, { date: "2026-10-05" }])).toBe("2026-10-05");
+    expect(latestValidDate([])).toBeUndefined();
   });
 });
 
@@ -202,7 +269,7 @@ describe("platformComparison", () => {
   // Instagram: steady 50/1000 per day. LinkedIn: 50/1000 last week, 35/1000 this week.
   const days = (platform: Platform, lastWeek: number, thisWeek: number) =>
     Array.from({ length: 14 }, (_, i) =>
-      row(platform, `2026-10-${String(i + 1).padStart(2, "0")}`, {
+      row(platform, `2026-10-${String(i + 4).padStart(2, "0")}`, {
         impressions: 1000,
         engagements: i < 7 ? lastWeek : thisWeek,
         clicks: 10,

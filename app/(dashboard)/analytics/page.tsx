@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { comparePeriods } from "@/lib/analytics/kpis";
+import { describePeriods, todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods, periodRanges } from "@/lib/analytics/kpis";
 import { createSampleData } from "@/lib/analytics/sample-data";
 import { buildSummary } from "@/lib/analytics/summary";
 import { KpiTiles } from "../_components/kpi-tiles";
@@ -12,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function AnalyticsPage() {
   // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
-  const rows = createSampleData();
+  const rows = createSampleData(todayIsoDate());
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:py-12">
@@ -20,7 +21,7 @@ export default function AnalyticsPage() {
         Analytics
       </h1>
       <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        Last 7 days compared with the 7 days before. Showing sample data.
+        {`${describePeriods(periodRanges(rows))} Showing sample data.`}
       </p>
 
       <div className="mt-6">

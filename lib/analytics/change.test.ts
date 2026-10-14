@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { isNoticeable, roundPercent } from "./change";
+import { formatChange, isNoticeable, roundPercent } from "./change";
+
+describe("formatChange", () => {
+  it("shows a signed whole percent", () => {
+    expect(formatChange(0.125)).toBe("+13%");
+    expect(formatChange(-0.08)).toBe("-8%");
+    expect(formatChange(0.001)).toBe("0%");
+  });
+
+  it("says there is no data when the change is unknown", () => {
+    expect(formatChange(null)).toBe("No data");
+  });
+});
 
 describe("roundPercent", () => {
   it("converts a fraction to a whole percent", () => {

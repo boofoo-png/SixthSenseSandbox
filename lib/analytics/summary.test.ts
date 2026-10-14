@@ -8,13 +8,13 @@ type DayValues = { impressions: number; engagements: number };
 /**
  * Builds 14 days of rows for one platform: the first 7 days ("last week")
  * and the latest 7 days ("this week") each get the given daily values.
- * By default the 14 days are 2026-10-01 to 2026-10-14.
+ * By default the 14 days are two calendar weeks, Sun 2026-10-04 to Sat 2026-10-17.
  */
 function twoWeeks(
   platform: Platform,
   lastWeek: DayValues,
   thisWeek: DayValues,
-  startDate = "2026-10-01",
+  startDate = "2026-10-04",
 ): DailyMetrics[] {
   return Array.from({ length: 14 }, (_, i) => {
     const values = i < 7 ? lastWeek : thisWeek;

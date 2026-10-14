@@ -1,4 +1,4 @@
-import { isIsoDate, shiftDate } from "./dates";
+import { isIsoDate, shiftDate, weekStart, type WeekPeriods } from "./dates";
 import { PLATFORMS, type DailyMetrics, type Platform } from "./types";
 
 export type KpiTotals = {
@@ -79,12 +79,16 @@ export function percentChange(current: number, previous: number): number | null 
   return (current - previous) / previous;
 }
 
-export type Periods = { current: DailyMetrics[]; previous: DailyMetrics[] };
+type Dated = { date: string };
 
-function latestDate(rows: readonly DailyMetrics[]): string | undefined {
+/** This week's and last week's rows. Works for any dated rows (metrics, posts). */
+export type Periods<T extends Dated = DailyMetrics> = { current: T[]; previous: T[] };
+
+/** The newest valid ISO date in the rows, ignoring malformed dates. */
+export function latestValidDate(rows: readonly Dated[]): string | undefined {
   let latest: string | undefined;
   for (const row of rows) {
-    if (latest === undefined || row.date > latest) {
+    if (isIsoDate(row.date) && (latest === undefined || row.date > latest)) {
       latest = row.date;
     }
   }
@@ -92,26 +96,44 @@ function latestDate(rows: readonly DailyMetrics[]): string | undefined {
 }
 
 /** Rows whose date falls within [from, to], inclusive. ISO dates compare correctly as strings. */
-function rowsBetween(rows: readonly DailyMetrics[], from: string, to: string): DailyMetrics[] {
+function rowsBetween<T extends Dated>(rows: readonly T[], from: string, to: string): T[] {
   return rows.filter((row) => row.date >= from && row.date <= to);
 }
 
 /**
- * Splits rows into the latest `days` days and the `days` before, relative to
+ * Splits rows into this calendar week so far and the same days of last week, relative to
  * the newest date in the data. Rows with malformed dates are ignored.
  */
-export function splitPeriods(rows: readonly DailyMetrics[], days = 7): Periods {
-  const validRows = rows.filter((row) => isIsoDate(row.date));
-  const end = latestDate(validRows);
-  if (end === undefined) {
+export function splitPeriods<T extends Dated>(rows: readonly T[]): Periods<T> {
+  const ranges = periodRanges(rows);
+  if (ranges === null) {
     return { current: [], previous: [] };
   }
-  const currentStart = shiftDate(end, -(days - 1));
-  const previousEnd = shiftDate(currentStart, -1);
-  const previousStart = shiftDate(previousEnd, -(days - 1));
+  const validRows = rows.filter((row) => isIsoDate(row.date));
   return {
-    current: rowsBetween(validRows, currentStart, end),
-    previous: rowsBetween(validRows, previousStart, previousEnd),
+    current: rowsBetween(validRows, ranges.current.start, ranges.current.end),
+    previous: rowsBetween(validRows, ranges.previous.start, ranges.previous.end),
+  };
+}
+
+/**
+ * The calendar week (Sunday to Saturday) containing the newest valid date,
+ * the part of it with data so far, and the same days of last week; null
+ * when there are no valid dates. Shown to users so "vs last week" is never
+ * ambiguous (see docs/DECISIONS.md: calendar weeks).
+ */
+export function periodRanges(rows: readonly Dated[]): WeekPeriods | null {
+  const end = latestValidDate(rows);
+  if (end === undefined) {
+    return null;
+  }
+  const start = weekStart(end);
+  const saturday = shiftDate(start, 6);
+  return {
+    week: { start, end: saturday },
+    current: { start, end },
+    previous: { start: shiftDate(start, -7), end: shiftDate(end, -7) },
+    complete: end === saturday,
   };
 }
 
@@ -151,8 +173,8 @@ export function comparePeriodRows(periods: Periods): PeriodComparison {
   };
 }
 
-export function comparePeriods(rows: readonly DailyMetrics[], days = 7): PeriodComparison {
-  return comparePeriodRows(splitPeriods(rows, days));
+export function comparePeriods(rows: readonly DailyMetrics[]): PeriodComparison {
+  return comparePeriodRows(splitPeriods(rows));
 }
 
 export type PlatformComparison = {
@@ -165,8 +187,8 @@ export type PlatformComparison = {
  * This week's totals and change vs last week for each platform with data
  * this week, using the same weeks as the rest of the dashboard.
  */
-export function platformComparison(rows: readonly DailyMetrics[], days = 7): PlatformComparison[] {
-  const periods = splitPeriods(rows, days);
+export function platformComparison(rows: readonly DailyMetrics[]): PlatformComparison[] {
+  const periods = splitPeriods(rows);
   return PLATFORMS.flatMap((platform) => {
     const current = periods.current.filter((row) => row.platform === platform);
     if (current.length === 0) {

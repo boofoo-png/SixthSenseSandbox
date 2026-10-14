@@ -17,3 +17,12 @@ export function roundPercent(fraction: number): number {
 export function isNoticeable(fraction: number): boolean {
   return Math.abs(roundPercent(fraction)) >= NOTICEABLE_PERCENT;
 }
+
+/** Signed whole percent for tables, e.g. "+13%" or "-8%"; "No data" when there is nothing to compare. */
+export function formatChange(fraction: number | null): string {
+  if (fraction === null) {
+    return "No data";
+  }
+  const percent = roundPercent(fraction);
+  return percent > 0 ? `+${percent}%` : `${percent}%`;
+}
