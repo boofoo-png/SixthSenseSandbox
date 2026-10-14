@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
-  dayName,
-  describePeriods,
+  daysInRange,
   formatDateRange,
   formatShortDate,
   isIsoDate,
   shiftDate,
+  shiftYear,
   todayIsoDate,
   weekStart,
 } from "./dates";
@@ -32,16 +32,11 @@ describe("formatShortDate", () => {
   });
 });
 
-describe("weekStart and dayName", () => {
+describe("weekStart", () => {
   it("finds the Sunday that starts the week", () => {
     expect(weekStart("2026-10-13")).toBe("2026-10-11");
     expect(weekStart("2026-10-11")).toBe("2026-10-11");
     expect(weekStart("2026-10-10")).toBe("2026-10-04");
-  });
-
-  it("names the day of the week", () => {
-    expect(dayName("2026-10-13")).toBe("Tue");
-    expect(dayName("2026-10-11")).toBe("Sun");
   });
 });
 
@@ -57,6 +52,27 @@ describe("formatDateRange", () => {
   it("shows both months when a range crosses months", () => {
     expect(formatDateRange({ start: "2026-09-26", end: "2026-10-02" })).toBe("Sep 26 - Oct 2");
   });
+  it("adds the year when asked", () => {
+    expect(formatDateRange({ start: "2026-10-04", end: "2026-10-09" }, true)).toBe("Oct 4 - 9, 2026");
+    expect(formatDateRange({ start: "2025-09-27", end: "2025-10-02" }, true)).toBe("Sep 27 - Oct 2, 2025");
+    expect(formatDateRange({ start: "2025-10-04", end: "2025-10-04" }, true)).toBe("Oct 4, 2025");
+  });
+
+  it("always shows both years when a range crosses years", () => {
+    expect(formatDateRange({ start: "2025-12-28", end: "2026-01-03" })).toBe("Dec 28, 2025 - Jan 3, 2026");
+  });
+});
+
+describe("daysInRange and shiftYear", () => {
+  it("counts days inclusively", () => {
+    expect(daysInRange({ start: "2026-10-04", end: "2026-10-09" })).toBe(6);
+    expect(daysInRange({ start: "2026-10-04", end: "2026-10-04" })).toBe(1);
+  });
+
+  it("moves a date back a year, turning Feb 29 into Feb 28", () => {
+    expect(shiftYear("2026-10-09", -1)).toBe("2025-10-09");
+    expect(shiftYear("2024-02-29", -1)).toBe("2023-02-28");
+  });
 });
 
 describe("todayIsoDate", () => {
@@ -68,44 +84,5 @@ describe("todayIsoDate", () => {
   it("defaults to the current time", () => {
     // vitest.setup.ts fixes the clock to 2026-10-09.
     expect(todayIsoDate()).toBe("2026-10-09");
-  });
-});
-
-describe("describePeriods", () => {
-  it("names both full weeks with their dates", () => {
-    expect(
-      describePeriods({
-        week: { start: "2026-10-11", end: "2026-10-17" },
-        current: { start: "2026-10-11", end: "2026-10-17" },
-        previous: { start: "2026-10-04", end: "2026-10-10" },
-        complete: true,
-      }),
-    ).toBe("This week (Oct 11 - 17) compared with last week (Oct 4 - 10).");
-  });
-
-  it("explains an unfinished week is compared with the same days last week", () => {
-    expect(
-      describePeriods({
-        week: { start: "2026-10-11", end: "2026-10-17" },
-        current: { start: "2026-10-11", end: "2026-10-13" },
-        previous: { start: "2026-10-04", end: "2026-10-06" },
-        complete: false,
-      }),
-    ).toBe("This week (Oct 11 - 17, so far Sun - Tue) compared with the same days last week (Oct 4 - 6).");
-  });
-
-  it("handles a week that has only reached Sunday", () => {
-    expect(
-      describePeriods({
-        week: { start: "2026-10-11", end: "2026-10-17" },
-        current: { start: "2026-10-11", end: "2026-10-11" },
-        previous: { start: "2026-10-04", end: "2026-10-04" },
-        complete: false,
-      }),
-    ).toBe("This week (Oct 11 - 17, so far Sun) compared with the same day last week (Oct 4).");
-  });
-
-  it("says there is no data yet when there are no dates", () => {
-    expect(describePeriods(null)).toBe("No data yet.");
   });
 });

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { formatChange } from "@/lib/analytics/change";
-import { describePeriods, todayIsoDate } from "@/lib/analytics/dates";
-import { comparePeriods, periodRanges, platformComparison } from "@/lib/analytics/kpis";
-import { createSampleData } from "@/lib/analytics/sample-data";
+import { todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods, platformComparison } from "@/lib/analytics/kpis";
+import { sampleDataBetween } from "@/lib/analytics/sample-data";
 import { buildSummary, formatPercent } from "@/lib/analytics/summary";
 import { PLATFORM_LABELS } from "@/lib/analytics/types";
 import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
@@ -11,10 +11,12 @@ import {
   SAMPLE_COMPETITORS,
   SAMPLE_TRENDS,
   createSampleAds,
-  createSamplePosts,
+  samplePostsBetween,
 } from "@/lib/competitors/sample-data";
 import { topTrends } from "@/lib/competitors/trends";
 import type { TrendSource } from "@/lib/competitors/types";
+import { pageDates, withQuery, type PageDates } from "@/lib/date-range";
+import { DateRangeBar } from "./_components/date-range-bar";
 import { KpiTile } from "./_components/kpi-tile";
 import { KpiTiles } from "./_components/kpi-tiles";
 import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "./_components/styles";
@@ -32,9 +34,14 @@ const SOURCE_LABELS: Record<TrendSource, string> = {
   industry: "Industry",
 };
 
-function CompetitorActivityCard({ today }: { today: string }) {
+function CompetitorActivityCard({ dates }: { dates: PageDates }) {
   const highlights = competitorHighlights(
-    competitorActivity(SAMPLE_COMPETITORS, createSamplePosts(today), createSampleAds(today)),
+    competitorActivity(
+      SAMPLE_COMPETITORS,
+      samplePostsBetween(dates.dataRange),
+      createSampleAds(dates.ranges.current.end),
+      dates.ranges,
+    ),
   );
   const { mostActive, bestEngagement } = highlights;
 
@@ -42,16 +49,16 @@ function CompetitorActivityCard({ today }: { today: string }) {
     <section aria-labelledby="competitor-activity" className={cardClass}>
       <h2 id="competitor-activity" className={cardHeadingClass}>Competitor activity</h2>
       {mostActive === null || bestEngagement === null ? (
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No competitor posts this week.</p>
+        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No competitor posts in this period.</p>
       ) : (
         <ul className="mt-3 space-y-2 text-zinc-700 dark:text-zinc-300">
-          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts this week)`}</li>
+          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts)`}</li>
           <li>{`Best engagement: ${bestEngagement.competitor.name} (${formatPercent(bestEngagement.engagementRate, 1)})`}</li>
           <li>{`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`}</li>
         </ul>
       )}
       <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Sample data: fictional competitors.</p>
-      <Link href="/competitors" className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
+      <Link href={withQuery("/competitors", dates.query)} className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
     </section>
   );
 }
@@ -78,34 +85,50 @@ function TrendsCard() {
   );
 }
 
-export default function OverviewPage() {
-  // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
+export default async function OverviewPage({ searchParams }: PageProps<"/">) {
   const today = todayIsoDate();
-  const rows = createSampleData(today);
-  const comparison = comparePeriods(rows);
-  const platforms = platformComparison(rows);
+  const dates = pageDates(await searchParams, today);
+  // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
+  const rows = sampleDataBetween(dates.dataRange);
+  const comparison = comparePeriods(rows, dates.ranges);
+  const platforms = platformComparison(rows, dates.ranges);
+  const summary = buildSummary(rows, {
+    ranges: dates.ranges,
+    currentPhrase: `during ${dates.currentLabel}`,
+    comparisonPhrase: dates.comparisonLabel,
+  });
 
   return (
     <main className={pageClass}>
       <h1 className={titleClass}>Overview</h1>
-      <p className={subtitleClass}>{`${describePeriods(periodRanges(rows))} Showing sample data.`}</p>
+      <p className={subtitleClass}>How your marketing did. Showing sample data.</p>
 
       <div className="mt-6">
-        <KpiTiles comparison={comparison} />
+        <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
+      </div>
+
+      <div className="mt-6">
+        <KpiTiles comparison={comparison} compareLabel={dates.comparisonLabel} />
       </div>
 
       <div className="mt-8 grid gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <SummaryCard lines={buildSummary(rows)} />
+          <SummaryCard lines={summary} />
         </div>
         <section aria-labelledby="market-highlights" className={cardClass}>
           <h2 id="market-highlights" className={cardHeadingClass}>Market highlights</h2>
           <div className="mt-3 grid gap-3">
-            <KpiTile label="Clicks" value={numberFormat.format(comparison.current.clicks)} change={comparison.change.clicks} />
+            <KpiTile
+              label="Clicks"
+              value={numberFormat.format(comparison.current.clicks)}
+              change={comparison.change.clicks}
+              compareLabel={dates.comparisonLabel}
+            />
             <KpiTile
               label="Click-through rate"
               value={formatPercent(comparison.current.clickThroughRate, 2)}
               change={comparison.change.clickThroughRate}
+              compareLabel={dates.comparisonLabel}
             />
           </div>
         </section>
@@ -120,7 +143,7 @@ export default function OverviewPage() {
                 <th scope="col" className="py-2 pr-4 font-medium">Platform</th>
                 <th scope="col" className="py-2 pr-4 font-medium">Impressions</th>
                 <th scope="col" className="py-2 pr-4 font-medium">Engagement rate</th>
-                <th scope="col" className="py-2 font-medium">Change vs last week</th>
+                <th scope="col" className="py-2 font-medium">Change</th>
               </tr>
             </thead>
             <tbody className="text-zinc-800 dark:text-zinc-200">
@@ -138,11 +161,11 @@ export default function OverviewPage() {
       </section>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <CompetitorActivityCard today={today} />
+        <CompetitorActivityCard dates={dates} />
         <TrendsCard />
       </div>
 
-      <Link href="/analytics" className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
+      <Link href={withQuery("/analytics", dates.query)} className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
     </main>
   );
 }

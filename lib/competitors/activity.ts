@@ -1,4 +1,10 @@
-import { engagementRate, latestValidDate, percentChange, splitPeriods } from "@/lib/analytics/kpis";
+import {
+  engagementRate,
+  latestValidDate,
+  percentChange,
+  splitPeriods,
+  type CompareRanges,
+} from "@/lib/analytics/kpis";
 import { isIsoDate, shiftDate, weekStart, type DateRange } from "@/lib/analytics/dates";
 import { PLATFORMS, type Platform } from "@/lib/analytics/types";
 import type { Competitor, CompetitorAd, CompetitorPost } from "./types";
@@ -66,9 +72,10 @@ export function competitorActivity(
   competitors: readonly Competitor[],
   posts: readonly CompetitorPost[],
   ads: readonly CompetitorAd[],
+  ranges?: CompareRanges,
 ): CompetitorActivity[] {
-  const periods = splitPeriods(posts);
-  const asOf = latestValidDate(posts);
+  const periods = splitPeriods(posts, ranges);
+  const asOf = ranges?.current.end ?? latestValidDate(posts);
 
   return competitors.map((competitor) => {
     const current = periods.current.filter((post) => post.competitor === competitor.slug);
@@ -84,26 +91,24 @@ export function competitorActivity(
   });
 }
 
-/** Top and bottom posts this week, most-used hashtags, and currently running ads for one competitor. */
+/** Top and bottom posts in the period, most-used hashtags in the period, and ads running at its end, for one competitor. */
 export function competitorDetail(
   slug: string,
   posts: readonly CompetitorPost[],
   ads: readonly CompetitorAd[],
+  ranges?: CompareRanges,
 ): CompetitorDetail {
-  const asOf = latestValidDate(posts);
-  const thisWeek = splitPeriods(posts).current
-    .filter((post) => post.competitor === slug)
-    .sort((a, b) => postRate(b) - postRate(a));
+  const asOf = ranges?.current.end ?? latestValidDate(posts);
+  const inPeriod = splitPeriods(posts, ranges).current.filter((post) => post.competitor === slug);
+  const thisWeek = [...inPeriod].sort((a, b) => postRate(b) - postRate(a));
 
   const topPosts = thisWeek.slice(0, TOP_POSTS);
   const bottomPosts = thisWeek.slice(TOP_POSTS).reverse().slice(0, TOP_POSTS);
 
   const counts = new Map<string, number>();
-  for (const post of posts) {
-    if (post.competitor === slug && isIsoDate(post.date)) {
-      for (const tag of post.hashtags) {
-        counts.set(tag, (counts.get(tag) ?? 0) + 1);
-      }
+  for (const post of inPeriod) {
+    for (const tag of post.hashtags) {
+      counts.set(tag, (counts.get(tag) ?? 0) + 1);
     }
   }
   const topHashtags = [...counts]
@@ -142,33 +147,41 @@ export type WeeklyEngagement = {
   series: { competitor: Competitor; rates: (number | null)[] }[];
 };
 
-/** Weekly engagement rate per competitor for the last `count` calendar weeks, using the dashboard's week boundaries. */
+const MAX_CHART_WEEKS = 12;
+
+/**
+ * Weekly engagement rate per competitor for the Sunday-to-Saturday weeks in
+ * `range` (at most the latest 12). Without a range, the last 4 weeks of data.
+ * Only posts inside the range count, so partial first and last weeks are fair.
+ */
 export function weeklyEngagement(
   competitors: readonly Competitor[],
   posts: readonly CompetitorPost[],
-  count = 4,
+  range?: DateRange,
 ): WeeklyEngagement {
-  const end = latestValidDate(posts);
-  if (end === undefined) {
+  const latest = latestValidDate(posts);
+  const bounds = range ?? (latest === undefined ? undefined : { start: shiftDate(weekStart(latest), -21), end: latest });
+  if (bounds === undefined) {
     return { weeks: [], series: competitors.map((competitor) => ({ competitor, rates: [] })) };
   }
 
-  // Sunday-to-Saturday weeks; the last one is the current week, which may be unfinished.
-  const currentWeek = weekStart(end);
-  const weeks: WeekRange[] = Array.from({ length: count }, (_, i) => {
-    const start = shiftDate(currentWeek, -7 * (count - 1 - i));
-    return { start, end: shiftDate(start, 6) };
-  });
+  const allWeeks: WeekRange[] = [];
+  for (let start = weekStart(bounds.start); start <= bounds.end; start = shiftDate(start, 7)) {
+    allWeeks.push({ start, end: shiftDate(start, 6) });
+  }
+  const weeks = allWeeks.slice(-MAX_CHART_WEEKS);
 
   const series = competitors.map((competitor) => ({
     competitor,
     rates: weeks.map(({ start, end: weekEnd }) => {
+      const from = start > bounds.start ? start : bounds.start;
+      const to = weekEnd < bounds.end ? weekEnd : bounds.end;
       const inWeek = posts.filter(
         (post) =>
           post.competitor === competitor.slug &&
           isIsoDate(post.date) &&
-          post.date >= start &&
-          post.date <= weekEnd,
+          post.date >= from &&
+          post.date <= to,
       );
       return inWeek.length === 0 ? null : postsRate(inWeek);
     }),
@@ -180,8 +193,12 @@ export function weeklyEngagement(
 export type PlatformActivity = { platform: Platform; posts: number; engagementRate: number };
 
 /** Posts and engagement rate per platform for one competitor this week, in platform order. */
-export function platformActivity(slug: string, posts: readonly CompetitorPost[]): PlatformActivity[] {
-  const thisWeek = splitPeriods(posts).current.filter((post) => post.competitor === slug);
+export function platformActivity(
+  slug: string,
+  posts: readonly CompetitorPost[],
+  ranges?: CompareRanges,
+): PlatformActivity[] {
+  const thisWeek = splitPeriods(posts, ranges).current.filter((post) => post.competitor === slug);
   return PLATFORMS.flatMap((platform) => {
     const onPlatform = thisWeek.filter((post) => post.platform === platform);
     return onPlatform.length === 0

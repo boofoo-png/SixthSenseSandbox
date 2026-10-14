@@ -31,8 +31,6 @@ export function formatShortDate(isoDate: string): string {
   return `${month} ${day}`;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
 function dayOfWeek(isoDate: string): number {
   return new Date(Date.parse(`${isoDate}T00:00:00Z`)).getUTCDay();
 }
@@ -42,21 +40,38 @@ export function weekStart(isoDate: string): string {
   return shiftDate(isoDate, -dayOfWeek(isoDate));
 }
 
-/** Short day name, e.g. "Tue". */
-export function dayName(isoDate: string): string {
-  return DAY_NAMES[dayOfWeek(isoDate)];
-}
-
-/** "Oct 4" for one day, "Oct 3 - 9" within one month, "Sep 26 - Oct 2" across months. */
-export function formatDateRange({ start, end }: DateRange): string {
+/**
+ * "Oct 4" for one day, "Oct 3 - 9" within one month, "Sep 26 - Oct 2" across
+ * months. With `withYear`, adds the year ("Oct 3 - 9, 2026"); a range that
+ * crosses years always shows both ("Dec 28, 2025 - Jan 3, 2026").
+ */
+export function formatDateRange({ start, end }: DateRange, withYear = false): string {
+  const startYear = start.slice(0, 4);
+  const endYear = end.slice(0, 4);
+  if (startYear !== endYear) {
+    return `${formatShortDate(start)}, ${startYear} - ${formatShortDate(end)}, ${endYear}`;
+  }
+  const year = withYear ? `, ${endYear}` : "";
   if (start === end) {
-    return formatShortDate(start);
+    return `${formatShortDate(start)}${year}`;
   }
   const from = parts(start);
   const to = parts(end);
-  return from.month === to.month && start.slice(0, 4) === end.slice(0, 4)
-    ? `${from.month} ${from.day} - ${to.day}`
-    : `${from.month} ${from.day} - ${to.month} ${to.day}`;
+  return from.month === to.month
+    ? `${from.month} ${from.day} - ${to.day}${year}`
+    : `${from.month} ${from.day} - ${to.month} ${to.day}${year}`;
+}
+
+/** Number of days in a range, counting both ends. */
+export function daysInRange({ start, end }: DateRange): number {
+  return Math.round((Date.parse(`${end}T00:00:00Z`) - Date.parse(`${start}T00:00:00Z`)) / MS_PER_DAY) + 1;
+}
+
+/** Moves a date by whole years; Feb 29 becomes Feb 28 in years without it. */
+export function shiftYear(isoDate: string, years: number): string {
+  const year = Number(isoDate.slice(0, 4)) + years;
+  const candidate = `${year}${isoDate.slice(4)}`;
+  return isIsoDate(candidate) ? candidate : `${year}-02-28`;
 }
 
 /**
@@ -71,20 +86,6 @@ export type WeekPeriods = {
   /** True once the week has data through Saturday. */
   complete: boolean;
 };
-
-/** The sentence pages show so "vs last week" is never ambiguous. */
-export function describePeriods(ranges: WeekPeriods | null): string {
-  if (ranges === null) {
-    return "No data yet.";
-  }
-  if (ranges.complete) {
-    return `This week (${formatDateRange(ranges.week)}) compared with last week (${formatDateRange(ranges.previous)}).`;
-  }
-  const { start, end } = ranges.current;
-  const soFar = start === end ? dayName(start) : `${dayName(start)} - ${dayName(end)}`;
-  const sameDays = start === end ? "the same day" : "the same days";
-  return `This week (${formatDateRange(ranges.week)}, so far ${soFar}) compared with ${sameDays} last week (${formatDateRange(ranges.previous)}).`;
-}
 
 /** Today's local calendar date as YYYY-MM-DD (used as the end of sample data). */
 export function todayIsoDate(now: Date = new Date()): string {

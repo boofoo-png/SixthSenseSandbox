@@ -54,11 +54,11 @@ describe("CompetitorDetail", () => {
 
   it("lists top and lowest performing posts with their engagement rate", () => {
     render(<CompetitorDetail competitor={competitor} detail={full} />);
-    const top = section("Top posts this week");
+    const top = section("Top posts");
     expect(within(top).getByText("Best post")).toBeDefined();
     expect(within(top).getByText("8.0% engagement")).toBeDefined();
     expect(within(top).getAllByText("Instagram, 2026-10-08")).toHaveLength(2);
-    expect(within(section("Lowest performing posts this week")).getByText("Worst post")).toBeDefined();
+    expect(within(section("Lowest performing posts")).getByText("Worst post")).toBeDefined();
   });
 
   it("lists the most used hashtags with counts", () => {
@@ -86,18 +86,23 @@ describe("CompetitorDetail", () => {
         ]}
       />,
     );
-    const byPlatform = section("By platform this week");
+    const byPlatform = section("By platform");
     const rows = within(byPlatform).getAllByRole("listitem").map((item) => item.textContent);
     expect(rows).toEqual(["Instagram3 posts, 4.2% engagement", "TikTok1 post, 9.0% engagement"]);
   });
 
   it("shows friendly empty states", () => {
     render(<CompetitorDetail competitor={competitor} detail={empty} />);
-    expect(within(section("By platform this week")).getByText("No posts this week.")).toBeDefined();
-    expect(within(section("Top posts this week")).getByText("No posts this week.")).toBeDefined();
-    expect(within(section("Lowest performing posts this week")).getByText("Not enough posts this week to compare.")).toBeDefined();
+    expect(within(section("By platform")).getByText("No posts in this period.")).toBeDefined();
+    expect(within(section("Top posts")).getByText("No posts in this period.")).toBeDefined();
+    expect(within(section("Lowest performing posts")).getByText("Not enough posts in this period to compare.")).toBeDefined();
     expect(within(section("Most used hashtags")).getByText("No hashtags used yet.")).toBeDefined();
     expect(within(section("Active ads")).getByText("No ads running right now.")).toBeDefined();
+  });
+
+  it("keeps the chosen dates in the link back", () => {
+    render(<CompetitorDetail competitor={competitor} detail={full} query="period=last-7-days" />);
+    expect(screen.getByRole("link", { name: "All competitors" }).getAttribute("href")).toBe("/competitors?period=last-7-days");
   });
 
   it("links back to the comparison and says it is sample data", () => {

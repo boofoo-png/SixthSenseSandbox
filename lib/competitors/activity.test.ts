@@ -170,7 +170,7 @@ describe("competitorHighlights", () => {
 
 describe("weeklyEngagement", () => {
   // Latest date is Sat 2026-10-17, so the last 3 calendar weeks start on Sundays 09-27, 10-04, 10-11.
-  const weekly = weeklyEngagement(competitors, posts, 3);
+  const weekly = weeklyEngagement(competitors, posts, { start: "2026-09-27", end: "2026-10-17" });
 
   it("returns Sunday-to-Saturday weeks oldest first, ending with the current week", () => {
     expect(weekly.weeks).toEqual([
@@ -182,7 +182,10 @@ describe("weeklyEngagement", () => {
 
   it("includes the current week even when it is unfinished", () => {
     // Tue 2026-10-13 is the latest post: the current week is still Oct 11-17.
-    const partial = weeklyEngagement(competitors, [post("alpha", "2026-10-05", 40), post("alpha", "2026-10-13", 60)], 2);
+    const partial = weeklyEngagement(competitors, [post("alpha", "2026-10-05", 40), post("alpha", "2026-10-13", 60)], {
+      start: "2026-10-04",
+      end: "2026-10-13",
+    });
     expect(partial.weeks).toEqual([
       { start: "2026-10-04", end: "2026-10-10" },
       { start: "2026-10-11", end: "2026-10-17" },
@@ -222,5 +225,45 @@ describe("platformActivity", () => {
 
   it("returns an empty list when the competitor did not post this week", () => {
     expect(platformActivity("nobody", posts)).toEqual([]);
+  });
+});
+
+describe("explicit date ranges", () => {
+  // Thu-Sat of the second week vs Sun-Tue of the first week.
+  const ranges = {
+    current: { start: "2026-10-12", end: "2026-10-14" },
+    comparison: { start: "2026-10-04", end: "2026-10-06" },
+  };
+
+  it("summarises activity over the given ranges, with ads active at the end of the range", () => {
+    const [alpha, beta] = competitorActivity(competitors, posts, ads, ranges);
+    expect(alpha.postsThisWeek).toBe(3);
+    expect(alpha.engagementRateChange).toBeCloseTo(0.25);
+    expect(beta.postsThisWeek).toBe(0);
+    // On 2026-10-14 beta's 10-10..10-20 ad is running.
+    expect(beta.activeAds).toBe(1);
+  });
+
+  it("finds top posts, hashtags, and platforms within the given range", () => {
+    const tagged = posts.map((p) => ({ ...p, hashtags: p.date === "2026-10-05" ? ["#old"] : ["#new"] }));
+    const detail = competitorDetail("alpha", tagged, ads, ranges);
+    expect(detail.topPosts.map((p) => p.engagements)).toEqual([70, 50, 30]);
+    expect(detail.topHashtags).toEqual([{ tag: "#new", count: 3 }]);
+    expect(platformActivity("alpha", posts, ranges)).toEqual([{ platform: "instagram", posts: 3, engagementRate: 0.05 }]);
+  });
+
+  it("charts the calendar weeks inside the given range", () => {
+    const weekly = weeklyEngagement(competitors, posts, { start: "2026-10-01", end: "2026-10-17" });
+    expect(weekly.weeks).toEqual([
+      { start: "2026-09-27", end: "2026-10-03" },
+      { start: "2026-10-04", end: "2026-10-10" },
+      { start: "2026-10-11", end: "2026-10-17" },
+    ]);
+  });
+
+  it("charts at most the latest 12 weeks", () => {
+    const weekly = weeklyEngagement(competitors, posts, { start: "2026-01-01", end: "2026-10-17" });
+    expect(weekly.weeks).toHaveLength(12);
+    expect(weekly.weeks[11]).toEqual({ start: "2026-10-11", end: "2026-10-17" });
   });
 });

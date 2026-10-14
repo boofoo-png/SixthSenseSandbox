@@ -1,35 +1,46 @@
 import type { Metadata } from "next";
-import { describePeriods, todayIsoDate } from "@/lib/analytics/dates";
-import { comparePeriods, periodRanges } from "@/lib/analytics/kpis";
-import { createSampleData } from "@/lib/analytics/sample-data";
+import { todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods } from "@/lib/analytics/kpis";
+import { sampleDataBetween } from "@/lib/analytics/sample-data";
 import { buildSummary } from "@/lib/analytics/summary";
+import { pageDates } from "@/lib/date-range";
+import { DateRangeBar } from "../_components/date-range-bar";
 import { KpiTiles } from "../_components/kpi-tiles";
+import { pageClass, subtitleClass, titleClass } from "../_components/styles";
 import { SummaryCard } from "../_components/summary-card";
 
 export const metadata: Metadata = {
   title: "Analytics",
-  description: "Marketing performance for the last 7 days.",
+  description: "Marketing performance for the dates you choose.",
 };
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage({ searchParams }: PageProps<"/analytics">) {
+  const today = todayIsoDate();
+  const dates = pageDates(await searchParams, today);
   // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
-  const rows = createSampleData(todayIsoDate());
+  const rows = sampleDataBetween(dates.dataRange);
 
   return (
-    <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 lg:py-12">
-      <h1 className="text-2xl font-semibold tracking-tight text-zinc-950 sm:text-3xl dark:text-zinc-50">
-        Analytics
-      </h1>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-        {`${describePeriods(periodRanges(rows))} Showing sample data.`}
-      </p>
+    <main className={pageClass}>
+      <h1 className={titleClass}>Analytics</h1>
+      <p className={subtitleClass}>Showing sample data.</p>
 
       <div className="mt-6">
-        <KpiTiles comparison={comparePeriods(rows)} />
+        <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
+      </div>
+
+      <div className="mt-6">
+        <KpiTiles comparison={comparePeriods(rows, dates.ranges)} compareLabel={dates.comparisonLabel} />
       </div>
 
       <div className="mt-8">
-        <SummaryCard lines={buildSummary(rows)} />
+        <SummaryCard
+          lines={buildSummary(rows, {
+            ranges: dates.ranges,
+            currentPhrase: `during ${dates.currentLabel}`,
+            comparisonPhrase: dates.comparisonLabel,
+          })}
+        />
       </div>
     </main>
   );

@@ -33,6 +33,17 @@ describe("KpiTile", () => {
 
   it("explains when there is nothing to compare", () => {
     render(<KpiTile label="Impressions" value="1" change={null} />);
-    expect(screen.getByText("No data from last week")).toBeDefined();
+    expect(screen.getByText("No data for last week")).toBeDefined();
+  });
+
+  it("names the comparison period it was given", () => {
+    render(<KpiTile label="Impressions" value="1" change={0.124} compareLabel="Oct 4 - 6" />);
+    expect(screen.getByText("+12% vs Oct 4 - 6")).toBeDefined();
+    cleanup();
+    render(<KpiTile label="Impressions" value="1" change={null} compareLabel="Oct 4 - 6" />);
+    expect(screen.getByText("No data for Oct 4 - 6")).toBeDefined();
+    cleanup();
+    render(<KpiTile label="Impressions" value="1" change={0} compareLabel="Oct 4 - 6" />);
+    expect(screen.getByText("No change vs Oct 4 - 6")).toBeDefined();
   });
 });

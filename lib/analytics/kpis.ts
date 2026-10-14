@@ -1,4 +1,4 @@
-import { isIsoDate, shiftDate, weekStart, type WeekPeriods } from "./dates";
+import { isIsoDate, shiftDate, weekStart, type DateRange, type WeekPeriods } from "./dates";
 import { PLATFORMS, type DailyMetrics, type Platform } from "./types";
 
 export type KpiTotals = {
@@ -81,7 +81,10 @@ export function percentChange(current: number, previous: number): number | null 
 
 type Dated = { date: string };
 
-/** This week's and last week's rows. Works for any dated rows (metrics, posts). */
+/** The period being shown and the period it is compared with (from the date bar). */
+export type CompareRanges = { current: DateRange; comparison: DateRange };
+
+/** This period's and the comparison period's rows. Works for any dated rows (metrics, posts). */
 export type Periods<T extends Dated = DailyMetrics> = { current: T[]; previous: T[] };
 
 /** The newest valid ISO date in the rows, ignoring malformed dates. */
@@ -104,16 +107,22 @@ function rowsBetween<T extends Dated>(rows: readonly T[], from: string, to: stri
  * Splits rows into this calendar week so far and the same days of last week, relative to
  * the newest date in the data. Rows with malformed dates are ignored.
  */
-export function splitPeriods<T extends Dated>(rows: readonly T[]): Periods<T> {
-  const ranges = periodRanges(rows);
-  if (ranges === null) {
+export function splitPeriods<T extends Dated>(rows: readonly T[], ranges?: CompareRanges): Periods<T> {
+  const resolved = ranges ?? defaultRanges(rows);
+  if (resolved === null) {
     return { current: [], previous: [] };
   }
   const validRows = rows.filter((row) => isIsoDate(row.date));
   return {
-    current: rowsBetween(validRows, ranges.current.start, ranges.current.end),
-    previous: rowsBetween(validRows, ranges.previous.start, ranges.previous.end),
+    current: rowsBetween(validRows, resolved.current.start, resolved.current.end),
+    previous: rowsBetween(validRows, resolved.comparison.start, resolved.comparison.end),
   };
+}
+
+/** Without a date bar selection: this calendar week so far vs the same days last week. */
+function defaultRanges(rows: readonly Dated[]): CompareRanges | null {
+  const ranges = periodRanges(rows);
+  return ranges === null ? null : { current: ranges.current, comparison: ranges.previous };
 }
 
 /**
@@ -173,8 +182,8 @@ export function comparePeriodRows(periods: Periods): PeriodComparison {
   };
 }
 
-export function comparePeriods(rows: readonly DailyMetrics[]): PeriodComparison {
-  return comparePeriodRows(splitPeriods(rows));
+export function comparePeriods(rows: readonly DailyMetrics[], ranges?: CompareRanges): PeriodComparison {
+  return comparePeriodRows(splitPeriods(rows, ranges));
 }
 
 export type PlatformComparison = {
@@ -187,8 +196,8 @@ export type PlatformComparison = {
  * This week's totals and change vs last week for each platform with data
  * this week, using the same weeks as the rest of the dashboard.
  */
-export function platformComparison(rows: readonly DailyMetrics[]): PlatformComparison[] {
-  const periods = splitPeriods(rows);
+export function platformComparison(rows: readonly DailyMetrics[], ranges?: CompareRanges): PlatformComparison[] {
+  const periods = splitPeriods(rows, ranges);
   return PLATFORMS.flatMap((platform) => {
     const current = periods.current.filter((row) => row.platform === platform);
     if (current.length === 0) {

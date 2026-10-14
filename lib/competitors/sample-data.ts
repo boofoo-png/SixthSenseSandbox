@@ -1,4 +1,4 @@
-import { shiftDate } from "@/lib/analytics/dates";
+import { daysInRange, shiftDate, type DateRange } from "@/lib/analytics/dates";
 import type { Platform } from "@/lib/analytics/types";
 import type { Competitor, CompetitorAd, CompetitorPost, Trend } from "./types";
 
@@ -17,8 +17,10 @@ type PostingProfile = {
   postsPerDay: number;
   baseImpressions: number;
   baseEngagementRate: number;
-  /** Daily change applied to the engagement rate. */
-  rateTrendPerDay: number;
+  /** How far the engagement rate swings up and down over a 60-day cycle (0.3 means +/-30%). */
+  rateSwing: number;
+  /** Where in the cycle the cafe is on the anchor date, in days. */
+  phase: number;
   platforms: readonly Platform[];
   captions: readonly string[];
   hashtags: readonly string[];
@@ -27,7 +29,7 @@ type PostingProfile = {
 
 // Each cafe has a distinct story: Brightside posts a lot but engages poorly,
 // Northwind posts rarely but engages well, Ember & Oak leans on ads, and
-// Little Fern is improving.
+// Little Fern's engagement swings the most.
 const PROFILES: readonly PostingProfile[] = [
   {
     competitor: "brightside-bakery",
@@ -35,7 +37,8 @@ const PROFILES: readonly PostingProfile[] = [
     postsPerDay: 2,
     baseImpressions: 2400,
     baseEngagementRate: 0.021,
-    rateTrendPerDay: 0,
+    rateSwing: 0.05,
+    phase: 0,
     platforms: ["instagram", "facebook", "tiktok"],
     captions: [
       "Fresh croissants just out of the oven",
@@ -53,7 +56,8 @@ const PROFILES: readonly PostingProfile[] = [
     postsPerDay: 1,
     baseImpressions: 5200,
     baseEngagementRate: 0.081,
-    rateTrendPerDay: 0,
+    rateSwing: 0.1,
+    phase: 20,
     platforms: ["instagram", "tiktok"],
     captions: [
       "How we roast our single-origin beans",
@@ -70,7 +74,8 @@ const PROFILES: readonly PostingProfile[] = [
     postsPerDay: 1,
     baseImpressions: 3300,
     baseEngagementRate: 0.039,
-    rateTrendPerDay: -0.008,
+    rateSwing: 0.2,
+    phase: 35,
     platforms: ["instagram", "facebook"],
     captions: [
       "Pumpkin spice is back for fall",
@@ -87,7 +92,8 @@ const PROFILES: readonly PostingProfile[] = [
     postsPerDay: 1,
     baseImpressions: 1800,
     baseEngagementRate: 0.043,
-    rateTrendPerDay: 0.02,
+    rateSwing: 0.35,
+    phase: 50,
     platforms: ["instagram", "tiktok"],
     captions: [
       "Matcha tasting flight this weekend",
@@ -100,51 +106,72 @@ const PROFILES: readonly PostingProfile[] = [
   },
 ];
 
-const DAYS = 30;
+/** Day numbers are counted from this date, so the same date always gives the same posts. */
+const ANCHOR = "2026-09-10";
+const CYCLE_DAYS = 60;
+
+/** Days from the anchor date (negative before it). */
+function dayNumber(isoDate: string): number {
+  return isoDate >= ANCHOR ? daysInRange({ start: ANCHOR, end: isoDate }) - 1 : 1 - daysInRange({ start: isoDate, end: ANCHOR });
+}
+
+/** Modulo that stays positive for negative day numbers. */
+function mod(n: number, m: number): number {
+  return ((n % m) + m) % m;
+}
 
 /** Repeatable variation between -0.4 and 0.4, so some posts do much better than others. */
 function postVariation(day: number, index: number, seed: number): number {
-  return (((day * 13 + index * 7 + seed * 5) % 9) - 4) / 10;
+  return (mod(day * 13 + index * 7 + seed * 5, 9) - 4) / 10;
 }
 
 /** Picks two or three hashtags from a pool in a repeatable way. */
 function pickHashtags(pool: readonly string[], n: number): string[] {
-  const count = 2 + (n % 2);
-  return Array.from({ length: count }, (_, i) => pool[(n + i * 2) % pool.length]);
+  const count = 2 + mod(n, 2);
+  return Array.from({ length: count }, (_, i) => pool[mod(n + i * 2, pool.length)]);
 }
 
-/** Builds 30 days of fictional competitor posts ending on `endDate`. Fully deterministic. */
-export function createSamplePosts(endDate = "2026-10-09"): CompetitorPost[] {
-  const startDate = shiftDate(endDate, -(DAYS - 1));
-  const posts: CompetitorPost[] = [];
-
-  for (const profile of PROFILES) {
-    let n = 0;
-    for (let day = 0; day < DAYS; day++) {
-      // Offset by seed so cafes posting every few days still post in the latest week.
-      if ((day + profile.seed) % profile.everyNDays !== 0) {
-        continue;
-      }
-      for (let index = 0; index < profile.postsPerDay; index++) {
-        const variation = postVariation(day, index, profile.seed);
-        const impressions = Math.round(profile.baseImpressions * (1 + variation / 2));
-        const rate =
-          profile.baseEngagementRate * (1 + profile.rateTrendPerDay * day) * (1 + variation);
-        posts.push({
-          competitor: profile.competitor,
-          platform: profile.platforms[n % profile.platforms.length],
-          date: shiftDate(startDate, day),
-          caption: profile.captions[n % profile.captions.length],
-          hashtags: pickHashtags(profile.hashtags, n),
-          impressions,
-          engagements: Math.max(0, Math.round(impressions * rate)),
-        });
-        n++;
-      }
-    }
+function postsOn(profile: PostingProfile, date: string): CompetitorPost[] {
+  const day = dayNumber(date);
+  // Offset by seed so cafes posting every few days still post in most weeks.
+  if (mod(day + profile.seed, profile.everyNDays) !== 0) {
+    return [];
   }
+  const cycle = Math.sin((2 * Math.PI * (day + profile.phase)) / CYCLE_DAYS);
+  return Array.from({ length: profile.postsPerDay }, (_, index) => {
+    const n = day * profile.postsPerDay + index;
+    const variation = postVariation(day, index, profile.seed);
+    const impressions = Math.round(profile.baseImpressions * (1 + variation / 2));
+    const rate = profile.baseEngagementRate * (1 + profile.rateSwing * cycle) * (1 + variation);
+    return {
+      competitor: profile.competitor,
+      platform: profile.platforms[mod(n, profile.platforms.length)],
+      date,
+      caption: profile.captions[mod(n, profile.captions.length)],
+      hashtags: pickHashtags(profile.hashtags, n),
+      impressions,
+      engagements: Math.max(0, Math.round(impressions * rate)),
+    };
+  });
+}
 
-  return posts;
+/**
+ * Fictional competitor posts for every day in a range. Each day's posts
+ * depend only on its date, so any past range (even last year) has data.
+ */
+export function samplePostsBetween({ start, end }: DateRange): CompetitorPost[] {
+  if (end < start) {
+    return [];
+  }
+  const days = daysInRange({ start, end });
+  return PROFILES.flatMap((profile) =>
+    Array.from({ length: days }, (_, i) => postsOn(profile, shiftDate(start, i))).flat(),
+  );
+}
+
+/** 30 days of fictional competitor posts ending on `endDate`. */
+export function createSamplePosts(endDate = "2026-10-09"): CompetitorPost[] {
+  return samplePostsBetween({ start: shiftDate(endDate, -29), end: endDate });
 }
 
 /** Fictional ads as they might appear in the Meta, TikTok, and Google ad libraries. */

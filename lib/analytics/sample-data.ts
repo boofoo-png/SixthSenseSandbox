@@ -1,4 +1,4 @@
-import { shiftDate } from "./dates";
+import { daysInRange, shiftDate, type DateRange } from "./dates";
 import type { DailyMetrics, Platform } from "./types";
 
 type PlatformProfile = {
@@ -7,25 +7,30 @@ type PlatformProfile = {
   baseEngagementRate: number;
   /** Share of engagements that are link clicks. */
   clickShare: number;
+  /** Followers on the anchor date. */
   startFollowers: number;
-  followersPerDay: number;
-  /** Daily change applied to the engagement rate, so recent weeks differ. */
-  rateTrendPerDay: number;
+  /** Follower growth per year as a fraction (0.5 means +50% a year). */
+  yearlyGrowth: number;
+  /** How far the engagement rate swings up and down over a 90-day cycle (0.25 means +/-25%). */
+  rateSwing: number;
+  /** Where in the cycle the platform is on the anchor date, in days. */
+  phase: number;
   /** Offset so each platform's day-to-day wobble differs. */
   seed: number;
 };
 
-// Profiles give each platform a distinct story for the summary to describe:
-// TikTok engages best, Instagram is improving, LinkedIn is slipping.
+// Profiles give each platform a distinct character for the summary to describe:
+// TikTok engages best, Instagram and LinkedIn rise and fall the most.
 const PROFILES: readonly PlatformProfile[] = [
   {
     platform: "instagram",
     baseImpressions: 4200,
-    baseEngagementRate: 0.045,
+    baseEngagementRate: 0.05,
     clickShare: 0.12,
     startFollowers: 5200,
-    followersPerDay: 18,
-    rateTrendPerDay: 0.012,
+    yearlyGrowth: 0.5,
+    rateSwing: 0.25,
+    phase: 0,
     seed: 1,
   },
   {
@@ -34,66 +39,83 @@ const PROFILES: readonly PlatformProfile[] = [
     baseEngagementRate: 0.028,
     clickShare: 0.2,
     startFollowers: 3800,
-    followersPerDay: 4,
-    rateTrendPerDay: 0,
+    yearlyGrowth: 0.1,
+    rateSwing: 0.05,
+    phase: 30,
     seed: 2,
   },
   {
     platform: "tiktok",
     baseImpressions: 6800,
-    baseEngagementRate: 0.072,
+    baseEngagementRate: 0.074,
     clickShare: 0.05,
     startFollowers: 2600,
-    followersPerDay: 35,
-    rateTrendPerDay: 0.002,
+    yearlyGrowth: 1.2,
+    rateSwing: 0.08,
+    phase: 60,
     seed: 3,
   },
   {
     platform: "linkedin",
     baseImpressions: 1500,
-    baseEngagementRate: 0.038,
+    baseEngagementRate: 0.032,
     clickShare: 0.3,
     startFollowers: 900,
-    followersPerDay: 2,
-    rateTrendPerDay: -0.015,
+    yearlyGrowth: 0.15,
+    rateSwing: 0.3,
+    phase: 45,
     seed: 4,
   },
 ];
 
-const DAYS = 30;
+/** Day numbers are counted from this date, so the same date always gives the same numbers. */
+const ANCHOR = "2026-09-10";
+const CYCLE_DAYS = 90;
 
-/** Repeatable wobble between -0.1 and 0.1, so the data looks less flat. */
+/** Days from the anchor date (negative before it). */
+function dayNumber(isoDate: string): number {
+  return isoDate >= ANCHOR ? daysInRange({ start: ANCHOR, end: isoDate }) - 1 : 1 - daysInRange({ start: isoDate, end: ANCHOR });
+}
+
+/** Repeatable wobble between -0.1 and 0.1, so the data looks less flat. Works for negative days too. */
 function wobble(day: number, seed: number): number {
-  return (((day * 7 + seed * 3) % 5) - 2) / 20;
+  const step = (((day * 7 + seed * 3) % 5) + 5) % 5;
+  return (step - 2) / 20;
+}
+
+function metricsFor(profile: PlatformProfile, date: string): DailyMetrics {
+  const day = dayNumber(date);
+  const impressions = Math.round(profile.baseImpressions * (1 + wobble(day, profile.seed)));
+  const cycle = Math.sin((2 * Math.PI * (day + profile.phase)) / CYCLE_DAYS);
+  const rate = profile.baseEngagementRate * (1 + profile.rateSwing * cycle);
+  const engagements = Math.max(1, Math.round(impressions * rate));
+  return {
+    platform: profile.platform,
+    date,
+    impressions,
+    engagements,
+    clicks: Math.round(engagements * profile.clickShare),
+    // Compound growth: realistic for any past date and never negative.
+    followers: Math.round(profile.startFollowers * (1 + profile.yearlyGrowth) ** (day / 365)),
+  };
 }
 
 /**
- * Builds 30 days of fake metrics per platform, ending on `endDate`.
- * Output is fully deterministic so tests and screenshots are stable.
+ * Fake metrics for every platform and every day in a range. Each day's
+ * numbers depend only on its date, so any past range (even last year) has
+ * stable, realistic data.
  */
-export function createSampleData(endDate = "2026-10-09"): DailyMetrics[] {
-  const startDate = shiftDate(endDate, -(DAYS - 1));
-  const rows: DailyMetrics[] = [];
-
-  for (const profile of PROFILES) {
-    for (let day = 0; day < DAYS; day++) {
-      const impressions = Math.round(
-        profile.baseImpressions * (1 + wobble(day, profile.seed)),
-      );
-      const rate =
-        profile.baseEngagementRate * (1 + profile.rateTrendPerDay * day);
-      const engagements = Math.max(1, Math.round(impressions * rate));
-
-      rows.push({
-        platform: profile.platform,
-        date: shiftDate(startDate, day),
-        impressions,
-        engagements,
-        clicks: Math.round(engagements * profile.clickShare),
-        followers: profile.startFollowers + profile.followersPerDay * day,
-      });
-    }
+export function sampleDataBetween({ start, end }: DateRange): DailyMetrics[] {
+  if (end < start) {
+    return [];
   }
+  const days = daysInRange({ start, end });
+  return PROFILES.flatMap((profile) =>
+    Array.from({ length: days }, (_, i) => metricsFor(profile, shiftDate(start, i))),
+  );
+}
 
-  return rows;
+/** 30 days of fake metrics ending on `endDate`. */
+export function createSampleData(endDate = "2026-10-09"): DailyMetrics[] {
+  return sampleDataBetween({ start: shiftDate(endDate, -29), end: endDate });
 }

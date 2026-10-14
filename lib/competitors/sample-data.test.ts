@@ -6,6 +6,7 @@ import {
   SAMPLE_TRENDS,
   createSampleAds,
   createSamplePosts,
+  samplePostsBetween,
 } from "./sample-data";
 
 const posts = createSamplePosts();
@@ -96,5 +97,26 @@ describe("SAMPLE_TRENDS", () => {
     expect(SAMPLE_TRENDS.some((t) => !t.relevant)).toBe(true);
     expect(SAMPLE_TRENDS.some((t) => t.kind === "hashtag")).toBe(true);
     expect(SAMPLE_TRENDS.some((t) => t.kind === "topic")).toBe(true);
+  });
+});
+
+describe("samplePostsBetween", () => {
+  it("covers any past date range", () => {
+    const lastYear = samplePostsBetween({ start: "2025-10-01", end: "2025-10-31" });
+    for (const { slug } of SAMPLE_COMPETITORS) {
+      expect(lastYear.some((post) => post.competitor === slug)).toBe(true);
+    }
+    for (const post of lastYear) {
+      expect(post.date >= "2025-10-01" && post.date <= "2025-10-31").toBe(true);
+    }
+  });
+
+  it("gives the same posts for a date no matter which range it is part of", () => {
+    const short = samplePostsBetween({ start: "2026-10-05", end: "2026-10-06" });
+    const long = samplePostsBetween({ start: "2026-09-01", end: "2026-10-09" });
+    expect(short.length).toBeGreaterThan(0);
+    for (const post of short) {
+      expect(long).toContainEqual(post);
+    }
   });
 });

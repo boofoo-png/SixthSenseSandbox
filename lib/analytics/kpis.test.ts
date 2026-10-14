@@ -295,3 +295,47 @@ describe("platformComparison", () => {
     expect(platformComparison([])).toEqual([]);
   });
 });
+
+describe("explicit date ranges", () => {
+  // Sun Oct 4 to Sat Oct 17, 100 engagements a day in the first week and 150 in the second.
+  const rows: DailyMetrics[] = Array.from({ length: 14 }, (_, i) =>
+    row("instagram", `2026-10-${String(i + 4).padStart(2, "0")}`, {
+      impressions: 1000,
+      engagements: i < 7 ? 100 : 150,
+      followers: 500 + i,
+    }),
+  );
+  // Compare Thu-Sat of week two against Sun-Tue of week one.
+  const ranges = {
+    current: { start: "2026-10-15", end: "2026-10-17" },
+    comparison: { start: "2026-10-04", end: "2026-10-06" },
+  };
+
+  it("splits rows into the given ranges", () => {
+    const { current, previous } = splitPeriods(rows, ranges);
+    expect(current.map((r) => r.date)).toEqual(["2026-10-15", "2026-10-16", "2026-10-17"]);
+    expect(previous.map((r) => r.date)).toEqual(["2026-10-04", "2026-10-05", "2026-10-06"]);
+  });
+
+  it("compares the given ranges", () => {
+    const result = comparePeriods(rows, ranges);
+    expect(result.current.engagements).toBe(450);
+    expect(result.previous.engagements).toBe(300);
+    expect(result.change.engagements).toBeCloseTo(0.5);
+  });
+
+  it("compares platforms over the given ranges", () => {
+    const [instagram] = platformComparison(rows, ranges);
+    expect(instagram.current.engagements).toBe(450);
+    expect(instagram.change.engagementRate).toBeCloseTo(0.5);
+  });
+
+  it("can compare ranges that are far apart, like last year", () => {
+    const lastYear = [...rows, row("instagram", "2025-10-15", { impressions: 1000, engagements: 300 })];
+    const result = comparePeriods(lastYear, {
+      current: ranges.current,
+      comparison: { start: "2025-10-15", end: "2025-10-17" },
+    });
+    expect(result.previous.engagements).toBe(300);
+  });
+});

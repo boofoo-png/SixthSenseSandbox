@@ -46,17 +46,17 @@ describe("KpiTiles", () => {
     expect(screen.getByText("12,400")).toBeDefined();
   });
 
-  it("shows each KPI's change vs last week", () => {
-    render(<KpiTiles comparison={comparison} />);
-    expect(screen.getByText("+21% vs last week")).toBeDefined();
-    expect(screen.getByText("-13% vs last week")).toBeDefined();
+  it("shows each KPI's change vs the comparison period", () => {
+    render(<KpiTiles comparison={comparison} compareLabel="Oct 4 - 6" />);
+    expect(screen.getByText("+21% vs Oct 4 - 6")).toBeDefined();
+    expect(screen.getByText("-13% vs Oct 4 - 6")).toBeDefined();
   });
 });
 
 describe("SummaryCard", () => {
   it("shows the heading and each summary line", () => {
     render(<SummaryCard lines={["First line.", "Second line."]} />);
-    expect(screen.getByRole("heading", { level: 2, name: "This week in plain English" })).toBeDefined();
+    expect(screen.getByRole("heading", { level: 2, name: "In plain English" })).toBeDefined();
     expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual([
       "First line.",
       "Second line.",

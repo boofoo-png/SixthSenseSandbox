@@ -4,6 +4,7 @@ import { formatPercent } from "@/lib/analytics/summary";
 import { PLATFORM_LABELS } from "@/lib/analytics/types";
 import type { CompetitorDetail as Detail, PlatformActivity } from "@/lib/competitors/activity";
 import { AD_LIBRARY_LABELS, type Competitor, type CompetitorPost } from "@/lib/competitors/types";
+import { withQuery } from "@/lib/date-range";
 import type { ReactNode } from "react";
 import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "../../_components/styles";
 
@@ -55,27 +56,33 @@ type CompetitorDetailProps = {
   competitor: Competitor;
   detail: Detail;
   platforms?: readonly PlatformActivity[];
+  /** The date bar's query string, kept in the link back. */
+  query?: string;
+  /** The date bar, rendered above the details. */
+  dateBar?: ReactNode;
 };
 
-/** Everything about one competitor: platforms, best and worst posts this week, hashtags, and running ads. */
-export function CompetitorDetail({ competitor, detail, platforms = [] }: CompetitorDetailProps) {
+/** Everything about one competitor in the selected period: platforms, best and worst posts, hashtags, and running ads. */
+export function CompetitorDetail({ competitor, detail, platforms = [], query = "", dateBar }: CompetitorDetailProps) {
   return (
     <main className={pageClass}>
-      <Link href="/competitors" className={linkClass}>All competitors</Link>
+      <Link href={withQuery("/competitors", query)} className={linkClass}>All competitors</Link>
       <h1 className={`mt-3 ${titleClass}`}>{competitor.name}</h1>
       <p className="text-sm text-zinc-500 dark:text-zinc-400">{competitor.handle}</p>
       <p className={subtitleClass}>Sample data: a fictional business used to show how competitor tracking will work.</p>
 
+      {dateBar && <div className="mt-6">{dateBar}</div>}
+
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <Section id="by-platform" title="By platform this week">
-          {platforms.length === 0 ? <Empty>No posts this week.</Empty> : <PlatformList platforms={platforms} />}
+        <Section id="by-platform" title="By platform">
+          {platforms.length === 0 ? <Empty>No posts in this period.</Empty> : <PlatformList platforms={platforms} />}
         </Section>
-        <Section id="top-posts" title="Top posts this week">
-          {detail.topPosts.length === 0 ? <Empty>No posts this week.</Empty> : <PostList posts={detail.topPosts} />}
+        <Section id="top-posts" title="Top posts">
+          {detail.topPosts.length === 0 ? <Empty>No posts in this period.</Empty> : <PostList posts={detail.topPosts} />}
         </Section>
-        <Section id="bottom-posts" title="Lowest performing posts this week">
+        <Section id="bottom-posts" title="Lowest performing posts">
           {detail.bottomPosts.length === 0 ? (
-            <Empty>Not enough posts this week to compare.</Empty>
+            <Empty>Not enough posts in this period to compare.</Empty>
           ) : (
             <PostList posts={detail.bottomPosts} />
           )}

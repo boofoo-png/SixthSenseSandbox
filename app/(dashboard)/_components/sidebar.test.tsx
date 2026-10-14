@@ -52,6 +52,18 @@ describe("Sidebar", () => {
     expect(competitors.textContent).not.toContain("Coming soon");
   });
 
+  it("keeps the chosen dates in every link", () => {
+    render(<Sidebar query="period=last-30-days" />);
+    const hrefs = within(nav()).getAllByRole("link").map((link) => link.getAttribute("href"));
+    expect(hrefs).toEqual([
+      "/?period=last-30-days",
+      "/analytics?period=last-30-days",
+      "/competitors?period=last-30-days",
+      "/ai-studio?period=last-30-days",
+      "/reports?period=last-30-days",
+    ]);
+  });
+
   describe("mobile menu", () => {
     it("starts closed", () => {
       render(<Sidebar />);

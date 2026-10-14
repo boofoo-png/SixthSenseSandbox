@@ -4,8 +4,8 @@ import { KpiTile } from "./kpi-tile";
 
 const numberFormat = new Intl.NumberFormat("en-US");
 
-/** The four headline KPIs for this week, each with its change vs last week. */
-export function KpiTiles({ comparison }: { comparison: PeriodComparison }) {
+/** The four headline KPIs for the selected period, each with its change vs the comparison period. */
+export function KpiTiles({ comparison, compareLabel }: { comparison: PeriodComparison; compareLabel?: string }) {
   const { current, change } = comparison;
   const tiles = [
     { label: "Impressions", value: numberFormat.format(current.impressions), change: change.impressions },
@@ -17,7 +17,7 @@ export function KpiTiles({ comparison }: { comparison: PeriodComparison }) {
   return (
     <section aria-label="Key metrics" className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {tiles.map((tile) => (
-        <KpiTile key={tile.label} {...tile} />
+        <KpiTile key={tile.label} {...tile} compareLabel={compareLabel} />
       ))}
     </section>
   );

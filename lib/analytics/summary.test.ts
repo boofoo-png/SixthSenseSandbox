@@ -113,14 +113,14 @@ describe("buildSummary", () => {
   it("explains when last week had views but no engagement", () => {
     const rows = twoWeeks("instagram", { impressions: 1000, engagements: 0 }, { impressions: 1000, engagements: 40 });
     expect(buildSummary(rows)).toContain(
-      "Engagement rate went up from 0% last week to 4.0%.",
+      "Engagement rate went up from 0% (last week) to 4.0%.",
     );
   });
 
   it("explains when last week had data but no views", () => {
     const rows = twoWeeks("instagram", { impressions: 0, engagements: 0 }, { impressions: 1000, engagements: 40 });
     expect(buildSummary(rows)).toContain(
-      "Your posts had no views last week, so there is nothing to compare.",
+      "Your posts had no views during last week, so there is nothing to compare.",
     );
   });
 
@@ -154,6 +154,24 @@ describe("buildSummary", () => {
       ...twoWeeks("linkedin", { impressions: 1000, engagements: 80 }, { impressions: 1000, engagements: 80 }).slice(0, 7),
     ];
     expect(buildSummary(rows).some((line) => line.includes("LinkedIn"))).toBe(false);
+  });
+
+  it("names the periods it is given instead of this week and last week", () => {
+    const rows = twoWeeks("instagram", { impressions: 1000, engagements: 40 }, { impressions: 1000, engagements: 50 });
+    const lines = buildSummary(rows, { currentPhrase: "during Oct 11 - 17", comparisonPhrase: "Oct 4 - 10" });
+    expect(lines).toContain("Instagram had your best engagement rate during Oct 11 - 17 (5.0%).");
+    expect(lines).toContain("Engagement rate is up 25% compared with Oct 4 - 10.");
+  });
+
+  it("uses the given date ranges", () => {
+    const rows = twoWeeks("instagram", { impressions: 1000, engagements: 40 }, { impressions: 1000, engagements: 50 });
+    const lines = buildSummary(rows, {
+      ranges: {
+        current: { start: "2026-10-04", end: "2026-10-10" },
+        comparison: { start: "2026-10-11", end: "2026-10-17" },
+      },
+    });
+    expect(lines).toContain("Engagement rate is down 20% compared with last week.");
   });
 
   it("uses plain ASCII text only", () => {
