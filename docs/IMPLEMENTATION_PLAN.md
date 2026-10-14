@@ -1,3 +1,49 @@
+# Implementation Plan: Competitors Section (Sample Data)
+
+_Last updated: 2026-10-13_
+
+## Goal
+`/competitors` compares four fictional local cafes (posting frequency, engagement rate, change vs last week, active ads), each links to a detail page with their top and bottom posts, top hashtags, and active ads, and the overview's "Coming soon" cards are replaced by real Competitor activity and Trends cards. All from deterministic, tested sample data.
+
+## Out of scope
+- Real competitor data, ad library APIs (Meta, TikTok, Google), or search trend APIs
+- Real company names (sample competitors are fictional; see DECISIONS.md)
+- Adding, removing, or choosing which competitors to follow
+- Comparing your own posts against competitors (needs post-level data for your account)
+- Charts other than the engagement-over-time chart on /competitors (added 2026-10-13), and AI-written insights about trends
+- Using the team's shared UI components (Tabs, Dropdown, Badge, etc.)
+
+## Phase 1 - Data layer (test-first)
+- [x] 1.1 Types: `Competitor` (slug, name, handle), `CompetitorPost` (competitor, platform, date, caption, hashtags, impressions, engagements), `CompetitorAd` (competitor, library: Meta / TikTok / Google, start and end date, format, headline), `Trend` (label, kind: topic / hashtag, source: social / search / industry, growth, relevant) (lib/competitors/types.ts)
+- [x] 1.2 Deterministic sample data: four fictional cafes over 30 days ending 2026-10-09, with distinct stories (one posts often but engages poorly, one posts rarely but engages well, one running several ads), plus sample trends (lib/competitors/sample-data.ts, sample-data.test.ts)
+- [x] 1.3 Make the week-splitting helper work for any dated rows, not only `DailyMetrics`, so competitor stats use the same weeks as the rest of the dashboard; existing analytics tests still pass (lib/analytics/kpis.ts)
+- [x] 1.4 Activity summary per competitor: posts this week, engagement rate this week, change vs last week, and number of active ads; ignores malformed dates (lib/competitors/activity.ts, activity.test.ts)
+- [x] 1.5 Competitor details: top 3 and bottom 3 posts this week by engagement rate, top 5 hashtags by use, and ads active on the latest date (lib/competitors/activity.ts, activity.test.ts)
+- [x] 1.6 Trends: relevant trends first, then by growth, limited to the top N (lib/competitors/trends.ts, trends.test.ts)
+
+## Phase 2 - Pages and cards (test-first)
+- [x] 2.1 `/competitors` comparison table replacing the "Coming soon" page; each name links to its detail page; mark Competitors as ready in the sidebar (app/(dashboard)/competitors/page.tsx, page.test.tsx, lib/navigation.ts)
+- [x] 2.2 `CompetitorDetail` component: top posts, bottom posts, top hashtags, and active ads, each with an empty state (app/(dashboard)/competitors/_components/competitor-detail.tsx, competitor-detail.test.tsx)
+- [x] 2.3 `/competitors/[slug]` page: thin async wrapper using `generateStaticParams`, `dynamicParams = false`, `notFound()` for unknown slugs, and a per-competitor page title (app/(dashboard)/competitors/[slug]/page.tsx)
+- [x] 2.4 Overview: replace the "Coming soon" cards with a Competitor activity card (most active competitor, best engagement, active ads) and a Trends card (top trending topics and hashtags, with relevant ones marked) (app/(dashboard)/page.tsx, page.test.tsx)
+
+## Phase 3 - Polish
+- [x] 3.1 Every competitor and trend view says it is sample data with fictional businesses
+- [x] 3.3 Test-first: weekly engagement rate per competitor for the last 4 weeks, using the same week boundaries as the dashboard (lib/competitors/activity.ts, activity.test.ts)
+- [x] 3.4 Test-first: posts and engagement rate per platform for one competitor this week, in platform order (lib/competitors/activity.ts, activity.test.ts)
+- [x] 3.5 Test-first: "By platform" section on each competitor page (app/(dashboard)/competitors/_components/competitor-detail.tsx, competitor-detail.test.tsx)
+- [x] 3.6 Test-first: engagement-over-time line chart on /competitors as server-rendered SVG with an accessible text alternative (app/(dashboard)/competitors/_components/engagement-chart.tsx, engagement-chart.test.tsx)
+- [x] 3.7 Test-first: show the actual date ranges for "this week" and "last week" on the competitors page (lib/analytics/dates.ts, lib/analytics/kpis.ts, app/(dashboard)/competitors/page.tsx)
+- [x] 3.8 Test-first: sample data ends on today's date so the dashboard looks current; pages refresh hourly via `revalidate` (lib/analytics/dates.ts, app/(dashboard)/layout.tsx, vitest.setup.ts)
+- [x] 3.9 Test-first: use Sunday-to-Saturday calendar weeks; an unfinished week is compared with the same days of last week, and the chart groups by calendar week (lib/analytics/dates.ts, lib/analytics/kpis.ts, lib/competitors/activity.ts, engagement-chart.tsx)
+- [ ] 3.2 Check by eye at phone, tablet, and desktop widths: comparison table scrolls sideways on phones, detail pages read well, overview cards fit
+
+## Open questions
+- Should the comparison table eventually include a "You" row once post-level data for the user's own account exists?
+- Next section after this: AI Studio (template-based suggestions, as chosen 2026-10-13; record as a decision when planned) or Reports?
+
+---
+
 # Implementation Plan: Homepage Overview and Navigation
 
 _Last updated: 2026-10-13_

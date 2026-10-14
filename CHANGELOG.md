@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Overview page at /: KPI tiles, plain-English summary, market highlights (clicks and click-through rate), platform comparison table, and coming soon cards for competitor activity and trends.
 - Coming soon pages for Competitors, AI Studio, and Reports listing their planned features.
 - Click-through rate and per-platform weekly comparison in the analytics KPIs.
+- Competitors section with sample data for four fictional cafes: comparison table, engagement-over-time chart (hand-written SVG with legend, hover labels, and table view), and a page per competitor with posts by platform, top and lowest posts, most used hashtags, and active ads.
+- Overview cards for competitor activity and trending topics and hashtags, replacing the coming soon cards.
+- Every dashboard page states exactly which dates "this week" and "last week" cover.
 
 ### Removed
 - Unused Next.js starter images in public/.
@@ -33,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Site title is now "Marketing Dashboard" (placeholder name) with per-page titles, replacing "Create Next App".
 - The analytics summary now describes the engagement rate, matching the Engagement rate tile.
 - Restore the `@AGENTS.md` import in CLAUDE.md so agents load the Next.js 16 rules.
+- Weeks are now Sunday-to-Saturday calendar weeks; an unfinished week is compared with the same days of last week (previously a rolling 7-day window).
+- Sample data now ends on today's date so the dashboard looks current; dashboard pages refresh at most hourly. Tests use a fixed clock (2026-10-09).
 
 ### Fixed
 - Followers change no longer counts platforms that only have data in one of the two weeks.
