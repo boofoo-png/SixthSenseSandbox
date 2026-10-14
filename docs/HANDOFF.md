@@ -26,3 +26,18 @@
 - A teammate branch `assignment-2` (TEAMWORK.md, component assignments) now exists on origin, based on main. It does not touch this branch, but check its component assignments before starting the app shell.
 - docs/USER_RESEARCH.md contains non-ASCII characters (from its original commit), which CLAUDE.md disallows; not changed here.
 - docs/competitor-research is still unmerged; merge it before this branch.
+
+## 2026-10-13 - feat/competitors
+
+**Done:** Competitors plan items 1.1-1.6 (types, fictional cafe sample data, generic week splitting, activity, details, trends), 2.1-2.4 (comparison page, detail component and pages, overview cards), 3.1 (sample data notices), 3.3-3.6 (weekly engagement, posts by platform, By platform section, engagement chart), 3.7 (date ranges shown on pages), 3.8 (sample data ends today; hourly refresh), 3.9 (Sunday-Saturday calendar weeks). Commits 54d894f and 0aa7e14.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 183/183 passed across 20 files; `npm run build` passed (all dashboard routes revalidate hourly; four competitor pages prerendered via generateStaticParams). Chart rendered and checked by eye. No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/competitors
+
+**Next:** 3.2 - check by eye at phone, tablet, and desktop widths (comparison table scrolls sideways on phones; chart scales; detail pages and overview cards fit). Then /plan for AI Studio or Reports.
+
+**Notes / risks:**
+- Branches are stacked: docs/competitor-research -> feat/analytics-dashboard -> feat/app-shell -> feat/competitors. Merge in that order, or base each PR on the previous branch.
+- Weeks are Sunday-to-Saturday; mid-week, "this week so far" is compared with the same days last week (see DECISIONS.md). KPI tiles still say "vs last week"; the page subtitle explains the exact days.
+- Sample data ends on the server's local date; tests fix the clock to 2026-10-09 in vitest.setup.ts. Tests that change the date must reset it.
+- Chart hover uses native SVG titles (plain browser tooltip), not a custom tooltip.
+- The GitHub repo was renamed to SixthSenseSandbox; the local remote still uses the old URL (GitHub redirects).
