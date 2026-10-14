@@ -55,3 +55,17 @@
 - Page tests call the async page functions directly with sample `searchParams` (instead of separate synchronous content components, as the 2026-10-13 decision described); they still cover each page's content.
 - Sample competitor ads are generated relative to the end of the selected period, so "active ads" look the same for any period until real ad data exists.
 - Date helpers formatDateRange (year option), daysInRange, and shiftYear were written alongside their tests rather than strictly test-first.
+
+## 2026-10-14 - feat/ai-studio
+
+**Done:** AI Studio plan items 1.1-1.7 (types, ideas, captions, hashtags, sample timing, best times, content briefs), 2.1-2.3 (planned post helpers, browser storage, usePlannedPosts hook), 3.1-3.6 (idea, caption, and schedule steps, content calendar, page, How to make it section), 4.1-4.2 (labels and notices; keyboard focus moves to each new step). Commits 861e842 and 4ce8a57.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 320/320 passed across 35 files; `npm run build` passed (/ai-studio renders per request via connection()). No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/ai-studio
+
+**Next:** AI Studio 4.3 and Competitors 3.2 (visual checks by the user). Next feature: Reports v1 (executive overview, print or save as PDF, date bar; scheduled emails deferred).
+
+**Notes / risks:**
+- Branches are stacked: ... -> feat/date-range -> feat/ai-studio.
+- Product decision (DECISIONS.md, 2026-10-14): no auto-posting. The calendar is a content plan; the business creates and posts its own photos and videos.
+- Planned posts live in localStorage under "marketing-dashboard.planned-posts" (version 1); they are per browser and not shared. Tests reset the store with resetPlannedPostsForTests().
+- Some idea templates read oddly for non-food hashtag trends (e.g. "Fall vibes taste test"); a fix limiting food templates to food topics was offered but not yet chosen.
