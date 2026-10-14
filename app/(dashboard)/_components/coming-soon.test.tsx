@@ -1,7 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { ComingSoon } from "./coming-soon";
-import AiStudioPage from "../ai-studio/page";
 import ReportsPage from "../reports/page";
 
 afterEach(cleanup);
@@ -25,7 +24,6 @@ describe("ComingSoon", () => {
 
 describe("placeholder pages", () => {
   it.each([
-    ["AI Studio", AiStudioPage],
     ["Reports", ReportsPage],
   ])("%s page renders a coming soon page with planned features", (title, Page) => {
     render(<Page />);
