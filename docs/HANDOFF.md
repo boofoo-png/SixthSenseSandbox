@@ -41,3 +41,17 @@
 - Sample data ends on the server's local date; tests fix the clock to 2026-10-09 in vitest.setup.ts. Tests that change the date must reset it.
 - Chart hover uses native SVG titles (plain browser tooltip), not a custom tooltip.
 - The GitHub repo was renamed to SixthSenseSandbox; the local remote still uses the old URL (GitHub redirects).
+
+## 2026-10-13 - feat/date-range
+
+**Done:** Date Range Selection plan items 1.1-1.5 (date range model in lib/date-range.ts), 2.1-2.4 (sample data for any past date, explicit ranges in KPI and competitor calculations, wording follows the selection), 3.1-3.5 (DateRangeBar, pages read the address, sidebar and links keep the selection, chart weeks follow the range, hourly revalidate removed), 4.1 (notices for invalid or future dates), 4.2 (checked by the user at phone and desktop widths). Commits 3b330b5 and 8858c28.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 233/233 passed across 22 files; `npm run build` passed (dashboard routes now render per request). Six date selections checked on the dev server. No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/date-range
+
+**Next:** Competitors plan 3.2 (visual check of /competitors and a competitor page) is still open. Next feature: AI Studio (idea generator, captions and hashtags, best time to post, content calendar saved in the browser; template-based suggestions).
+
+**Notes / risks:**
+- Branches are stacked: docs/competitor-research -> feat/analytics-dashboard -> feat/app-shell -> feat/competitors -> feat/date-range.
+- Page tests call the async page functions directly with sample `searchParams` (instead of separate synchronous content components, as the 2026-10-13 decision described); they still cover each page's content.
+- Sample competitor ads are generated relative to the end of the selected period, so "active ads" look the same for any period until real ad data exists.
+- Date helpers formatDateRange (year option), daysInRange, and shiftYear were written alongside their tests rather than strictly test-first.
