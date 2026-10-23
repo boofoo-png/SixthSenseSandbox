@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Dark mode applies on screen only, so printed reports are always dark text on white paper. */
+@custom-variant dark {
+  @media screen and (prefers-color-scheme: dark) {
+    @slot;
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -12,7 +19,7 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -32,7 +39,7 @@
   --viz-label: #3f3f46;
 }
 
-@media (prefers-color-scheme: dark) {
+@media screen and (prefers-color-scheme: dark) {
   .viz-root {
     --series-1: #3987e5;
     --series-2: #d95926;

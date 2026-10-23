@@ -19,7 +19,7 @@ export function Sidebar({ query = "" }: { query?: string }) {
   const navId = useId();
 
   return (
-    <aside className="border-b border-zinc-200 bg-white md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-r md:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
+    <aside className="border-b border-zinc-200 bg-white print:hidden md:sticky md:top-0 md:h-screen md:w-60 md:shrink-0 md:border-r md:border-b-0 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex items-center justify-between px-4 py-4 md:px-5 md:py-6">
         <Link href={withQuery("/", query)} className="text-lg font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
           {APP_NAME}

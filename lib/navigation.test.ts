@@ -14,7 +14,7 @@ describe("NAV_ITEMS", () => {
 
   it("marks only built sections as ready", () => {
     const ready = NAV_ITEMS.filter((item) => item.status === "ready").map((item) => item.href);
-    expect(ready).toEqual(["/", "/analytics", "/competitors", "/ai-studio"]);
+    expect(ready).toEqual(["/", "/analytics", "/competitors", "/ai-studio", "/reports"]);
   });
 
   it("uses unique hrefs that start with a slash", () => {

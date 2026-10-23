@@ -44,12 +44,16 @@ describe("Sidebar", () => {
     expect(overview.getAttribute("aria-current")).toBe("page");
   });
 
-  it("labels sections that are not built yet", () => {
+  it("no longer labels any section as coming soon", () => {
     render(<Sidebar />);
-    const reports = within(nav()).getByRole("link", { name: /Reports/ });
-    expect(reports.textContent).toContain("Coming soon");
-    const competitors = within(nav()).getByRole("link", { name: "Competitors" });
-    expect(competitors.textContent).not.toContain("Coming soon");
+    for (const link of within(nav()).getAllByRole("link")) {
+      expect(link.textContent).not.toContain("Coming soon");
+    }
+  });
+
+  it("is hidden when printing", () => {
+    render(<Sidebar />);
+    expect(nav().closest(".print\\:hidden")).not.toBeNull();
   });
 
   it("keeps the chosen dates in every link", () => {

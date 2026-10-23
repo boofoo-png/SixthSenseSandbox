@@ -3,7 +3,7 @@ import { Sidebar, SidebarWithDates } from "./_components/sidebar";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 md:flex-row dark:bg-black">
+    <div className="flex flex-1 flex-col bg-zinc-50 md:flex-row dark:bg-black print:bg-white">
       {/* The sidebar reads the address to keep the chosen dates, so it sits in Suspense (Next.js 16 docs). */}
       <Suspense fallback={<Sidebar />}>
         <SidebarWithDates />

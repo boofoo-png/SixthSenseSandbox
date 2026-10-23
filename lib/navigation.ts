@@ -15,7 +15,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/analytics", label: "Analytics", status: "ready" },
   { href: "/competitors", label: "Competitors", status: "ready" },
   { href: "/ai-studio", label: "AI Studio", status: "ready" },
-  { href: "/reports", label: "Reports", status: "coming-soon" },
+  { href: "/reports", label: "Reports", status: "ready" },
 ];
 
 /** True when `pathname` is the section at `href` or one of its sub-pages. */
