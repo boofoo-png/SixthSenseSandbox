@@ -66,3 +66,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KPI tiles and the summary now round percentages the same way and agree on what counts as steady.
 - Clearer summary messages when last week had no views or no engagement.
 - Rows with malformed dates are ignored instead of crashing the page.
+- Login could redirect to another site after signing in through a crafted `next` link (tab, line-break, or backslash tricks); it now only returns to pages inside the app.
+- Very long sign-up answers could overflow the browser's cookie limit and send the person back to step 2 forever; links and text are now limited and an over-size answer shows a clear message.
+- Removing and adding rows on step 2 after an error no longer brings back answers from removed rows.
+- Leftover sign-up details are cleared on sign-in and sign-out, so they cannot take over another account or be seen by the next person; step 1 offers Cancel sign-up instead of a Back that signed people out without saying so.
+- Continue and Back on the sign-up steps lock while one is running, so the two cannot conflict.
+- AI Studio and the printable report can be reached again (links on Content Creation, AI Management, and Insight Report); the unused Geist fonts are no longer downloaded.

@@ -88,6 +88,7 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - Explore Audience and Trend, Revisit Findings, and Ask anything have no mid-fi screens yet; build from the site map or wait for designs?
 - Which Content Creation tool comes after Social Post?
 - What should Compare do, and what file should a campaign brief export to beyond print / Save as PDF?
+- The session cookie holds the email unsigned, so anyone can set it by hand and appear signed in (code review 2026-10-23, finding 6; accepted for the prototype). Sign it (HMAC with a secret in .env.local) or replace it with real auth before any real use.
 
 ---
 

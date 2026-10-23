@@ -99,3 +99,16 @@
 - Mid-fi deviations, by choice: no Connect / Generate a link buttons on step 2; simpler region pickers (Dropdown is a teammate assignment); tile icons replace the mid-fi "icon" placeholders; the stray slider in the returning dashboard was left out.
 - Teammate-assigned components (TEAMWORK.md on assignment-2): Buttons is assigned to Sam, but the kit Button was built here on request; coordinate before Sam's version lands. Native checkboxes and selects are used in place of the Checkbox and Dropdown assignments.
 - Next.js typed routes: after adding a route, run `npx next typegen` (or the dev server) before `tsc`.
+
+## 2026-10-23 - feat/sixth-sense (review fixes)
+
+**Done:** Fixed 9 of 10 /code-review findings on the branch: open redirect through the login `next` value; business profile cookie overflow causing a step 2 loop (field and link limits, an overall size check, and one shared cookie JSON helper in lib/hub/cookie-json.ts); stale rows on step 2 after an error; leftover sign-up cookies surviving sign-in and sign-out; step 1 Back silently signing out (now Cancel sign-up); Continue and Back running at the same time; AI Studio and the printable report unreachable; unused Geist fonts. No plan items were completed by this change. Commit 3c7cbb7.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 511/511 passed across 56 files; `npm run build` passed. Spot-checked on the dev server: crafted `next` falls back to /; a 3000-character report link shows a clear error with no account created and no loop; leftover sign-up cookies are gone after signing in; Cancel sign-up shows on step 1 after step 2; AI Studio and printable report links present; no Geist on the page. The stale-rows test was confirmed to fail against the old code. No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/sixth-sense
+
+**Next:** 2.10 (Settings and Profile), 1.5 (redirect old addresses), 1.6 (remaining tokens), then Phases 4 and 5.
+
+**Notes / risks:**
+- Finding 6 is still open by choice: the session cookie is the email, unsigned. Recorded under Open questions in the plan.
+- React holds later form actions until pending ones finish; tests that leave a server action pending must resolve it, or later tests in the file time out (see the "locks Continue and Back" test).
+- `useFormStatus` drives the locked buttons; it reports which action is running, so Continue shows its spinner only for Continue.
