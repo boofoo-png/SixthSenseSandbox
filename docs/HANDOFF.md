@@ -82,3 +82,20 @@
 - Branches are stacked: ... -> feat/ai-studio -> feat/reports.
 - The `dark:` variant is now screen-only (custom variant in app/globals.css), so every page prints dark text on white, not just /reports.
 - The "Coming soon" nav status type is kept in lib/navigation.ts for future sections, though no section uses it now.
+
+## 2026-10-23 - feat/sixth-sense
+
+**Done:** Sixth Sense (Mid-fi Build) plan items 1.1-1.4 (name, seven-area navigation, mid-fi top bar and drawer, Coming soon pages), 2.1-2.9 and 2.11 (Login, Create an Account, "Tell us about your industry" with Back, prototype cookie accounts, proxy redirects), 3.1-3.2 (mid-fi dashboard in "New account" and "Have account before" versions, Material icons). Also the SIXTH SENSE design system (tokens, Roboto, Button, TextField, Alert), the restyle of existing pages, light mode only, the old overview moved to /insights, and local-only "Fill with sample data" buttons. Commit 01ca401.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 493/493 passed across 55 files; `npm run build` passed (proxy compiled; /login, /, /insights render per request). Sign-up, Back, login, and both dashboard versions were driven on the dev server with curl (forms work without JavaScript); the fill button was confirmed present in dev and absent in a production build. No CI configured (no .github/workflows). PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/sixth-sense
+
+**Next:** 2.10 (Settings edits the step 2 answers; Profile shows the account), 1.5 (redirect /analytics, /reports, /ai-studio to their new homes), 1.6 (remaining tokens such as secondary and info), then Phase 4 (research sample data) and Phase 5 (Research Competitors to the mid-fi).
+
+**Notes / risks:**
+- Branch is based on feat/reports, which is not merged yet; merge that first or base this PR on it.
+- Prototype sign-in is not security: anyone can set the cookies by hand, and accounts live only in the browser that created them (see DECISIONS.md 2026-10-22 and 2026-10-23).
+- Demo account: demo@sixthsense.app / sixthsense-demo (counts as onboarded; sees the "Have account before" dashboard).
+- The Figma file is being edited: the dashboard frame IDs changed on 2026-10-23 (now 9679:7894 "New account" and 9776:13002 "Have account before"). Check the mid-fi again before building the next area.
+- Mid-fi deviations, by choice: no Connect / Generate a link buttons on step 2; simpler region pickers (Dropdown is a teammate assignment); tile icons replace the mid-fi "icon" placeholders; the stray slider in the returning dashboard was left out.
+- Teammate-assigned components (TEAMWORK.md on assignment-2): Buttons is assigned to Sam, but the kit Button was built here on request; coordinate before Sam's version lands. Native checkboxes and selects are used in place of the Checkbox and Dropdown assignments.
+- Next.js typed routes: after adding a route, run `npx next typegen` (or the dev server) before `tsc`.

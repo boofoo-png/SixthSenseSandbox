@@ -32,11 +32,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Decisions: template-based AI Studio suggestions with planned posts in browser storage, and no auto-posting (the site plans content; the business creates and posts it).
 - Reports at /reports: a one-page executive overview for the dates chosen in the date bar, with headline numbers, the three biggest changes, the best platform, and the plain-English summary. A "Print / Save as PDF" button opens the browser's print dialog; the printed page hides the sidebar and controls, keeps cards whole, and always prints dark text on white.
 - Decision: report PDFs come from the browser's print dialog rather than a PDF library.
+- SIXTH SENSE design system in the app: MUI kit colors, shadows, and type as tokens in app/globals.css, Roboto, and Button, TextField, Select, Alert, and Material icon components (components/).
+- Sign-up flow from the mid-fi: Login (with a demo account), Create an Account (step 1, first and last name), and "Tell us about your industry" (step 2: industries, target regions, audience, goals with a conversion target, linked accounts, competitors, documents, team invites) with Back; the account is created when step 2 is finished. Signed-out visitors are sent to Login and unfinished sign-ups to step 2 (proxy.ts). Prototype accounts are saved in browser cookies with hashed passwords.
+- "Fill with sample data" buttons on both sign-up steps, shown only when running locally.
+- Dashboard at / from the mid-fi, in two versions: "New account" right after sign-up and "Have account before" (Welcome Back!, Insight Report, Revisit Findings) after signing in; plus an Ask anything page at /ask.
+- Top bar with a navigation drawer (menu, search, notifications, profile, settings) and Coming soon pages for the areas not built yet.
 
 ### Removed
 - The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
 - Unused Next.js starter images in public/.
 - The Reports coming soon page and the unused ComingSoon component.
+- Sidebar navigation (replaced by the mid-fi top bar and drawer).
 
 ### Changed
 - Ignore the editor's local history folder (.history/).
@@ -50,6 +56,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dashboard pages now render on each request (they read the date selection from the address); the hourly refresh is removed.
 - Tiles, summaries, tables, and the competitor chart follow the selected dates; tiles say "vs <dates>" instead of "vs last week", and the summary heading is "In plain English".
 - Sample follower counts grow by a realistic yearly percentage instead of a fixed daily amount.
+- Product renamed to Sixth Sense and rebuilt around the team's mid-fi: seven areas (Insight Report, Revisit Findings, Research Competitors, Explore Audience and Trend, AI Management, Content Creation, Campaigns).
+- Existing pages restyled with the SIXTH SENSE kit; light mode only (dark mode removed).
+- The old overview moved from / to /insights as the start of Insight Report.
 
 ### Fixed
 - Followers change no longer counts platforms that only have data in one of the two weeks.
