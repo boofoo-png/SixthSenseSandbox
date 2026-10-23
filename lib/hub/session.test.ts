@@ -59,5 +59,9 @@ describe("safeNextPath", () => {
     expect(safeNextPath("//example.com")).toBe("/");
     expect(safeNextPath("/\\example.com")).toBe("/");
     expect(safeNextPath("/login")).toBe("/");
+    expect(safeNextPath("/\t/example.com")).toBe("/");
+    expect(safeNextPath("/\n/example.com")).toBe("/");
+    expect(safeNextPath("/\r/example.com")).toBe("/");
+    expect(safeNextPath("/%2F/example.com")).toBe("/%2F/example.com");
   });
 });

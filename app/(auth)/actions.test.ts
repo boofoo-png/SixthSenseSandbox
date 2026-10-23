@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-const { createAccount, goBackToStepOne, saveOnboarding, signIn, signOut } = await import("./actions");
+const { cancelSignUp, createAccount, goBackToStepOne, saveOnboarding, signIn, signOut } = await import("./actions");
 
 function form(values: Record<string, string>): FormData {
   const data = new FormData();
@@ -110,6 +110,35 @@ describe("signIn", () => {
     expect(jar.get(SESSION_COOKIE)?.options?.maxAge).toBeUndefined();
     await redirectedTo(() => signIn({ email: "" }, form({ ...creds, remember: "on" })));
     expect(jar.get(SESSION_COOKIE)?.options?.maxAge).toBe(60 * 60 * 24 * 30);
+  });
+});
+
+describe("leftover sign-up details", () => {
+  it("signing in clears an abandoned sign-up, so it cannot take over the account", async () => {
+    jar.set(SIGNUP_COOKIE, { value: "someone else's step 1" });
+    jar.set(ONBOARDING_DRAFT_COOKIE, { value: "someone else's step 2" });
+    await redirectedTo(() => signIn({ email: "" }, form({ email: DEMO_ACCOUNT.email, password: DEMO_ACCOUNT.password })));
+    expect(jar.has(SIGNUP_COOKIE)).toBe(false);
+    expect(jar.has(ONBOARDING_DRAFT_COOKIE)).toBe(false);
+  });
+
+  it("signing out clears them too, so the next person on this computer does not see them", async () => {
+    jar.set(SESSION_COOKIE, { value: "jordan@example.com" });
+    jar.set(SIGNUP_COOKIE, { value: "step 1" });
+    jar.set(ONBOARDING_DRAFT_COOKIE, { value: "step 2" });
+    await redirectedTo(() => signOut());
+    expect(jar.has(SIGNUP_COOKIE)).toBe(false);
+    expect(jar.has(ONBOARDING_DRAFT_COOKIE)).toBe(false);
+  });
+});
+
+describe("cancelSignUp", () => {
+  it("throws away the unfinished sign-up and opens the login page", async () => {
+    jar.set(SIGNUP_COOKIE, { value: "step 1" });
+    jar.set(ONBOARDING_DRAFT_COOKIE, { value: "step 2" });
+    expect(await redirectedTo(() => cancelSignUp())).toBe("/login");
+    expect(jar.has(SIGNUP_COOKIE)).toBe(false);
+    expect(jar.has(ONBOARDING_DRAFT_COOKIE)).toBe(false);
   });
 });
 

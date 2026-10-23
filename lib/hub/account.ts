@@ -1,5 +1,7 @@
+import { decodeCookieJson, encodeCookieJson, isRecord } from "./cookie-json";
 import { hashPassword } from "./password";
-import { COUNTRIES, REGIONS, isCountryCode, type CountryCode } from "./regions";
+import { REGIONS, isCountryCode, regionLabel, type CountryCode } from "./regions";
+import { EMAIL_PATTERN, MAX_TEXT } from "./text";
 
 // The Create an Account form from the mid-fi (SIXTH SENSE Figma, "Create an account").
 
@@ -62,7 +64,6 @@ const REQUIRED: readonly [NewAccountField, string][] = [
   ["confirmPassword", "Re-type your password"],
 ];
 
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const POSTAL: Record<CountryCode, { pattern: RegExp; message: string }> = {
   CA: { pattern: /^[A-Z]\d[A-Z] ?\d[A-Z]\d$/, message: "Enter a postal code like A1B 2C3" },
   US: { pattern: /^\d{5}(-\d{4})?$/, message: "Enter a ZIP code like 98101" },
@@ -84,18 +85,24 @@ export function validateNewAccount(
     if (keepPassword && (key === "password" || key === "confirmPassword")) continue;
     if (value(key) === "") errors[key] = message;
   }
+  // Keeps the account cookie well under the browser's size limit.
+  for (const key of Object.keys(fields) as NewAccountField[]) {
+    if (key !== "password" && key !== "confirmPassword" && value(key).length > MAX_TEXT) {
+      errors[key] = `Use ${MAX_TEXT} characters or fewer`;
+    }
+  }
 
   const country = value("country");
   const email = value("email").toLowerCase();
   const postalCode = value("postalCode").toUpperCase();
 
-  if (email && !EMAIL.test(email)) errors.email = "Enter an email address like name@example.com";
+  if (email && email.length <= MAX_TEXT && !EMAIL_PATTERN.test(email)) errors.email = "Enter an email address like name@example.com";
   if (value("phone") && value("phone").replace(/\D/g, "").length < 10) {
     errors.phone = "Enter a phone number with at least 10 digits";
   }
   if (country && !isCountryCode(country)) errors.country = "Choose a country";
   if (isCountryCode(country)) {
-    const label = COUNTRIES.find((entry) => entry.code === country)?.regionLabel.toLowerCase() ?? "province";
+    const label = regionLabel(country).toLowerCase();
     if (!REGIONS[country].some((region) => region.code === value("province"))) errors.province = `Choose a ${label}`;
     if (postalCode && !POSTAL[country].pattern.test(postalCode)) errors.postalCode = POSTAL[country].message;
   }
@@ -141,30 +148,28 @@ export function encodeStoredAccount(account: Account, password: string): string 
 
 /** Encode an account whose password is already hashed. */
 export function encodeStored(stored: StoredAccount): string {
-  return Buffer.from(JSON.stringify(stored)).toString("base64url");
+  const encoded = encodeCookieJson(stored);
+  // Field limits in validateNewAccount keep every account well within a cookie.
+  if (!encoded) throw new Error("Account is too large to save in a cookie");
+  return encoded;
 }
 
 /** Read the account cookie's value; null when it is missing, corrupted, or incomplete. */
 export function decodeStoredAccount(value: string | undefined): StoredAccount | null {
-  if (!value) return null;
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (!parsed || typeof parsed !== "object") return null;
-    const { account: raw, passwordHash } = parsed as Partial<StoredAccount>;
-    if (typeof passwordHash !== "string" || !raw || typeof raw !== "object") return null;
-    // Accounts saved before first and last name were separate had one "name" field.
-    const { name: legacyName, ...rest } = raw as Account & { name?: unknown };
-    const account = rest as Account;
-    if (typeof legacyName === "string" && account.firstName === undefined) {
-      const [first, ...others] = legacyName.trim().split(/\s+/);
-      account.firstName = first ?? "";
-      account.lastName = others.join(" ");
-    }
-    const required: (keyof Account)[] = ["firstName", "lastName", "role", "company", "address1", "city", "country", "province", "postalCode", "email", "phone"];
-    if (!required.every((key) => typeof account[key] === "string" && account[key] !== "")) return null;
-    if (!isCountryCode(account.country)) return null;
-    return { account, passwordHash };
-  } catch {
-    return null;
+  const parsed = decodeCookieJson(value, isRecord);
+  if (!parsed) return null;
+  const { account: raw, passwordHash } = parsed as Partial<StoredAccount>;
+  if (typeof passwordHash !== "string" || !isRecord(raw)) return null;
+  // Accounts saved before first and last name were separate had one "name" field.
+  const { name: legacyName, ...rest } = raw as Account & { name?: unknown };
+  const account = rest as Account;
+  if (typeof legacyName === "string" && account.firstName === undefined) {
+    const [first, ...others] = legacyName.trim().split(/\s+/);
+    account.firstName = first ?? "";
+    account.lastName = others.join(" ");
   }
+  const required: (keyof Account)[] = ["firstName", "lastName", "role", "company", "address1", "city", "country", "province", "postalCode", "email", "phone"];
+  if (!required.every((key) => typeof account[key] === "string" && account[key] !== "")) return null;
+  if (!isCountryCode(account.country)) return null;
+  return { account, passwordHash };
 }

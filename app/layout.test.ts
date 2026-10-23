@@ -2,12 +2,20 @@ import { describe, expect, it, vi } from "vitest";
 import { APP_NAME } from "@/lib/navigation";
 
 vi.mock("next/font/google", () => ({
-  Geist: () => ({ variable: "font-sans" }),
-  Geist_Mono: () => ({ variable: "font-mono" }),
   Roboto: () => ({ variable: "font-roboto" }),
 }));
 
-const { metadata } = await import("./layout");
+const { default: RootLayout, metadata } = await import("./layout");
+
+describe("fonts", () => {
+  it("puts only Roboto, the design system font, on the page", () => {
+    const html = RootLayout({ children: null } as Parameters<typeof RootLayout>[0]);
+    const classes = String(html.props.className).split(/\s+/);
+    expect(classes).toContain("font-roboto");
+    expect(classes).not.toContain("font-sans");
+    expect(classes).not.toContain("font-mono");
+  });
+});
 
 describe("root metadata", () => {
   it("uses the product name instead of the starter title", () => {

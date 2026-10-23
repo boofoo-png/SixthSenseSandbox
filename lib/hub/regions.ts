@@ -40,6 +40,11 @@ export const REGIONS: Record<CountryCode, readonly Region[]> = {
   ].map(([code, name]) => ({ code, name })),
 };
 
+/** "Province" or "State" for a country. */
+export function regionLabel(country: CountryCode): string {
+  return COUNTRIES.find((entry) => entry.code === country)?.regionLabel ?? "Province";
+}
+
 export function isCountryCode(value: string): value is CountryCode {
   return COUNTRIES.some((country) => country.code === value);
 }

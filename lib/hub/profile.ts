@@ -1,4 +1,5 @@
 import { DEMO_ACCOUNT } from "./constants";
+import { decodeCookieJson, encodeCookieJson, isRecord } from "./cookie-json";
 import type { BusinessProfile } from "./onboarding";
 
 // The business profile from the second Create an Account page, kept in the `ss_profile` cookie.
@@ -8,35 +9,36 @@ import type { BusinessProfile } from "./onboarding";
 export const PROFILE_COOKIE = "ss_profile";
 
 export function encodeProfile(profile: BusinessProfile): string {
-  return Buffer.from(JSON.stringify(profile)).toString("base64url");
+  const encoded = encodeCookieJson(profile);
+  // validateOnboarding refuses answers too big for a cookie, so this only fails on a bug.
+  if (!encoded) throw new Error("Business profile is too large to save in a cookie");
+  return encoded;
 }
 
 const isStringArray = (value: unknown): value is string[] =>
   Array.isArray(value) && value.every((item) => typeof item === "string");
 
+function isProfile(value: unknown): value is BusinessProfile {
+  if (!isRecord(value)) return false;
+  const p = value as Partial<BusinessProfile>;
+  return (
+    typeof p.email === "string" &&
+    isStringArray(p.industries) &&
+    Array.isArray(p.regions) &&
+    typeof p.audience === "string" &&
+    isStringArray(p.goals) &&
+    typeof p.website === "string" &&
+    Array.isArray(p.socials) &&
+    Array.isArray(p.competitors) &&
+    isStringArray(p.reportLinks) &&
+    isStringArray(p.documents) &&
+    isStringArray(p.invites)
+  );
+}
+
 /** Read the profile cookie; null when it is missing or not a profile. */
 export function decodeProfile(value: string | undefined): BusinessProfile | null {
-  if (!value) return null;
-  try {
-    const parsed: unknown = JSON.parse(Buffer.from(value, "base64url").toString("utf8"));
-    if (!parsed || typeof parsed !== "object") return null;
-    const p = parsed as Partial<BusinessProfile>;
-    const ok =
-      typeof p.email === "string" &&
-      isStringArray(p.industries) &&
-      Array.isArray(p.regions) &&
-      typeof p.audience === "string" &&
-      isStringArray(p.goals) &&
-      typeof p.website === "string" &&
-      Array.isArray(p.socials) &&
-      Array.isArray(p.competitors) &&
-      isStringArray(p.reportLinks) &&
-      isStringArray(p.documents) &&
-      isStringArray(p.invites);
-    return ok ? (p as BusinessProfile) : null;
-  } catch {
-    return null;
-  }
+  return decodeCookieJson(value, isProfile);
 }
 
 /** True when the signed-in person has finished onboarding. The demo account always has. */

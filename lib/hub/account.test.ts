@@ -122,6 +122,23 @@ describe("first and last name", () => {
   });
 });
 
+describe("length limits", () => {
+  it("keeps every field short enough for the account cookie", () => {
+    const result = validateNewAccount(fields({ company: "x".repeat(101) }));
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.company).toBe("Use 100 characters or fewer");
+  });
+
+  it("fits the longest allowed account in a cookie", () => {
+    const long = "x".repeat(100);
+    const result = validateNewAccount(
+      fields({ firstName: long, lastName: long, role: long, company: long, address1: long, address2: long, city: long }),
+    );
+    if (!result.ok) throw new Error("expected a valid account");
+    expect(encodeStoredAccount(result.account, "longenough").length).toBeLessThan(3800);
+  });
+});
+
 describe("validateNewAccount when coming back from step 2", () => {
   it("lets both passwords be left blank to keep the one already chosen", () => {
     const result = validateNewAccount(fields({ password: "", confirmPassword: "" }), { passwordOptional: true });

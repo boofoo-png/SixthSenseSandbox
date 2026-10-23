@@ -49,6 +49,15 @@ describe("NAV_ITEMS", () => {
   });
 });
 
+describe("features already built", () => {
+  it("point the AI Management and Content Creation placeholders at AI Studio, which works today", () => {
+    for (const href of ["/ai-management", "/content"]) {
+      const item = NAV_ITEMS.find((entry) => entry.href === href);
+      expect(item?.status === "coming-soon" && item.availableNow?.href).toBe("/ai-studio");
+    }
+  });
+});
+
 describe("ACCOUNT_ITEMS", () => {
   it("has the profile and settings pages from the top bar", () => {
     expect(ACCOUNT_ITEMS.map((item) => [item.label, item.href])).toEqual([

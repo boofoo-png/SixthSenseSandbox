@@ -12,8 +12,17 @@ export type NavItem = { href: string; label: string } & (
       summary: string;
       /** Features planned from the mid-fi, shown on the "Coming soon" page. */
       planned: readonly string[];
+      /** A finished feature people can use in the meantime. */
+      availableNow?: { href: string; label: string; description: string };
     }
 );
+
+/** AI Studio (built before the mid-fi) already plans posts; AI Management and Content Creation grow from it. */
+const AI_STUDIO = {
+  href: "/ai-studio",
+  label: "AI Studio",
+  description: "Content ideas, captions, hashtags, best times to post, and a content calendar.",
+};
 
 /** The dashboard and the seven areas, in the order of the dashboard tiles (mid-fi). */
 export const NAV_ITEMS: readonly NavItem[] = [
@@ -54,6 +63,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
       "Upcoming posts and connected accounts",
       "Auto publishing is coming later; for now you post yourself",
     ],
+    availableNow: AI_STUDIO,
   },
   {
     href: "/content",
@@ -65,6 +75,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
       "Ideas for videos, blogs, and ad copy",
       "Edit posts, improve copy, and repurpose content for other platforms",
     ],
+    availableNow: AI_STUDIO,
   },
   {
     href: "/campaigns",

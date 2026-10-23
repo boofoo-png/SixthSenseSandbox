@@ -113,6 +113,53 @@ describe("OnboardingForm", () => {
     expect((screen.getByRole("textbox", { name: "Website" }) as HTMLInputElement).value).not.toBe("");
   });
 
+  it("does not refill new rows with old answers after an error", async () => {
+    vi.mocked(saveOnboarding).mockResolvedValue({
+      errors: { "regions.2.province": "Choose a province" },
+      values: {
+        ...emptyOnboardingDraft(),
+        regions: [
+          { country: "CA", province: "BC", area: "Area one" },
+          { country: "CA", province: "ON", area: "Area two" },
+          { country: "CA", province: "", area: "Area three" },
+        ],
+      },
+    });
+    render(<OnboardingForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByText("Choose a province", { selector: "p" })).toBeDefined());
+    fireEvent.click(screen.getByRole("button", { name: "Remove region 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
+    const areas = screen.getAllByRole("textbox", { name: "Region or city (optional)" }).map((input) => (input as HTMLInputElement).value);
+    expect(areas).toEqual(["Area one", "Area three", ""]);
+    const provinces = screen.getAllByRole("combobox", { name: "Province" }).map((select) => (select as HTMLSelectElement).value);
+    expect(provinces).toEqual(["BC", "", ""]);
+  });
+
+  it("shows a message for the whole form when the answers are too big to save", async () => {
+    vi.mocked(saveOnboarding).mockResolvedValue({
+      errors: { form: "These answers are too long to save. Shorten some links or remove a few rows." },
+      values: emptyOnboardingDraft(),
+    });
+    render(<OnboardingForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect(screen.getByRole("alert").textContent).toContain("These answers are too long to save"));
+  });
+
+  it("locks Continue and Back while one of them is working, so they cannot both run", async () => {
+    let finish: (state: Awaited<ReturnType<typeof saveOnboarding>>) => void = () => {};
+    vi.mocked(saveOnboarding).mockReturnValue(new Promise((resolve) => (finish = resolve)));
+    render(<OnboardingForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() => expect((screen.getByRole("button", { name: "Back" }) as HTMLButtonElement).disabled).toBe(true));
+    expect((screen.getByRole("button", { name: "Continue" }) as HTMLButtonElement).disabled).toBe(true);
+    // Let the request finish: React holds later form actions until pending ones complete.
+    finish({ errors: {}, values: emptyOnboardingDraft() });
+    await waitFor(() => expect((screen.getByRole("button", { name: "Back" }) as HTMLButtonElement).disabled).toBe(false));
+  });
+
   it("shows the problems from the server next to their fields", async () => {
     vi.mocked(saveOnboarding).mockResolvedValue({
       errors: { industries: "Choose at least one industry", website: "Enter your website", "regions.0.province": "Choose a province" },

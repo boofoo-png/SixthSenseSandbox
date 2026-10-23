@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId, useRef, useState, type ComponentProps, type DragEvent, type ReactNode } from "react";
-import { flushSync } from "react-dom";
+import { flushSync, useFormStatus } from "react-dom";
 import { Alert } from "@/components/alert";
 import { Button, buttonClassName } from "@/components/button";
 import { SelectField, TextField } from "@/components/text-field";
@@ -55,6 +55,27 @@ function ChipCheckbox({ name, value, label, defaultChecked }: { name: string; va
   );
 }
 
+/** Continue and Back. Both are locked while either is being processed, so they cannot both run. */
+function StepButtons() {
+  const { pending, action } = useFormStatus();
+  const goingBack = pending && action === goBackToStepOne;
+  return (
+    <div className="flex justify-end gap-4 border-t border-divider pt-6">
+      <Button type="submit" variant="contained" size="large" loading={pending && !goingBack} disabled={pending}>
+        Continue
+      </Button>
+      <button
+        type="submit"
+        formAction={goBackToStepOne}
+        disabled={pending}
+        className={buttonClassName({ variant: "outlined", size: "large" })}
+      >
+        Back
+      </button>
+    </div>
+  );
+}
+
 function CheckboxLabel({ children, ...input }: { children: ReactNode } & ComponentProps<"input">) {
   return (
     <label className="flex cursor-pointer items-start gap-2 text-[14px] leading-[1.43] tracking-[0.17px] text-ink">
@@ -73,7 +94,7 @@ type OnboardingFormProps = {
 
 /** Step 2 of Create an Account. Continue creates the account; Back returns to step 1 keeping the answers. */
 export function OnboardingForm({ initialDraft = null, showDevTools = false }: OnboardingFormProps) {
-  const [state, formAction, pending] = useActionState(saveOnboarding, INITIAL);
+  const [state, formAction] = useActionState(saveOnboarding, INITIAL);
   const { errors } = state;
   const submitted = state.values ?? initialDraft ?? emptyOnboardingDraft();
   const hasErrors = Object.keys(errors).length > 0;
@@ -86,6 +107,20 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
   const [wantsConversions, setWantsConversions] = useState(submitted.goals.includes("conversions"));
   const [conversionTarget, setConversionTarget] = useState(Number(submitted.conversionTarget) || 10);
   const [documents, setDocuments] = useState<string[]>(submitted.documents);
+
+  // After the server answers, rebuild the rows from what was submitted, with new keys, so each
+  // row's fields start from its own values (not from whatever row used to be at that position).
+  const [seenValues, setSeenValues] = useState(state.values);
+  if (state.values !== seenValues) {
+    setSeenValues(state.values);
+    if (state.values) {
+      setRegions(withIds(state.values.regions));
+      setSocials(withIds(state.values.socials));
+      setCompetitors(withIds(state.values.competitors));
+      setReportLinks(withIds(state.values.reportLinks.map((link) => ({ link }))));
+      setDocuments(state.values.documents);
+    }
+  }
   const [rejected, setRejected] = useState<string[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -158,7 +193,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
 
       {hasErrors && (
         <Alert severity="error" className="mt-6">
-          Check the highlighted answers and try again.
+          {errors.form ?? "Check the highlighted answers and try again."}
         </Alert>
       )}
 
@@ -223,7 +258,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                   name="regionProvince"
                   placeholder={`Choose a ${regionLabel.toLowerCase()}`}
                   options={REGIONS[country].map((region) => ({ value: region.code, label: region.name }))}
-                  defaultValue={submitted.regions[index]?.country === country ? submitted.regions[index]?.province : row.province}
+                  defaultValue={row.province}
                   error={errors[`regions.${index}.province`]}
                 />
                 <TextField
@@ -231,7 +266,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                   name="regionArea"
                   placeholder="e.g. Lower Mainland"
                   maxLength={100}
-                  defaultValue={submitted.regions[index]?.area ?? row.area}
+                  defaultValue={row.area}
                 />
                 {index > 0 ? (
                   <button
@@ -333,7 +368,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                 label="Platform"
                 name="socialPlatform"
                 options={PLATFORMS.map((value) => ({ value, label: value }))}
-                defaultValue={submitted.socials[index]?.platform ?? row.platform}
+                defaultValue={row.platform}
                 error={errors[`socials.${index}.platform`]}
               />
               <TextField
@@ -341,7 +376,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                 name="socialHandle"
                 placeholder="@yourbrand"
                 maxLength={31}
-                defaultValue={submitted.socials[index]?.handle ?? row.handle}
+                defaultValue={row.handle}
                 error={errors[`socials.${index}.handle`]}
               />
               {index > 0 ? (
@@ -394,14 +429,14 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                 label="Company name"
                 name="competitorName"
                 maxLength={100}
-                defaultValue={submitted.competitors[index]?.name ?? row.name}
+                defaultValue={row.name}
                 error={errors[`competitors.${index}.name`]}
               />
               <TextField
                 label="Company website"
                 name="competitorWebsite"
                 placeholder="example.com"
-                defaultValue={submitted.competitors[index]?.website ?? row.website}
+                defaultValue={row.website}
                 error={errors[`competitors.${index}.website`]}
               />
               {index > 0 ? (
@@ -485,7 +520,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
                 name="reportLink"
                 type="url"
                 placeholder="https://"
-                defaultValue={submitted.reportLinks[index] ?? row.link}
+                defaultValue={row.link}
                 error={errors[`reportLinks.${index}`]}
               />
               {index > 0 ? (
@@ -525,14 +560,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
           />
         </Section>
 
-        <div className="flex justify-end gap-4 border-t border-divider pt-6">
-          <Button type="submit" variant="contained" size="large" loading={pending}>
-            Continue
-          </Button>
-          <button type="submit" formAction={goBackToStepOne} className={buttonClassName({ variant: "outlined", size: "large" })}>
-            Back
-          </button>
-        </div>
+        <StepButtons />
       </form>
 
     </section>

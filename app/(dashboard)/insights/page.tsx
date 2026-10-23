@@ -102,6 +102,9 @@ export default async function InsightsPage({ searchParams }: PageProps<"/insight
     <main className={pageClass}>
       <h1 className={titleClass}>Insight Report</h1>
       <p className={subtitleClass}>How your marketing did. Showing sample data.</p>
+      <Link href={withQuery("/reports", dates.query)} className={`mt-2 inline-block ${linkClass}`}>
+        Open the printable report
+      </Link>
 
       <div className="mt-6">
         <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />

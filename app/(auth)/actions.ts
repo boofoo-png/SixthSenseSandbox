@@ -44,6 +44,15 @@ function cookieOptions(maxAge?: number) {
   };
 }
 
+/**
+ * Forget an unfinished sign-up held in this browser. Called on sign-in and sign-out so one
+ * person's step 1 details cannot take over another account or be seen by the next visitor.
+ */
+function clearSignUp(store: Awaited<ReturnType<typeof cookies>>) {
+  store.delete(SIGNUP_COOKIE);
+  store.delete(ONBOARDING_DRAFT_COOKIE);
+}
+
 function text(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value : "";
@@ -61,6 +70,7 @@ export async function signIn(_previous: SignInState, formData: FormData): Promis
   }
   store.set(SESSION_COOKIE, user.email, cookieOptions(formData.get("remember") ? THIRTY_DAYS : undefined));
   store.delete(NEW_ACCOUNT_COOKIE);
+  clearSignUp(store);
   redirect(safeNextPath(text(formData, "next")));
 }
 
@@ -168,6 +178,14 @@ export async function goBackToStepOne(formData: FormData): Promise<void> {
 
 /** End the session. The account stays so the person can sign in again. */
 export async function signOut(): Promise<void> {
-  (await cookies()).delete(SESSION_COOKIE);
+  const store = await cookies();
+  store.delete(SESSION_COOKIE);
+  clearSignUp(store);
+  redirect("/login");
+}
+
+/** Throw away an unfinished sign-up (step 1 details and step 2 answers) and open the login page. */
+export async function cancelSignUp(): Promise<void> {
+  clearSignUp(await cookies());
   redirect("/login");
 }

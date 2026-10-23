@@ -30,7 +30,7 @@ describe("profile cookie", () => {
     expect(decodeProfile(Buffer.from(JSON.stringify({ email: 5 })).toString("base64url"))).toBeNull();
   });
 
-  it("stays small enough for a cookie even when every list is full", () => {
+  it("refuses to write a profile too big for a cookie (validation stops these first)", () => {
     const big = {
       ...profile(),
       regions: Array.from({ length: 5 }, () => ({ country: "CA" as const, province: "BC", area: "x".repeat(100) })),
@@ -38,7 +38,7 @@ describe("profile cookie", () => {
       documents: Array.from({ length: 10 }, () => "x".repeat(100)),
       invites: Array.from({ length: 10 }, (_, i) => `person${i}@example.com`),
     };
-    expect(encodeProfile(big).length).toBeLessThan(4000);
+    expect(() => encodeProfile(big)).toThrow("too large");
   });
 });
 

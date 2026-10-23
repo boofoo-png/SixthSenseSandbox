@@ -2,16 +2,41 @@
 
 import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { flushSync, useFormStatus } from "react-dom";
 import { Alert } from "@/components/alert";
 import { Button, buttonClassName } from "@/components/button";
 import { SelectField, TextField } from "@/components/text-field";
 import { COUNTRIES, REGIONS, isCountryCode } from "@/lib/hub/regions";
-import { createAccount, type CreateAccountState } from "../actions";
+import { cancelSignUp, createAccount, type CreateAccountState } from "../actions";
 import { sectionHeadingClass } from "../styles";
 
 const INITIAL: CreateAccountState = { errors: {}, values: {} };
 const COUNTRY_OPTIONS = COUNTRIES.map((country) => ({ value: country.code, label: country.name }));
+
+/**
+ * Continue, plus Back (to Login) on a first visit. Once step 1 was done, leaving means throwing the
+ * sign-up away, so that button says Cancel sign-up instead of a quiet Back. Locked while busy.
+ */
+function StepButtons({ signUpInProgress }: { signUpInProgress: boolean }) {
+  const { pending, action } = useFormStatus();
+  const cancelling = pending && action === cancelSignUp;
+  return (
+    <div className="flex gap-4 pt-2">
+      <Button type="submit" variant="contained" loading={pending && !cancelling} disabled={pending}>
+        Continue
+      </Button>
+      {signUpInProgress ? (
+        <button type="submit" formAction={cancelSignUp} disabled={pending} className={buttonClassName({ variant: "outlined" })}>
+          Cancel sign-up
+        </button>
+      ) : (
+        <Link href="/login" className={buttonClassName({ variant: "outlined" })}>
+          Back
+        </Link>
+      )}
+    </div>
+  );
+}
 
 type CreateAccountFormProps = {
   /** Details from an earlier visit to step 1 (coming back from step 2). */
@@ -42,7 +67,7 @@ function sampleAccount(): Record<string, string> {
 
 /** The mid-fi "Create an Account" form (step 1). Problems are checked on the server and shown per field. */
 export function CreateAccountForm({ initialValues = {}, keepingPassword = false, showDevTools = false }: CreateAccountFormProps) {
-  const [state, formAction, pending] = useActionState(createAccount, INITIAL);
+  const [state, formAction] = useActionState(createAccount, INITIAL);
   const { errors } = state;
   const values = state === INITIAL ? initialValues : state.values;
   const [country, setCountry] = useState(values.country && isCountryCode(values.country) ? values.country : "CA");
@@ -162,14 +187,7 @@ export function CreateAccountForm({ initialValues = {}, keepingPassword = false,
           />
         </div>
 
-        <div className="flex gap-4 pt-2">
-          <Button type="submit" variant="contained" loading={pending}>
-            Continue
-          </Button>
-          <Link href="/login" className={buttonClassName({ variant: "outlined" })}>
-            Back
-          </Link>
-        </div>
+        <StepButtons signUpInProgress={keepingPassword} />
       </form>
     </section>
   );

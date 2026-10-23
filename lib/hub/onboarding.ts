@@ -1,4 +1,6 @@
-import { COUNTRIES, REGIONS, isCountryCode, type CountryCode } from "./regions";
+import { decodeCookieJson, encodeCookieJson, isRecord } from "./cookie-json";
+import { REGIONS, isCountryCode, regionLabel, type CountryCode } from "./regions";
+import { EMAIL_PATTERN, MAX_LINK, MAX_TEXT } from "./text";
 
 // Second Create an Account page from the mid-fi ("Tell us about your industry", "ACCOUNT POP UP X3").
 // In the prototype, social accounts, documents, and team invites are only recorded:
@@ -49,7 +51,6 @@ export const DOCUMENT_TYPES = ["pdf", "png", "jpg", "jpeg", "docx", "xlsx"] as c
 export const MAX_DOCUMENT_BYTES = 3 * 1024 * 1024;
 export const MAX_CONVERSION_TARGET = 35;
 export const MAX_ROWS = 5;
-const MAX_TEXT = 100;
 const MAX_INVITES = 10;
 const MAX_DOCUMENTS = 10;
 
@@ -139,46 +140,42 @@ export function readOnboardingForm(form: FormData): OnboardingDraft {
   };
 }
 
-/** Largest cookie value we write; browsers allow about 4096 bytes per cookie. */
-const MAX_COOKIE_VALUE = 3800;
-
 /** Encode step 2 answers for the draft cookie; null when they are too big to keep. */
 export function encodeOnboardingDraft(draft: OnboardingDraft): string | null {
-  const value = Buffer.from(JSON.stringify(draft)).toString("base64url");
-  return value.length <= MAX_COOKIE_VALUE ? value : null;
+  return encodeCookieJson(draft);
+}
+
+const isStringList = (items: unknown) => Array.isArray(items) && items.every((item) => typeof item === "string");
+const isRowList = (items: unknown, keys: string[]) =>
+  Array.isArray(items) && items.every((item) => isRecord(item) && keys.every((key) => typeof item[key] === "string"));
+
+function isOnboardingDraft(value: unknown): value is OnboardingDraft {
+  if (!isRecord(value)) return false;
+  const d = value as Partial<OnboardingDraft>;
+  return (
+    isStringList(d.industries) &&
+    typeof d.subIndustry === "string" &&
+    isRowList(d.regions, ["country", "province", "area"]) &&
+    typeof d.audience === "string" &&
+    isStringList(d.goals) &&
+    typeof d.conversionTarget === "string" &&
+    typeof d.website === "string" &&
+    isRowList(d.socials, ["platform", "handle"]) &&
+    typeof d.analyticsConsent === "boolean" &&
+    isRowList(d.competitors, ["name", "website"]) &&
+    isStringList(d.reportLinks) &&
+    isStringList(d.documents) &&
+    typeof d.invites === "string"
+  );
 }
 
 /** Read the draft cookie; null when it is missing or not a draft. */
 export function decodeOnboardingDraft(value: string | undefined): OnboardingDraft | null {
-  if (!value) return null;
-  try {
-    const d = JSON.parse(Buffer.from(value, "base64url").toString("utf8")) as Partial<OnboardingDraft>;
-    const strings = (items: unknown) => Array.isArray(items) && items.every((item) => typeof item === "string");
-    const rows = (items: unknown, keys: string[]) =>
-      Array.isArray(items) &&
-      items.every((item) => item && typeof item === "object" && keys.every((key) => typeof (item as Record<string, unknown>)[key] === "string"));
-    const ok =
-      strings(d.industries) &&
-      typeof d.subIndustry === "string" &&
-      rows(d.regions, ["country", "province", "area"]) &&
-      typeof d.audience === "string" &&
-      strings(d.goals) &&
-      typeof d.conversionTarget === "string" &&
-      typeof d.website === "string" &&
-      rows(d.socials, ["platform", "handle"]) &&
-      typeof d.analyticsConsent === "boolean" &&
-      rows(d.competitors, ["name", "website"]) &&
-      strings(d.reportLinks) &&
-      strings(d.documents) &&
-      typeof d.invites === "string";
-    return ok ? (d as OnboardingDraft) : null;
-  } catch {
-    return null;
-  }
+  return decodeCookieJson(value, isOnboardingDraft);
 }
 
 const clip = (value: string) => value.trim().slice(0, MAX_TEXT);
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const LINK_TOO_LONG = `Use a link of ${MAX_LINK} characters or fewer`;
 const HANDLE = /^@?[A-Za-z0-9._]{1,30}$/;
 
 /** "Example.com/shop" -> "https://example.com/shop"; null when it is not a website. */
@@ -212,7 +209,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
       errors[`regions.${index}.country`] = "Choose a country";
       return;
     }
-    const label = COUNTRIES.find((country) => country.code === row.country)?.regionLabel.toLowerCase() ?? "province";
+    const label = regionLabel(row.country).toLowerCase();
     if (!REGIONS[row.country].some((region) => region.code === row.province)) {
       errors[`regions.${index}.province`] = `Choose a ${label}`;
       return;
@@ -237,6 +234,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
 
   const website = normalizeWebsite(draft.website);
   if (!draft.website.trim()) errors.website = "Enter your website";
+  else if (draft.website.trim().length > MAX_LINK) errors.website = LINK_TOO_LONG;
   else if (!website) errors.website = "Enter a website like example.com";
 
   const socials: BusinessProfile["socials"] = [];
@@ -263,7 +261,9 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     if (!name && !row.website.trim()) return;
     if (!name) errors[`competitors.${index}.name`] = "Enter the competitor's name";
     let site = "";
-    if (row.website.trim()) {
+    if (row.website.trim().length > MAX_LINK) {
+      errors[`competitors.${index}.website`] = LINK_TOO_LONG;
+    } else if (row.website.trim()) {
       const normalized = normalizeWebsite(row.website);
       if (!normalized) errors[`competitors.${index}.website`] = "Enter a website like example.com";
       else site = normalized;
@@ -275,7 +275,9 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
   draft.reportLinks.slice(0, 3).forEach((link, index) => {
     const text = link.trim();
     if (!text) return;
-    if (!/^https?:\/\//i.test(text) || !normalizeWebsite(text)) {
+    if (text.length > MAX_LINK) {
+      errors[`reportLinks.${index}`] = LINK_TOO_LONG;
+    } else if (!/^https?:\/\//i.test(text) || !normalizeWebsite(text)) {
       errors[`reportLinks.${index}`] = "Enter a link that starts with https://";
     } else {
       reportLinks.push(text);
@@ -292,7 +294,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     .split(",")
     .map((value) => value.trim().toLowerCase())
     .filter(Boolean);
-  const badInvite = invites.find((value) => !EMAIL.test(value));
+  const badInvite = invites.find((value) => value.length > MAX_TEXT || !EMAIL_PATTERN.test(value));
   if (badInvite) errors.invites = `Check this email address: ${badInvite}`;
   else if (invites.length > MAX_INVITES) errors.invites = `Invite up to ${MAX_INVITES} people`;
 
@@ -300,22 +302,25 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     return { ok: false, errors };
   }
 
-  return {
-    ok: true,
-    profile: {
-      email,
-      industries,
-      ...(subIndustry ? { subIndustry } : {}),
-      regions,
-      audience,
-      goals,
-      ...(conversionTarget !== undefined ? { conversionTarget } : {}),
-      website,
-      socials,
-      competitors,
-      reportLinks,
-      documents,
-      invites: [...new Set(invites)],
-    },
+  const profile: BusinessProfile = {
+    email,
+    industries,
+    ...(subIndustry ? { subIndustry } : {}),
+    regions,
+    audience,
+    goals,
+    ...(conversionTarget !== undefined ? { conversionTarget } : {}),
+    website,
+    socials,
+    competitors,
+    reportLinks,
+    documents,
+    invites: [...new Set(invites)],
   };
+  // Browsers silently drop cookies over about 4 KB, which would send the person back to this
+  // page forever; say so instead of saving something that cannot be kept.
+  if (encodeCookieJson(profile) === null) {
+    return { ok: false, errors: { form: "These answers are too long to save. Shorten some links or remove a few rows." } };
+  }
+  return { ok: true, profile };
 }

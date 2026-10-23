@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { createAccount } from "../actions";
 import { CreateAccountForm } from "./create-account-form";
 
-vi.mock("../actions", () => ({ createAccount: vi.fn() }));
+vi.mock("../actions", () => ({ createAccount: vi.fn(), cancelSignUp: vi.fn() }));
 
 afterEach(() => {
   cleanup();
@@ -72,6 +72,15 @@ describe("CreateAccountForm", () => {
     expect((screen.getByRole("combobox", { name: "State" }) as HTMLSelectElement).value).toBe("WA");
     expect(screen.getByText("Leave blank to keep the password you chose")).toBeDefined();
     expect(screen.getByLabelText("Create a password").getAttribute("aria-required")).toBeNull();
+  });
+
+  it("offers Cancel sign-up instead of Back once step 1 was done, so leaving is never silent", () => {
+    render(<CreateAccountForm keepingPassword initialValues={{ firstName: "Jordan" }} />);
+    expect(screen.queryByRole("link", { name: "Back" })).toBeNull();
+    const cancel = screen.getByRole("button", { name: "Cancel sign-up" });
+    expect(cancel.getAttribute("type")).toBe("submit");
+    expect(cancel.hasAttribute("formaction")).toBe(true);
+    expect(cancel.closest("form")?.querySelector('button[type="submit"]')?.textContent).toContain("Continue");
   });
 
   it("offers a Fill with sample data button only when asked to (local development)", () => {

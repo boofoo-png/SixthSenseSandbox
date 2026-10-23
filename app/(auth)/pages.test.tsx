@@ -14,6 +14,7 @@ vi.mock("./actions", () => ({
   createAccount: vi.fn(),
   saveOnboarding: vi.fn(),
   goBackToStepOne: vi.fn(),
+  cancelSignUp: vi.fn(),
   signOut: vi.fn(),
 }));
 

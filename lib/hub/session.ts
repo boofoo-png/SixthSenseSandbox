@@ -30,7 +30,16 @@ export function checkCredentials(
 
 /** A page inside the app to go to after signing in; the dashboard for anything else. */
 export function safeNextPath(next: string | null | undefined): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return "/";
-  const pathname = next.split(/[?#]/)[0];
-  return isPublicPath(pathname) ? "/" : next;
+  // Browsers drop tabs and line breaks from URLs and treat a backslash like "/", so "/\t/evil.com" would
+  // become "//evil.com", another site. Refuse those characters, then check the origin is ours.
+  if (!next || !next.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(next)) return "/";
+  const base = "http://sixthsense.invalid";
+  let url: URL;
+  try {
+    url = new URL(next, base);
+  } catch {
+    return "/";
+  }
+  if (url.origin !== base || isPublicPath(url.pathname)) return "/";
+  return `${url.pathname}${url.search}${url.hash}`;
 }

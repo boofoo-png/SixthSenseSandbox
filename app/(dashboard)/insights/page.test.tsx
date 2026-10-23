@@ -32,6 +32,11 @@ function expectedFor(params: SearchParams) {
 }
 
 describe("Insight Report page", () => {
+  it("links to the printable report", async () => {
+    await renderPage();
+    expect(screen.getByRole("link", { name: "Open the printable report" }).getAttribute("href")).toBe("/reports");
+  });
+
   it("renders the heading and the date bar with the default dates", async () => {
     await renderPage();
     expect(screen.getByRole("heading", { level: 1, name: "Insight Report" })).toBeDefined();

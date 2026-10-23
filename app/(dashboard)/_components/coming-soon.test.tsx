@@ -35,6 +35,11 @@ describe("ComingSoon", () => {
     expect(within(list).getAllByRole("listitem").map((li) => li.textContent)).toEqual([...item.planned]);
   });
 
+  it("links to a feature that already works, when there is one", () => {
+    render(<ComingSoon item={comingSoonItem("/content")} />);
+    expect(screen.getByRole("link", { name: /AI Studio/ }).getAttribute("href")).toBe("/ai-studio");
+  });
+
   it("links back to the dashboard", () => {
     render(<ComingSoon item={comingSoonItem("/content")} />);
     expect(screen.getByRole("link", { name: "Back to dashboard" }).getAttribute("href")).toBe("/");

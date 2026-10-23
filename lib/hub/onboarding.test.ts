@@ -152,6 +152,29 @@ describe("validateOnboarding", () => {
     });
   });
 
+  it("limits links to 200 characters", () => {
+    const long = `https://example.com/${"x".repeat(200)}`;
+    const errors = errorsOf(draft({ website: long, reportLinks: [long], competitors: [{ name: "Rival", website: long }] }));
+    expect(errors).toMatchObject({
+      website: "Use a link of 200 characters or fewer",
+      "reportLinks.0": "Use a link of 200 characters or fewer",
+      "competitors.0.website": "Use a link of 200 characters or fewer",
+    });
+  });
+
+  it("says so, instead of saving, when all the answers together are too big to keep", () => {
+    const link = `https://example.com/${"x".repeat(170)}`;
+    const errors = errorsOf(
+      draft({
+        competitors: Array.from({ length: 5 }, (_, i) => ({ name: `Rival ${i} ${"y".repeat(80)}`, website: link })),
+        reportLinks: [link, link, link],
+        invites: Array.from({ length: 10 }, (_, i) => `person.with.a.long.address.${i}@example-company.com`).join(", "),
+        documents: Array.from({ length: 10 }, (_, i) => `${"z".repeat(90)}${i}.pdf`),
+      }),
+    );
+    expect(errors.form).toBe("These answers are too long to save. Shorten some links or remove a few rows.");
+  });
+
   it("rejects choices that are not on the lists", () => {
     const errors = errorsOf(draft({ industries: ["Space Mining"], audience: "Everyone", goals: ["world-peace"] }));
     expect(errors).toMatchObject({

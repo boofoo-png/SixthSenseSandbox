@@ -28,6 +28,15 @@ export function ComingSoon({ item }: { item: ComingSoonItem }) {
           ))}
         </ul>
       </section>
+      {item.availableNow && (
+        <section className={`mt-6 max-w-3xl ${cardClass}`}>
+          <h2 className={cardHeadingClass}>Available now</h2>
+          <p className="mt-2 text-ink-muted">{item.availableNow.description}</p>
+          <Link href={item.availableNow.href} className={`mt-3 inline-block ${linkClass}`}>
+            {`Open ${item.availableNow.label}`}
+          </Link>
+        </section>
+      )}
       <Link href="/" className={`mt-6 inline-block ${linkClass}`}>
         Back to dashboard
       </Link>
