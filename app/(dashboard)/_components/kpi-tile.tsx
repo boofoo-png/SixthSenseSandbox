@@ -11,23 +11,23 @@ type KpiTileProps = {
 
 function describeChange(change: number | null, label: string): { text: string; className: string } {
   if (change === null) {
-    return { text: `No data for ${label}`, className: "text-zinc-500 dark:text-zinc-400" };
+    return { text: `No data for ${label}`, className: "text-ink-muted" };
   }
   const percent = roundPercent(change);
   if (percent === 0) {
-    return { text: `No change vs ${label}`, className: "text-zinc-500 dark:text-zinc-400" };
+    return { text: `No change vs ${label}`, className: "text-ink-muted" };
   }
   return percent > 0
-    ? { text: `+${percent}% vs ${label}`, className: "text-emerald-700 dark:text-emerald-400" }
-    : { text: `${percent}% vs ${label}`, className: "text-red-700 dark:text-red-400" };
+    ? { text: `+${percent}% vs ${label}`, className: "text-success" }
+    : { text: `${percent}% vs ${label}`, className: "text-error" };
 }
 
 export function KpiTile({ label, value, change, compareLabel = "last week" }: KpiTileProps) {
   const { text, className } = describeChange(change, compareLabel);
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">{label}</p>
-      <p className="mt-2 text-3xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
+    <div className="rounded bg-paper shadow-elevation-1 p-5">
+      <p className="text-sm font-medium text-ink-muted">{label}</p>
+      <p className="mt-2 text-3xl font-medium text-ink">
         {value}
       </p>
       <p className={`mt-1 text-sm ${className}`}>{text}</p>

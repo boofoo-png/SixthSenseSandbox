@@ -52,8 +52,8 @@ export function ScheduleForm({ idea, caption, hashtags, today, onAdd, onBack }: 
   return (
     // noValidate: our own check shows a clear message instead of the browser's popup.
     <form onSubmit={submit} noValidate>
-      <h3 className="font-semibold text-zinc-950 dark:text-zinc-50">{idea.title}</h3>
-      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{caption}</p>
+      <h3 className="font-medium text-ink">{idea.title}</h3>
+      <p className="mt-1 text-sm text-ink-muted">{caption}</p>
 
       <div className="mt-4 flex flex-wrap items-end gap-3">
         <label className={labelClass} htmlFor={`${id}-platform`}>
@@ -74,16 +74,16 @@ export function ScheduleForm({ idea, caption, hashtags, today, onAdd, onBack }: 
         </label>
       </div>
 
-      <div className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+      <div className="mt-3 text-sm text-ink-muted">
         <p>{`Best times for ${PLATFORM_LABELS[platform]} (sample data):`}</p>
         <ul className="mt-1 flex flex-wrap gap-2">
           {bestTimes(platform).map((slot) => (
-            <li key={`${slot.weekday}-${slot.hour}`} className="rounded-md bg-zinc-100 px-2 py-0.5 dark:bg-zinc-800">{formatSlot(slot)}</li>
+            <li key={`${slot.weekday}-${slot.hour}`} className="rounded bg-selected px-2 py-0.5">{formatSlot(slot)}</li>
           ))}
         </ul>
       </div>
 
-      {error && <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-400">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm text-error">{error}</p>}
 
       <div className="mt-4 flex gap-3">
         <button type="button" className={secondaryButtonClass} onClick={onBack}>Back to captions</button>

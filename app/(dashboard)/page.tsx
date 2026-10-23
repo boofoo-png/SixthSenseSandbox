@@ -1,171 +1,40 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { formatChange } from "@/lib/analytics/change";
-import { todayIsoDate } from "@/lib/analytics/dates";
-import { comparePeriods, platformComparison } from "@/lib/analytics/kpis";
-import { sampleDataBetween } from "@/lib/analytics/sample-data";
-import { buildSummary, formatPercent } from "@/lib/analytics/summary";
-import { PLATFORM_LABELS } from "@/lib/analytics/types";
-import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
-import {
-  SAMPLE_COMPETITORS,
-  SAMPLE_TRENDS,
-  createSampleAds,
-  samplePostsBetween,
-} from "@/lib/competitors/sample-data";
-import { topTrends } from "@/lib/competitors/trends";
-import type { TrendSource } from "@/lib/competitors/types";
-import { pageDates, withQuery, type PageDates } from "@/lib/date-range";
-import { DateRangeBar } from "./_components/date-range-bar";
-import { KpiTile } from "./_components/kpi-tile";
-import { KpiTiles } from "./_components/kpi-tiles";
-import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "./_components/styles";
-import { SummaryCard } from "./_components/summary-card";
+import { cookies } from "next/headers";
+import { NEW_ACCOUNT_COOKIE } from "@/lib/hub/constants";
+import { DashboardTiles } from "./_components/dashboard-tiles";
 
 export const metadata: Metadata = {
-  title: "Overview",
+  title: "Dashboard",
+  description: "Choose what you would like to do in Sixth Sense.",
 };
 
-const numberFormat = new Intl.NumberFormat("en-US");
-
-const SOURCE_LABELS: Record<TrendSource, string> = {
-  social: "Social",
-  search: "Search",
-  industry: "Industry",
-};
-
-function CompetitorActivityCard({ dates }: { dates: PageDates }) {
-  const highlights = competitorHighlights(
-    competitorActivity(
-      SAMPLE_COMPETITORS,
-      samplePostsBetween(dates.dataRange),
-      createSampleAds(dates.ranges.current.end),
-      dates.ranges,
-    ),
-  );
-  const { mostActive, bestEngagement } = highlights;
+// The mid-fi dashboard. Right after sign-up it is the "New account" version; when someone signs
+// in again it is the "Have account before" version, with Welcome Back! and two extra tiles.
+export default async function DashboardPage() {
+  const isNewAccount = Boolean((await cookies()).get(NEW_ACCOUNT_COOKIE)?.value);
 
   return (
-    <section aria-labelledby="competitor-activity" className={cardClass}>
-      <h2 id="competitor-activity" className={cardHeadingClass}>Competitor activity</h2>
-      {mostActive === null || bestEngagement === null ? (
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No competitor posts in this period.</p>
-      ) : (
-        <ul className="mt-3 space-y-2 text-zinc-700 dark:text-zinc-300">
-          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts)`}</li>
-          <li>{`Best engagement: ${bestEngagement.competitor.name} (${formatPercent(bestEngagement.engagementRate, 1)})`}</li>
-          <li>{`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`}</li>
-        </ul>
-      )}
-      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Sample data: fictional competitors.</p>
-      <Link href={withQuery("/competitors", dates.query)} className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
-    </section>
-  );
-}
-
-function TrendsCard() {
-  const trends = topTrends(SAMPLE_TRENDS);
-  return (
-    <section aria-labelledby="trends" className={cardClass}>
-      <h2 id="trends" className={cardHeadingClass}>Trends</h2>
-      <ul className="mt-3 divide-y divide-zinc-200 dark:divide-zinc-800">
-        {trends.map((trend) => (
-          <li key={trend.label} className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-            <span className="font-medium text-zinc-900 dark:text-zinc-100">{trend.label}</span>
-            <span className="flex gap-3 text-sm text-zinc-500 dark:text-zinc-400">
-              {trend.relevant && <span className="text-emerald-700 dark:text-emerald-400">Relevant to you</span>}
-              <span>{SOURCE_LABELS[trend.source]}</span>
-              <span className="font-medium text-zinc-800 dark:text-zinc-200">{`+${formatPercent(trend.growth)}`}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Sample trends, growth over the last week.</p>
-    </section>
-  );
-}
-
-export default async function OverviewPage({ searchParams }: PageProps<"/">) {
-  const today = todayIsoDate();
-  const dates = pageDates(await searchParams, today);
-  // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
-  const rows = sampleDataBetween(dates.dataRange);
-  const comparison = comparePeriods(rows, dates.ranges);
-  const platforms = platformComparison(rows, dates.ranges);
-  const summary = buildSummary(rows, {
-    ranges: dates.ranges,
-    currentPhrase: `during ${dates.currentLabel}`,
-    comparisonPhrase: dates.comparisonLabel,
-  });
-
-  return (
-    <main className={pageClass}>
-      <h1 className={titleClass}>Overview</h1>
-      <p className={subtitleClass}>How your marketing did. Showing sample data.</p>
-
-      <div className="mt-6">
-        <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
-      </div>
-
-      <div className="mt-6">
-        <KpiTiles comparison={comparison} compareLabel={dates.comparisonLabel} />
-      </div>
-
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SummaryCard lines={summary} />
-        </div>
-        <section aria-labelledby="market-highlights" className={cardClass}>
-          <h2 id="market-highlights" className={cardHeadingClass}>Market highlights</h2>
-          <div className="mt-3 grid gap-3">
-            <KpiTile
-              label="Clicks"
-              value={numberFormat.format(comparison.current.clicks)}
-              change={comparison.change.clicks}
-              compareLabel={dates.comparisonLabel}
+    <main className="flex-1 bg-paper">
+      <div className="mx-auto grid w-full max-w-[1600px] gap-10 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,420px)_1fr] lg:gap-16 lg:px-20 lg:py-20">
+        <div className="flex flex-col gap-6">
+          {!isNewAccount && (
+            <p className="text-[25px] leading-[1.235] tracking-[0.25px] text-ink sm:text-[34px]">Welcome Back!</p>
+          )}
+          <h1 className="text-[38px] leading-[1.2] font-light tracking-[-0.5px] text-ink sm:text-[60px]">
+            What would you like to do?
+          </h1>
+          <form action="/ask" method="get" role="search">
+            <input
+              type="search"
+              name="q"
+              aria-label="Ask anything"
+              placeholder="Ask anything"
+              className="w-full rounded border-2 border-outline bg-paper px-[14px] py-2 text-[16px] leading-6 tracking-[0.15px] text-ink outline-none placeholder:text-ink-disabled hover:border-ink focus:border-primary"
             />
-            <KpiTile
-              label="Click-through rate"
-              value={formatPercent(comparison.current.clickThroughRate, 2)}
-              change={comparison.change.clickThroughRate}
-              compareLabel={dates.comparisonLabel}
-            />
-          </div>
-        </section>
-      </div>
-
-      <section className={`mt-8 ${cardClass}`}>
-        <h2 id="platform-comparison" className={cardHeadingClass}>Platform comparison</h2>
-        <div className="mt-3 overflow-x-auto">
-          <table aria-labelledby="platform-comparison" className="w-full min-w-md text-left text-sm">
-            <thead className="text-zinc-500 dark:text-zinc-400">
-              <tr>
-                <th scope="col" className="py-2 pr-4 font-medium">Platform</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Impressions</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Engagement rate</th>
-                <th scope="col" className="py-2 font-medium">Change</th>
-              </tr>
-            </thead>
-            <tbody className="text-zinc-800 dark:text-zinc-200">
-              {platforms.map(({ platform, current, change }) => (
-                <tr key={platform} className="border-t border-zinc-200 dark:border-zinc-800">
-                  <th scope="row" className="py-2 pr-4 font-medium">{PLATFORM_LABELS[platform]}</th>
-                  <td className="py-2 pr-4">{numberFormat.format(current.impressions)}</td>
-                  <td className="py-2 pr-4">{formatPercent(current.engagementRate, 1)}</td>
-                  <td className="py-2">{formatChange(change.engagementRate)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          </form>
         </div>
-      </section>
-
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <CompetitorActivityCard dates={dates} />
-        <TrendsCard />
+        <DashboardTiles returning={!isNewAccount} />
       </div>
-
-      <Link href={withQuery("/analytics", dates.query)} className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
     </main>
   );
 }

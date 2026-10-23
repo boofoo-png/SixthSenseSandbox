@@ -13,7 +13,7 @@ describe("Dashboard layout", () => {
         <p>Report content</p>
       </DashboardLayout>,
     );
-    const shell = screen.getByText("Report content").closest(".bg-zinc-50");
+    const shell = screen.getByText("Report content").closest(".bg-canvas");
     expect(shell?.className).toContain("print:bg-white");
   });
 });

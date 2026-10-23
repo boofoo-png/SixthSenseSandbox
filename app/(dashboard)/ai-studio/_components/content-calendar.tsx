@@ -86,21 +86,21 @@ export function ContentCalendar({ today }: { today: string }) {
   return (
     <section aria-labelledby="calendar-heading">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 id="calendar-heading" className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">Content calendar</h2>
+        <h2 id="calendar-heading" className="text-lg font-medium text-ink">Content calendar</h2>
         <div className="flex items-center gap-2">
           <button type="button" className={secondaryButtonClass} aria-label="Previous month" onClick={() => moveMonth(-1)}>Prev</button>
-          <h3 className="min-w-36 text-center text-sm font-semibold text-zinc-800 dark:text-zinc-200" aria-live="polite">{label}</h3>
+          <h3 className="min-w-36 text-center text-sm font-medium text-ink" aria-live="polite">{label}</h3>
           <button type="button" className={secondaryButtonClass} aria-label="Next month" onClick={() => moveMonth(1)}>Next</button>
         </div>
       </div>
-      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Planned posts are saved in this browser only. Nothing is posted automatically.</p>
+      <p className="mt-1 text-xs text-ink-muted">Planned posts are saved in this browser only. Nothing is posted automatically.</p>
 
       <section aria-label="Month view" className="mt-4 hidden md:block">
         <table role="grid" className="w-full table-fixed border-collapse text-left text-xs">
           <thead>
             <tr>
               {WEEKDAYS.map((day) => (
-                <th key={day} scope="col" className="pb-1 font-medium text-zinc-500 dark:text-zinc-400">{day}</th>
+                <th key={day} scope="col" className="pb-1 font-medium text-ink-muted">{day}</th>
               ))}
             </tr>
           </thead>
@@ -109,18 +109,18 @@ export function ContentCalendar({ today }: { today: string }) {
               <tr key={w}>
                 {week.map((date, d) =>
                   date === null ? (
-                    <td key={d} role="gridcell" className="h-24 border border-zinc-100 dark:border-zinc-900" />
+                    <td key={d} role="gridcell" className="h-24 border border-divider" />
                   ) : (
                     <td
                       key={date}
                       role="gridcell"
                       aria-label={`${MONTHS[month]} ${Number(date.slice(8))}`}
-                      className={`h-24 border border-zinc-200 p-1 align-top dark:border-zinc-800 ${date === today ? "bg-zinc-50 dark:bg-zinc-900" : ""}`}
+                      className={`h-24 border border-divider p-1 align-top ${date === today ? "bg-hover" : ""}`}
                     >
-                      <span className="text-zinc-500 dark:text-zinc-400">{Number(date.slice(8))}</span>
+                      <span className="text-ink-muted">{Number(date.slice(8))}</span>
                       <ul className="mt-1 space-y-1">
                         {(byDay.get(date) ?? []).map((post) => (
-                          <li key={post.id} className="truncate rounded bg-zinc-100 px-1 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
+                          <li key={post.id} className="truncate rounded bg-selected px-1 text-ink">
                             {`${formatTime(post.time)} ${PLATFORM_LABELS[post.platform]}: ${post.caption}`}
                           </li>
                         ))}
@@ -136,17 +136,17 @@ export function ContentCalendar({ today }: { today: string }) {
 
       <section aria-label="List view" className="mt-4">
         {byDay.size === 0 ? (
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">{`No posts planned for ${label}.`}</p>
+          <p className="text-sm text-ink-muted">{`No posts planned for ${label}.`}</p>
         ) : (
           <ul className="space-y-4">
             {[...byDay].map(([date, dayPosts]) => (
               <li key={date}>
-                <h4 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{dayLabel(date)}</h4>
+                <h4 className="text-sm font-medium text-ink">{dayLabel(date)}</h4>
                 <ul className="mt-1 space-y-2">
                   {dayPosts.map((post) => (
-                    <li key={post.id} className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-                      <p className="text-xs text-zinc-500 dark:text-zinc-400">{`${formatTime(post.time)}, ${PLATFORM_LABELS[post.platform]}`}</p>
-                      <p className="text-sm text-zinc-800 dark:text-zinc-200">{post.caption}</p>
+                    <li key={post.id} className="rounded border border-divider p-3">
+                      <p className="text-xs text-ink-muted">{`${formatTime(post.time)}, ${PLATFORM_LABELS[post.platform]}`}</p>
+                      <p className="text-sm text-ink">{post.caption}</p>
                       {editing === post.id ? (
                         <PostEditor
                           post={post}

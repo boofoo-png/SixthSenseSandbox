@@ -13,6 +13,8 @@ import {
   type PeriodPreset,
   type ResolvedDateRange,
 } from "@/lib/date-range";
+import { Button } from "@/components/button";
+import { fieldClass, labelClass } from "./styles";
 
 type DateRangeBarProps = {
   resolved: ResolvedDateRange;
@@ -20,9 +22,6 @@ type DateRangeBarProps = {
   today: string;
 };
 
-const fieldClass =
-  "rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100";
-const labelClass = "flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400";
 
 /**
  * Lets users pick the period to show and the period to compare it with.
@@ -71,7 +70,7 @@ export function DateRangeBar({ resolved, today }: DateRangeBarProps) {
   const needsApply = period === "custom" || compare === "custom";
 
   return (
-    <section aria-label="Date range" className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <section aria-label="Date range" className="rounded bg-paper shadow-elevation-1 p-4">
       <form
         className="flex flex-wrap items-end gap-3"
         onSubmit={(event) => {
@@ -124,18 +123,15 @@ export function DateRangeBar({ resolved, today }: DateRangeBarProps) {
         )}
 
         {needsApply && (
-          <button
-            type="submit"
-            className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-          >
+          <Button type="submit" variant="contained">
             Apply dates
-          </button>
+          </Button>
         )}
       </form>
 
-      <p className="mt-3 text-sm text-zinc-700 dark:text-zinc-300">{describeSelection(resolved, today)}</p>
+      <p className="mt-3 text-sm text-ink-muted">{describeSelection(resolved, today)}</p>
       {resolved.notices.length > 0 && (
-        <div role="status" className="mt-2 text-sm text-amber-800 dark:text-amber-300">
+        <div role="status" className="mt-3 rounded bg-warning-bg px-4 py-2 text-sm text-warning-fg">
           {resolved.notices.map((notice) => (
             <p key={notice}>{notice}</p>
           ))}

@@ -1,0 +1,171 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { formatChange } from "@/lib/analytics/change";
+import { todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods, platformComparison } from "@/lib/analytics/kpis";
+import { sampleDataBetween } from "@/lib/analytics/sample-data";
+import { buildSummary, formatPercent } from "@/lib/analytics/summary";
+import { PLATFORM_LABELS } from "@/lib/analytics/types";
+import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
+import {
+  SAMPLE_COMPETITORS,
+  SAMPLE_TRENDS,
+  createSampleAds,
+  samplePostsBetween,
+} from "@/lib/competitors/sample-data";
+import { topTrends } from "@/lib/competitors/trends";
+import type { TrendSource } from "@/lib/competitors/types";
+import { pageDates, withQuery, type PageDates } from "@/lib/date-range";
+import { DateRangeBar } from "../_components/date-range-bar";
+import { KpiTile } from "../_components/kpi-tile";
+import { KpiTiles } from "../_components/kpi-tiles";
+import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "../_components/styles";
+import { SummaryCard } from "../_components/summary-card";
+
+export const metadata: Metadata = {
+  title: "Insight Report",
+};
+
+const numberFormat = new Intl.NumberFormat("en-US");
+
+const SOURCE_LABELS: Record<TrendSource, string> = {
+  social: "Social",
+  search: "Search",
+  industry: "Industry",
+};
+
+function CompetitorActivityCard({ dates }: { dates: PageDates }) {
+  const highlights = competitorHighlights(
+    competitorActivity(
+      SAMPLE_COMPETITORS,
+      samplePostsBetween(dates.dataRange),
+      createSampleAds(dates.ranges.current.end),
+      dates.ranges,
+    ),
+  );
+  const { mostActive, bestEngagement } = highlights;
+
+  return (
+    <section aria-labelledby="competitor-activity" className={cardClass}>
+      <h2 id="competitor-activity" className={cardHeadingClass}>Competitor activity</h2>
+      {mostActive === null || bestEngagement === null ? (
+        <p className="mt-3 text-sm text-ink-muted">No competitor posts in this period.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-ink-muted">
+          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts)`}</li>
+          <li>{`Best engagement: ${bestEngagement.competitor.name} (${formatPercent(bestEngagement.engagementRate, 1)})`}</li>
+          <li>{`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`}</li>
+        </ul>
+      )}
+      <p className="mt-3 text-xs text-ink-muted">Sample data: fictional competitors.</p>
+      <Link href={withQuery("/competitors", dates.query)} className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
+    </section>
+  );
+}
+
+function TrendsCard() {
+  const trends = topTrends(SAMPLE_TRENDS);
+  return (
+    <section aria-labelledby="trends" className={cardClass}>
+      <h2 id="trends" className={cardHeadingClass}>Trends</h2>
+      <ul className="mt-3 divide-y divide-divider">
+        {trends.map((trend) => (
+          <li key={trend.label} className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
+            <span className="font-medium text-ink">{trend.label}</span>
+            <span className="flex gap-3 text-sm text-ink-muted">
+              {trend.relevant && <span className="text-success">Relevant to you</span>}
+              <span>{SOURCE_LABELS[trend.source]}</span>
+              <span className="font-medium text-ink">{`+${formatPercent(trend.growth)}`}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-ink-muted">Sample trends, growth over the last week.</p>
+    </section>
+  );
+}
+
+export default async function InsightsPage({ searchParams }: PageProps<"/insights">) {
+  const today = todayIsoDate();
+  const dates = pageDates(await searchParams, today);
+  // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
+  const rows = sampleDataBetween(dates.dataRange);
+  const comparison = comparePeriods(rows, dates.ranges);
+  const platforms = platformComparison(rows, dates.ranges);
+  const summary = buildSummary(rows, {
+    ranges: dates.ranges,
+    currentPhrase: `during ${dates.currentLabel}`,
+    comparisonPhrase: dates.comparisonLabel,
+  });
+
+  return (
+    <main className={pageClass}>
+      <h1 className={titleClass}>Insight Report</h1>
+      <p className={subtitleClass}>How your marketing did. Showing sample data.</p>
+
+      <div className="mt-6">
+        <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
+      </div>
+
+      <div className="mt-6">
+        <KpiTiles comparison={comparison} compareLabel={dates.comparisonLabel} />
+      </div>
+
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <SummaryCard lines={summary} />
+        </div>
+        <section aria-labelledby="market-highlights" className={cardClass}>
+          <h2 id="market-highlights" className={cardHeadingClass}>Market highlights</h2>
+          <div className="mt-3 grid gap-3">
+            <KpiTile
+              label="Clicks"
+              value={numberFormat.format(comparison.current.clicks)}
+              change={comparison.change.clicks}
+              compareLabel={dates.comparisonLabel}
+            />
+            <KpiTile
+              label="Click-through rate"
+              value={formatPercent(comparison.current.clickThroughRate, 2)}
+              change={comparison.change.clickThroughRate}
+              compareLabel={dates.comparisonLabel}
+            />
+          </div>
+        </section>
+      </div>
+
+      <section className={`mt-8 ${cardClass}`}>
+        <h2 id="platform-comparison" className={cardHeadingClass}>Platform comparison</h2>
+        <div className="mt-3 overflow-x-auto">
+          <table aria-labelledby="platform-comparison" className="w-full min-w-md text-left text-sm">
+            <thead className="text-ink-muted">
+              <tr>
+                <th scope="col" className="py-2 pr-4 font-medium">Platform</th>
+                <th scope="col" className="py-2 pr-4 font-medium">Impressions</th>
+                <th scope="col" className="py-2 pr-4 font-medium">Engagement rate</th>
+                <th scope="col" className="py-2 font-medium">Change</th>
+              </tr>
+            </thead>
+            <tbody className="text-ink">
+              {platforms.map(({ platform, current, change }) => (
+                <tr key={platform} className="border-t border-divider">
+                  <th scope="row" className="py-2 pr-4 font-medium">{PLATFORM_LABELS[platform]}</th>
+                  <td className="py-2 pr-4">{numberFormat.format(current.impressions)}</td>
+                  <td className="py-2 pr-4">{formatPercent(current.engagementRate, 1)}</td>
+                  <td className="py-2">{formatChange(change.engagementRate)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <CompetitorActivityCard dates={dates} />
+        <TrendsCard />
+      </div>
+
+      <Link href={withQuery("/analytics", dates.query)} className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
+    </main>
+  );
+}

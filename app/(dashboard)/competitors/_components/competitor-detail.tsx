@@ -18,16 +18,16 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 function Empty({ children }: { children: ReactNode }) {
-  return <p className="text-sm text-zinc-500 dark:text-zinc-400">{children}</p>;
+  return <p className="text-sm text-ink-muted">{children}</p>;
 }
 
 function PostList({ posts }: { posts: readonly CompetitorPost[] }) {
   return (
-    <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+    <ul className="divide-y divide-divider">
       {posts.map((post, index) => (
         <li key={`${post.date}-${index}`} className="py-2">
-          <p className="text-zinc-900 dark:text-zinc-100">{post.caption}</p>
-          <div className="mt-0.5 flex flex-wrap justify-between gap-x-4 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="text-ink">{post.caption}</p>
+          <div className="mt-0.5 flex flex-wrap justify-between gap-x-4 text-sm text-ink-muted">
             <span>{`${PLATFORM_LABELS[post.platform]}, ${post.date}`}</span>
             <span>{`${formatPercent(engagementRate(post.engagements, post.impressions), 1)} engagement`}</span>
           </div>
@@ -42,8 +42,8 @@ function PlatformList({ platforms }: { platforms: readonly PlatformActivity[] })
     <ul className="space-y-1">
       {platforms.map(({ platform, posts, engagementRate: rate }) => (
         <li key={platform} className="flex justify-between text-sm">
-          <span className="font-medium text-zinc-900 dark:text-zinc-100">{PLATFORM_LABELS[platform]}</span>
-          <span className="text-zinc-500 dark:text-zinc-400">
+          <span className="font-medium text-ink">{PLATFORM_LABELS[platform]}</span>
+          <span className="text-ink-muted">
             {`${posts} ${posts === 1 ? "post" : "posts"}, ${formatPercent(rate, 1)} engagement`}
           </span>
         </li>
@@ -68,7 +68,7 @@ export function CompetitorDetail({ competitor, detail, platforms = [], query = "
     <main className={pageClass}>
       <Link href={withQuery("/competitors", query)} className={linkClass}>All competitors</Link>
       <h1 className={`mt-3 ${titleClass}`}>{competitor.name}</h1>
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">{competitor.handle}</p>
+      <p className="text-sm text-ink-muted">{competitor.handle}</p>
       <p className={subtitleClass}>Sample data: a fictional business used to show how competitor tracking will work.</p>
 
       {dateBar && <div className="mt-6">{dateBar}</div>}
@@ -94,8 +94,8 @@ export function CompetitorDetail({ competitor, detail, platforms = [], query = "
             <ul className="space-y-1">
               {detail.topHashtags.map(({ tag, count }) => (
                 <li key={tag} className="flex justify-between text-sm">
-                  <span className="font-medium text-zinc-900 dark:text-zinc-100">{tag}</span>
-                  <span className="text-zinc-500 dark:text-zinc-400">{`${count} posts`}</span>
+                  <span className="font-medium text-ink">{tag}</span>
+                  <span className="text-ink-muted">{`${count} posts`}</span>
                 </li>
               ))}
             </ul>
@@ -105,11 +105,11 @@ export function CompetitorDetail({ competitor, detail, platforms = [], query = "
           {detail.activeAds.length === 0 ? (
             <Empty>No ads running right now.</Empty>
           ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-800">
+            <ul className="divide-y divide-divider">
               {detail.activeAds.map((ad) => (
                 <li key={`${ad.library}-${ad.headline}`} className="py-2">
-                  <p className="text-zinc-900 dark:text-zinc-100">{ad.headline}</p>
-                  <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                  <p className="text-ink">{ad.headline}</p>
+                  <p className="mt-0.5 text-sm text-ink-muted">
                     {`${AD_LIBRARY_LABELS[ad.library]} ad library, ${ad.format}, running since ${ad.startDate}`}
                   </p>
                 </li>

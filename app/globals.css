@@ -1,33 +1,83 @@
 @import "tailwindcss";
 
-/* Dark mode applies on screen only, so printed reports are always dark text on white paper. */
-@custom-variant dark {
-  @media screen and (prefers-color-scheme: dark) {
-    @slot;
-  }
-}
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light mode only: the app has no dark mode, so native controls stay light too. */
+  color-scheme: light;
+
+  /* SIXTH SENSE design system (MUI for Figma kit) palette. */
+  --canvas: #fafafa;
+  --paper: #ffffff;
+  --ink: rgba(0, 0, 0, 0.87);
+  --ink-muted: rgba(0, 0, 0, 0.6);
+  --ink-disabled: rgba(0, 0, 0, 0.38);
+  --divider: rgba(0, 0, 0, 0.12);
+  --outline: rgba(0, 0, 0, 0.23);
+  --hover: rgba(0, 0, 0, 0.04);
+  --selected: rgba(0, 0, 0, 0.08);
+
+  --primary: #1976d2;
+  --primary-dark: #1565c0;
+  --primary-contrast: #ffffff;
+  --action-disabled: rgba(0, 0, 0, 0.26);
+  --action-disabled-bg: rgba(0, 0, 0, 0.12);
+
+  --success: #2e7d32;
+  --error: #d32f2f;
+  --warning-fg: #663c00;
+  --warning-bg: #fff4e5;
+  --error-fg: #5f2120;
+  --error-bg: #fdeded;
+  --info-fg: #014361;
+  --info-bg: #e5f6fd;
+  --info: #0288d1;
+
+  --background: var(--canvas);
+  --foreground: var(--ink);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-roboto-sans);
   --font-mono: var(--font-geist-mono);
+
+  --color-canvas: var(--canvas);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-disabled: var(--ink-disabled);
+  --color-divider: var(--divider);
+  --color-outline: var(--outline);
+  --color-hover: var(--hover);
+  --color-selected: var(--selected);
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-contrast: var(--primary-contrast);
+  --color-action-disabled: var(--action-disabled);
+  --color-action-disabled-bg: var(--action-disabled-bg);
+  --color-success: var(--success);
+  --color-error: var(--error);
+  --color-warning-fg: var(--warning-fg);
+  --color-warning-bg: var(--warning-bg);
+  --color-error-fg: var(--error-fg);
+  --color-error-bg: var(--error-bg);
+  --color-info-fg: var(--info-fg);
+  --color-info-bg: var(--info-bg);
+  --color-info: var(--info);
+  --font-roboto: var(--font-roboto-sans);
+  --shadow-elevation-1: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 3px 0px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-2: 0px 3px 1px -2px rgba(0, 0, 0, 0.2), 0px 2px 2px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 5px 0px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-4: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+    0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-8: 0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14),
+    0px 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --shadow-elevation-16: 0px 8px 10px -5px rgba(0, 0, 0, 0.2), 0px 16px 24px 2px rgba(0, 0, 0, 0.14),
+    0px 6px 30px 5px rgba(0, 0, 0, 0.12);
 }
 
-@media screen and (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/* Chart colors: categorical slots 1-4 from the validated reference palette,
-   with separate steps for dark mode (validated against each surface). */
+/* Chart colors: categorical slots 1-4 from the validated reference palette. */
 .viz-root {
   --series-1: #2a78d6;
   --series-2: #eb6834;
@@ -39,21 +89,10 @@
   --viz-label: #3f3f46;
 }
 
-@media screen and (prefers-color-scheme: dark) {
-  .viz-root {
-    --series-1: #3987e5;
-    --series-2: #d95926;
-    --series-3: #199e70;
-    --series-4: #c98500;
-    --viz-surface: #18181b;
-    --viz-grid: #27272a;
-    --viz-axis: #a1a1aa;
-    --viz-label: #d4d4d8;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-roboto-sans), Arial, Helvetica, sans-serif;
+  /* Native checkboxes, radios, and date pickers pick up the primary color. */
+  accent-color: var(--primary);
 }

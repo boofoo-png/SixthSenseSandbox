@@ -40,9 +40,9 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
       </div>
 
       <section aria-labelledby="executive-overview" className="mt-8 space-y-6 print:mt-0">
-        <header className="border-b border-zinc-200 pb-4 dark:border-zinc-800">
-          <h2 id="executive-overview" className="text-2xl font-semibold text-zinc-950 dark:text-zinc-50">Executive overview</h2>
-          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <header className="border-b border-divider pb-4">
+          <h2 id="executive-overview" className="text-2xl font-medium text-ink">Executive overview</h2>
+          <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-ink-muted">
             <p>{`Period: ${dates.currentLabel}`}</p>
             <p>{`Compared with: ${dates.comparisonLabel}`}</p>
             <p>{`Prepared on: ${formatDateRange({ start: today, end: today }, true)}`}</p>
@@ -56,7 +56,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
         <div className="grid gap-4 md:grid-cols-2 print:grid-cols-2">
           <section aria-labelledby="what-changed" className={`${cardClass} print:break-inside-avoid`}>
             <h3 id="what-changed" className={cardHeadingClass}>What changed</h3>
-            <ul className="mt-3 list-disc space-y-2 pl-5 text-zinc-700 dark:text-zinc-300">
+            <ul className="mt-3 list-disc space-y-2 pl-5 text-ink-muted">
               {report.changes.map((line) => (
                 <li key={line}>{line}</li>
               ))}
@@ -64,7 +64,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           </section>
           <section aria-labelledby="best-platform" className={`${cardClass} print:break-inside-avoid`}>
             <h3 id="best-platform" className={cardHeadingClass}>Best platform</h3>
-            <p className="mt-3 text-zinc-700 dark:text-zinc-300">
+            <p className="mt-3 text-ink-muted">
               {report.bestPlatform === null
                 ? "No platform data for this period."
                 : `${PLATFORM_LABELS[report.bestPlatform.platform]}: ${formatPercent(report.bestPlatform.engagementRate, 1)} engagement rate`}
@@ -76,7 +76,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/reports"
           <SummaryCard lines={report.summary} />
         </div>
 
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">Sample data: numbers are made up until real accounts are connected.</p>
+        <p className="text-xs text-ink-muted">Sample data: numbers are made up until real accounts are connected.</p>
       </section>
     </main>
   );

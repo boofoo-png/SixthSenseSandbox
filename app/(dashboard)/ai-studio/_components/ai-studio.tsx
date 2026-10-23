@@ -25,7 +25,7 @@ type AiStudioProps = {
 
 const STEPS = ["Ideas", "Caption", "Schedule"] as const;
 
-const cardClass = "rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900";
+const cardClass = "rounded bg-paper shadow-elevation-1 p-5";
 
 /** The idea -> caption -> schedule flow, with the content calendar below. */
 export function AiStudio({ trends, bestPlatforms, ownTags, today }: AiStudioProps) {
@@ -69,18 +69,18 @@ export function AiStudio({ trends, bestPlatforms, ownTags, today }: AiStudioProp
   return (
     <div className="space-y-8">
       <section aria-labelledby="studio-heading" className={cardClass}>
-        <h2 id="studio-heading" className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">Plan a post</h2>
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Suggestions are generated from templates and sample data, not AI.</p>
+        <h2 id="studio-heading" className="text-lg font-medium text-ink">Plan a post</h2>
+        <p className="mt-1 text-xs text-ink-muted">Suggestions are generated from templates and sample data, not AI.</p>
 
         <ol aria-label="Steps" className="mt-4 flex flex-wrap gap-2 text-sm">
           {STEPS.map((name, index) => (
             <li
               key={name}
               aria-current={index === step && added === null ? "step" : undefined}
-              className={`rounded-full px-3 py-1 ${
+              className={`rounded-full px-3 py-1 text-[13px] leading-[1.85] tracking-[0.16px] ${
                 index === step && added === null
-                  ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-                  : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400"
+                  ? "bg-primary text-primary-contrast"
+                  : "bg-selected text-ink"
               }`}
             >
               {`${index + 1}. ${name}`}
@@ -90,13 +90,13 @@ export function AiStudio({ trends, bestPlatforms, ownTags, today }: AiStudioProp
 
         <div className="mt-5">
           {added === null && (
-            <h3 ref={stepHeading} tabIndex={-1} className="mb-3 text-xs font-medium uppercase tracking-wide text-zinc-500 outline-none dark:text-zinc-400">
+            <h3 ref={stepHeading} tabIndex={-1} className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted outline-none">
               {`Step ${step + 1} of ${STEPS.length}: ${STEPS[step]}`}
             </h3>
           )}
           {added !== null ? (
             <div>
-              <p ref={confirmation} tabIndex={-1} role="status" className="text-sm text-zinc-800 outline-none dark:text-zinc-200">
+              <p ref={confirmation} tabIndex={-1} role="status" className="text-sm text-ink outline-none">
                 {`Added to your calendar for ${added.date} at ${formatTime(added.time)}.`}
               </p>
               <button type="button" className={`mt-3 ${buttonClass}`} onClick={startOver}>Plan another post</button>

@@ -33,21 +33,21 @@ export function CaptionStudio({ idea, tone, captions, hashtags, selected, onTone
 
   return (
     <div>
-      <h3 className="font-semibold text-zinc-950 dark:text-zinc-50">{idea.title}</h3>
-      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{idea.angle}</p>
+      <h3 className="font-medium text-ink">{idea.title}</h3>
+      <p className="mt-1 text-sm text-ink-muted">{idea.angle}</p>
 
-      <section aria-labelledby="how-to-make-it" className="mt-4 rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800/50">
-        <h4 id="how-to-make-it" className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">How to make it</h4>
-        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">You create and post the photo or video yourself; this is a plan to help.</p>
-        <p className="mt-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Shot list</p>
-        <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-zinc-800 dark:text-zinc-200">
+      <section aria-labelledby="how-to-make-it" className="mt-4 rounded bg-hover p-4">
+        <h4 id="how-to-make-it" className="text-sm font-medium text-ink">How to make it</h4>
+        <p className="mt-1 text-xs text-ink-muted">You create and post the photo or video yourself; this is a plan to help.</p>
+        <p className="mt-3 text-xs font-medium text-ink-muted">Shot list</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-5 text-sm text-ink">
           {idea.brief.shots.map((shot) => (
             <li key={shot}>{shot}</li>
           ))}
         </ol>
-        <p className="mt-3 text-sm text-zinc-800 dark:text-zinc-200">{`Length: ${idea.brief.length}`}</p>
-        <p className="mt-3 text-xs font-medium text-zinc-600 dark:text-zinc-400">Tips</p>
-        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-zinc-800 dark:text-zinc-200">
+        <p className="mt-3 text-sm text-ink">{`Length: ${idea.brief.length}`}</p>
+        <p className="mt-3 text-xs font-medium text-ink-muted">Tips</p>
+        <ul className="mt-1 list-disc space-y-1 pl-5 text-sm text-ink">
           {idea.brief.tips.map((tip) => (
             <li key={tip}>{tip}</li>
           ))}
@@ -55,10 +55,10 @@ export function CaptionStudio({ idea, tone, captions, hashtags, selected, onTone
       </section>
 
       <fieldset className="mt-4">
-        <legend className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Tone</legend>
+        <legend className="text-xs font-medium text-ink-muted">Tone</legend>
         <div className="mt-1 flex flex-wrap gap-4">
           {CAPTION_TONES.map((option) => (
-            <label key={option.value} className="flex items-center gap-2 text-sm text-zinc-800 dark:text-zinc-200">
+            <label key={option.value} className="flex items-center gap-2 text-sm text-ink">
               <input type="radio" name="tone" value={option.value} checked={tone === option.value} onChange={() => onToneChange(option.value)} />
               {option.label}
             </label>
@@ -70,8 +70,8 @@ export function CaptionStudio({ idea, tone, captions, hashtags, selected, onTone
         {captions.map((caption, index) => (
           <li
             key={caption}
-            className={`flex items-start gap-3 rounded-lg border p-3 ${
-              index === selected ? "border-zinc-900 dark:border-zinc-100" : "border-zinc-200 dark:border-zinc-800"
+            className={`flex items-start gap-3 rounded border p-3 ${
+              index === selected ? "border-primary" : "border-divider"
             }`}
           >
             <input
@@ -82,7 +82,7 @@ export function CaptionStudio({ idea, tone, captions, hashtags, selected, onTone
               checked={index === selected}
               onChange={() => onSelect(index)}
             />
-            <p className="flex-1 text-sm text-zinc-800 dark:text-zinc-200">{caption}</p>
+            <p className="flex-1 text-sm text-ink">{caption}</p>
             <button
               type="button"
               className={secondaryButtonClass}
@@ -97,15 +97,15 @@ export function CaptionStudio({ idea, tone, captions, hashtags, selected, onTone
 
       <div className="mt-4 flex flex-wrap items-start gap-3">
         <div className="flex-1">
-          <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Suggested hashtags</p>
-          <p className="mt-1 text-sm text-zinc-800 dark:text-zinc-200">{tagText}</p>
+          <p className="text-xs font-medium text-ink-muted">Suggested hashtags</p>
+          <p className="mt-1 text-sm text-ink">{tagText}</p>
         </div>
         <button type="button" className={secondaryButtonClass} onClick={() => copy(tagText, "Copied hashtags.")}>
           Copy hashtags
         </button>
       </div>
 
-      <p role="status" className="mt-2 min-h-5 text-sm text-zinc-600 dark:text-zinc-400">{message}</p>
+      <p role="status" className="mt-2 min-h-5 text-sm text-ink-muted">{message}</p>
 
       <div className="mt-4 flex gap-3">
         <button type="button" className={secondaryButtonClass} onClick={onBack}>Back to ideas</button>

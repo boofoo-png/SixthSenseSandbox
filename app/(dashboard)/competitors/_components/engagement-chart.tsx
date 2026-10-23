@@ -35,7 +35,7 @@ export function EngagementChart({ data }: { data: WeeklyEngagement }) {
     return (
       <section aria-labelledby="engagement-chart" className={cardClass}>
         <h2 id="engagement-chart" className={cardHeadingClass}>{TITLE}</h2>
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">No competitor posts to chart yet.</p>
+        <p className="mt-3 text-sm text-ink-muted">No competitor posts to chart yet.</p>
       </section>
     );
   }
@@ -65,7 +65,7 @@ export function EngagementChart({ data }: { data: WeeklyEngagement }) {
   return (
     <figure aria-labelledby="engagement-chart" className={`viz-root ${cardClass}`}>
       <h2 id="engagement-chart" className={cardHeadingClass}>{TITLE}</h2>
-      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+      <p className="mt-1 text-sm text-ink-muted">
         Engagements divided by impressions, last {weeks.length} weeks. Hover a point for details.
       </p>
 
@@ -73,8 +73,8 @@ export function EngagementChart({ data }: { data: WeeklyEngagement }) {
         {lines.map((line) => (
           <li key={line.competitor.slug} className="flex items-center gap-2">
             <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded-full" style={{ background: seriesColor(line.index) }} />
-            <span className="text-zinc-700 dark:text-zinc-300">{line.competitor.name}</span>
-            <span className="font-medium text-zinc-950 dark:text-zinc-50">
+            <span className="text-ink-muted">{line.competitor.name}</span>
+            <span className="font-medium text-ink">
               {line.latest === null ? "" : formatPercent(line.latest, 1)}
             </span>
           </li>
@@ -139,11 +139,11 @@ export function EngagementChart({ data }: { data: WeeklyEngagement }) {
       </svg>
 
       <details className="mt-3 text-sm">
-        <summary className="cursor-pointer text-zinc-600 dark:text-zinc-400">View as table</summary>
+        <summary className="cursor-pointer text-ink-muted">View as table</summary>
         <div className="mt-2 overflow-x-auto">
           <table className="w-full text-left">
             <caption className="sr-only">{`${TITLE} (table)`}</caption>
-            <thead className="text-zinc-500 dark:text-zinc-400">
+            <thead className="text-ink-muted">
               <tr>
                 <th scope="col" className="py-1 pr-4 font-medium">Competitor</th>
                 {weeks.map((week) => (
@@ -151,9 +151,9 @@ export function EngagementChart({ data }: { data: WeeklyEngagement }) {
                 ))}
               </tr>
             </thead>
-            <tbody className="text-zinc-800 dark:text-zinc-200">
+            <tbody className="text-ink">
               {lines.map((line) => (
-                <tr key={line.competitor.slug} className="border-t border-zinc-200 dark:border-zinc-800">
+                <tr key={line.competitor.slug} className="border-t border-divider">
                   <th scope="row" className="py-1 pr-4 font-medium">{line.competitor.name}</th>
                   {line.rates.map((rate, i) => (
                     <td key={weeks[i].end} className="py-1 pr-4">{rate === null ? "No posts" : formatPercent(rate, 1)}</td>
