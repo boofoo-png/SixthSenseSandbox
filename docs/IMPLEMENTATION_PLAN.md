@@ -1,3 +1,35 @@
+# Implementation Plan: Reports v1 (Executive Overview)
+
+_Last updated: 2026-10-22_
+
+## Goal
+/reports shows a one-page executive overview for the dates chosen in the date bar: headline numbers, what changed, the best platform, and the plain-English summary. A "Print / Save as PDF" button prints a clean page (no sidebar or controls) that can be saved as a PDF from the browser's print dialog.
+
+## Out of scope
+- Scheduled or emailed reports (need accounts, an email service, and a server job)
+- Platform breakdown, competitor, and content plan sections (possible later report sections)
+- A PDF-generation library or downloadable file built by the app
+- Custom branding or logos (the business name is the placeholder)
+
+## Phase 1 - Report content (test-first)
+- [x] 1.1 Executive report model: headline numbers (impressions, engagements, engagement rate, followers, clicks) with their change, the best platform by engagement rate, and the plain-English summary, for the given date ranges (lib/reports/executive.ts, executive.test.ts)
+- [x] 1.2 "What changed": the three biggest noticeable moves in plain words, e.g. "Impressions up 12% (48,200 vs 43,000)", using the shared rounding and steady threshold; a "held steady" line when nothing moved noticeably (lib/reports/executive.ts, executive.test.ts)
+
+## Phase 2 - Page and printing (test-first)
+- [x] 2.1 `PrintButton` client component that opens the browser's print dialog, with a note that "Save as PDF" is in that dialog (app/(dashboard)/reports/_components/print-button.tsx, print-button.test.tsx)
+- [x] 2.2 /reports page replaces "Coming soon": date bar, report header (title, period covered, comparison period, "Prepared on" date), headline tiles, what changed, best platform, and summary; mark Reports as ready in the sidebar (app/(dashboard)/reports/page.tsx, page.test.tsx, lib/navigation.ts)
+- [x] 2.3 Print layout: hide the sidebar, date bar controls, and print button when printing; keep cards from splitting across pages; fit tiles to the page width (app/(dashboard)/layout.tsx, reports components)
+- [x] 2.4 Remove the `ComingSoon` component and its tests once no page uses it (app/(dashboard)/_components/coming-soon.tsx)
+
+## Phase 3 - Polish
+- [ ] 3.1 Check by eye at phone and desktop widths, and in print preview (Save as PDF) that the page is clean and fits
+
+## Open questions
+- Which sections should a fuller report add next: platform breakdown, competitors, or the content plan?
+- Should reports eventually be emailed on a schedule once accounts exist?
+
+---
+
 # Implementation Plan: AI Studio v1
 
 _Last updated: 2026-10-13_

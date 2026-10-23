@@ -30,10 +30,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - AI Studio at /ai-studio: a step-by-step flow from trend-based content ideas to captions (friendly, playful, or professional) and hashtags with copy buttons, to scheduling at the platform's next best time; a content calendar (month grid and list with edit and delete) saved in the browser; and best times to post per platform. Suggestions are template-based and labelled as such.
 - A "How to make it" content brief for every idea: shot list, ideal length, and tips, since the business creates its own photos and videos.
 - Decisions: template-based AI Studio suggestions with planned posts in browser storage, and no auto-posting (the site plans content; the business creates and posts it).
+- Reports at /reports: a one-page executive overview for the dates chosen in the date bar, with headline numbers, the three biggest changes, the best platform, and the plain-English summary. A "Print / Save as PDF" button opens the browser's print dialog; the printed page hides the sidebar and controls, keeps cards whole, and always prints dark text on white.
+- Decision: report PDFs come from the browser's print dialog rather than a PDF library.
 
 ### Removed
 - The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
 - Unused Next.js starter images in public/.
+- The Reports coming soon page and the unused ComingSoon component.
 
 ### Changed
 - Ignore the editor's local history folder (.history/).

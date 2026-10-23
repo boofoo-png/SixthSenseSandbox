@@ -95,3 +95,11 @@ Decision: The dashboard is a planning assistant. It suggests ideas, trends, capt
 Alternatives considered: Auto-posting captions on a schedule was rejected because posts need photos or videos the business makes. AI-generated images or videos were rejected for now: they would not show the real cafe, products, or people, and add cost and review effort. Publishing user-uploaded media through platform APIs was deferred; it needs account connections and approval from each platform, and can be revisited once accounts exist.
 
 Supersedes: the "schedule auto post calendar" idea in DISCOVERY.md (2026-10-13), which was a product note rather than a recorded decision.
+
+## 2026-10-14 - Report PDFs come from the browser's print dialog
+
+Context: Reports need a PDF version to share with stakeholders. The app has no PDF tooling, and the report is a normal web page built from existing components.
+
+Decision: Provide a "Print / Save as PDF" button that calls the browser's print dialog, where every major browser offers "Save as PDF". Use Tailwind's built-in `print:` variant to hide the sidebar, date bar controls, and buttons, and to stop cards splitting across pages. The printed report states the period covered, the comparison period, and the date it was prepared.
+
+Alternatives considered: A PDF library (for example react-pdf or a headless browser on the server) was rejected for now: it adds a dependency, a separate layout to maintain, and server work, for no real gain over the browser's own PDF output for a one-page report. It can be revisited if reports need to be generated or emailed automatically.
