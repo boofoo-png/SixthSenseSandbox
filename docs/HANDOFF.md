@@ -69,3 +69,16 @@
 - Product decision (DECISIONS.md, 2026-10-14): no auto-posting. The calendar is a content plan; the business creates and posts its own photos and videos.
 - Planned posts live in localStorage under "marketing-dashboard.planned-posts" (version 1); they are per browser and not shared. Tests reset the store with resetPlannedPostsForTests().
 - Some idea templates read oddly for non-food hashtag trends (e.g. "Fall vibes taste test"); a fix limiting food templates to food topics was offered but not yet chosen.
+
+## 2026-10-22 - feat/reports
+
+**Done:** Reports v1 plan items 1.1-1.2 (executive report model and "what changed" lines in lib/reports/executive.ts), 2.1-2.4 (PrintButton, /reports page with date bar and report header, print layout, ComingSoon removed; Reports marked ready in the sidebar). Commits 69a01ce and 94e2b2b.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 332/332 passed across 38 files; `npm run build` passed (/reports renders per request). No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/reports
+
+**Next:** Reports 3.1 (check /reports by eye at phone and desktop widths and in print preview / Save as PDF), plus the earlier visual checks AI Studio 4.3 and Competitors 3.2. Open question: which report section comes next (platform breakdown, competitors, or content plan).
+
+**Notes / risks:**
+- Branches are stacked: ... -> feat/ai-studio -> feat/reports.
+- The `dark:` variant is now screen-only (custom variant in app/globals.css), so every page prints dark text on white, not just /reports.
+- The "Coming soon" nav status type is kept in lib/navigation.ts for future sections, though no section uses it now.
