@@ -1,0 +1,32 @@
+html {
+    background-color: #11425d;
+    font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
+}
+h1 {
+    color: #ddff55;
+    text-align: center;
+    font-size: 5rem;
+    margin-bottom: 0px;
+    margin-top: 1px;
+}
+.title-description {
+    text-align: center;
+    color: white;
+    margin-top: 0 20;
+}
+
+.main-content--container {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.card {
+    background-color: #ddff55;
+    border: solid #b1d426 4px;
+    margin-left: 40px;
+    border-radius: 40px;
+}
+.c-badge {
+    background-color: #6cacce;
+    margin: 10;
+}
