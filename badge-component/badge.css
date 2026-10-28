@@ -36,6 +36,18 @@ h1 {
 
 .c-badge.c-badge--positive {
     background-color: #84e966;
-    color: #395f2d;
-    border: solid #395f2d 2px;
+    color: #2b4723;
+    border: solid #65a950 2px;
+}
+
+.c-badge.c-badge--neutral {
+    background-color: lightgrey;
+    color: rgb(54, 54, 54);
+    border: solid rgb(109, 109, 109) 2px;
+}
+
+.c-badge.c-badge--negative {
+    background-color: rgba(255, 41, 41, 0.851);
+    color: rgb(111, 0, 0);
+    border: solid rgb(159, 1, 1) 2px;
 }
