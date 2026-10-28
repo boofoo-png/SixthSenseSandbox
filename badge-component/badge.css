@@ -1,5 +1,5 @@
 html {
-    background-color: #0c2c3d;
+    background-color: #0d2c3c;
     font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
 }
 h1 {
@@ -61,4 +61,11 @@ h1 {
     background-color: rgba(255, 41, 41, 0.851);
     color: rgb(111, 0, 0);
     border: solid rgb(159, 1, 1) 2px;
+}
+
+.card-content--data {
+    font-size: 40px;
+    font-weight: bold;
+    color: #0c2c3d;
+    margin: 0%;
 }
