@@ -51,12 +51,12 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [ ] 4.3 Browser storage for saved findings, user audiences, saved social posts, and campaign briefs under versioned keys, following lib/ai-studio/storage.ts, read through `useSyncExternalStore` hooks (lib/hub/storage.ts, app/(dashboard)/_components/use-hub-store.ts, tests)
 
 ## Phase 5 - Research Competitors (test-first)
-- [ ] 5.1 Rework /competitors to the mid-fi: "Review your competitors.", filter chips (Most viewed post, Most liked post, Most popular item, Most popular trends, Common reused layouts, Most used by users), and post cards with brand, date, title, summary, and tags; reuse the existing competitor activity and chart code where it fits (app/(dashboard)/competitors/, lib/competitors/)
+- [x] 5.1 Rework /competitors to the mid-fi: "Review your competitors.", filter chips (Most viewed post, Most liked post, Most popular item, Most popular trends, Common reused layouts, Most used by users), and post cards with brand, date, title, summary, and tags; reuse the existing competitor activity and chart code where it fits (app/(dashboard)/competitors/, lib/competitors/)
 - [ ] 5.2 "Comparison on trends between you and your competitors": your posts vs competitor posts side by side (engagement, views, likes, shares this week) (lib/hub/compare.ts, competitors page)
 - [ ] 5.3 "Updates and suggestions": rule-based recommendations from the comparison, plus Save to findings (lib/hub/recommendations.ts, competitors page)
-- [ ] 5.4 Competitor tracking (FUNCTIONALITY.md) for the hospitality supplier: posting frequency, engagement, best and worst posts, hashtags, and active ads, starting with the competitors added during sign-up plus fictional sample competitors (lib/competitors/, lib/hub/sample-data.ts)
-- [ ] 5.5 Trend and campaign pattern detection: recurring themes across competitors' campaigns, with examples (lib/competitors/themes.ts, competitors page)
-- [ ] 5.6 Audience-based selection: choose which competitors to track for the selected target audience, starting with those added during sign-up (lib/hub/storage.ts, competitors page)
+- [x] 5.4 Competitor tracking (FUNCTIONALITY.md) for the hospitality supplier: posting frequency, engagement, best and worst posts, hashtags, and active ads, starting with the competitors added during sign-up plus fictional sample competitors (lib/competitors/, lib/hub/sample-data.ts)
+- [x] 5.5 Trend and campaign pattern detection: recurring themes across competitors' campaigns, with examples (lib/competitors/themes.ts, competitors page)
+- [x] 5.6 Audience-based selection: choose which competitors to track for the selected target audience, starting with those added during sign-up (lib/hub/storage.ts, competitors page)
 
 ## Phase 6 - Target Audience ("Explore Audience and Trend"), Ask anything, Revisit Findings (test-first)
 - [ ] 6.1 Trend search by category (FUNCTIONALITY.md): /explore lists trends by category, filtered by demographics, age, and interests, with an empty state and Clear Filters (lib/hub/trends.ts, app/(dashboard)/explore/)
@@ -100,6 +100,8 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - What should Compare do, and what file should a campaign brief export to beyond print / Save as PDF?
 - "Audience types" in the functionality list: is it the one general audience from the mid-fi (Residential, Commercial, Industrial, Institutional), or several? Answered 2026-10-29: several; step 2 now uses tick-all-that-apply chips.
 - The session cookie holds the email unsigned, so anyone can set it by hand and appear signed in (code review 2026-10-23, finding 6; accepted for the prototype). Sign it (HMAC with a secret in .env.local) or replace it with real auth before any real use.
+- 5.1 descoped (2026-10-29): only the Most viewed post, Most liked post, and Most popular trends chips are offered; Most popular item, Common reused layouts, and Most used by users need data the prototype does not have. Add them when there is a data source, or drop them from the mid-fi?
+- 5.4-5.6 were built in lib/competitors/ (hospitality.ts, themes.ts, findings.ts) and lib/hub/tracking.ts, with the tracked choice saved in the business profile cookie, rather than the planned lib/hub/sample-data.ts and lib/hub/storage.ts; 4.1 and 4.2 are still open for trends, audiences, and saved findings.
 
 ---
 

@@ -126,3 +126,16 @@
 - Reset tokens live in `ss_reset` as a SHA-256 hash for 15 minutes; the demo account cannot be reset.
 - Test-harness gotcha when driving forms with curl: the page's hidden fields (`socialVerified`, `inviteLink`) are already in the form, so sending them again makes the server read the first, empty value.
 - The session cookie is still unsigned (review finding 6, in the plan's open questions).
+
+## 2026-10-29 - feat/sixth-sense (Research Competitors)
+
+**Done:** 5.1 (Research Competitors reworked to the mid-fi; 3 of the 6 finding chips, see Open questions), 5.4 (competitor tracking for the hospitality supplier, starting with sign-up competitors plus fictional suppliers), 5.5 (recurring themes across tracked competitors), 5.6 (audience-based selection, saved in the profile cookie). Also a demo business profile (lib/hub/demo-profile.ts) and one shared cookie settings helper (lib/hub/cookie-options.ts). Commit 657e25d.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 594/594 passed across 64 files; `npm run build` passed. No CI configured. PR not opened automatically (gh CLI not installed).
+
+**Next:** 5.2 (you vs competitors comparison) and 5.3 (updates and suggestions, Save to findings), Phase 6 Target Audience, 2.10 (Settings and Profile), 1.5 (redirect old addresses).
+
+**Notes / risks:**
+- Sample competitor numbers come from a hash of the slug (`seedOf`, unsigned 32-bit). Use `>>>`, not `>>`, when taking bits from it: a signed shift goes negative for large seeds and broke 8 tests before commit 657e25d.
+- Sign-up competitors get a slug from their name; a clash with a sample supplier gets `-2`, `-3`, and so on, so a competitor's address can change if a sample supplier is renamed.
+- The session cookie is still unsigned (review finding 6, in the plan's open questions).

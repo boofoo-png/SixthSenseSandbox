@@ -40,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Team functionality list as the feature reference (docs/FUNCTIONALITY.md), with what is built so far.
 - Forgot Password: a reset link for an account saved in this browser, shown on screen in the prototype; it expires after 15 minutes and works once (/forgot-password, /reset-password).
 - Connect on each linked social account (simulated verification, labelled as such), Generate a link for team invites (Create an Account shows who invited you), and Add later / Add now on the optional parts of sign-up step 2.
+- Research Competitors from the mid-fi ("Review your competitors."): track the competitors added at sign-up plus fictional hospitality suppliers, with posting frequency, engagement, and active ads; choose which to track, filtered by one of your audiences; filter posts by findings (most viewed, most liked, most popular trends); and recurring campaign themes across tracked competitors, with a best example. All figures are sample data.
+- The demo account has a fictional sample business profile, so every area has something to show.
 
 ### Removed
 - The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
