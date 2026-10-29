@@ -3,7 +3,7 @@ html {
     font-family: "Franklin Gothic Medium", "Arial Narrow", Arial, sans-serif;
 }
 h1 {
-    color: #ddff55;
+    color: #deff58;
     text-align: center;
     font-size: 5rem;
     margin-bottom: 0px;
@@ -48,13 +48,13 @@ h1 {
 .c-badge.c-badge--positive {
     background-color: #84e966;
     color: #2b4723;
-    border: solid #65a950 2px;
+    border-color: #65a950;
 }
 
 .c-badge.c-badge--neutral {
     background-color: lightgrey;
-    color: rgb(54, 54, 54);
-    border: solid rgb(109, 109, 109) 2px;
+    color: #2b2e30;
+    border-color: #5e666b;
 }
 
 .c-badge.c-badge--negative {
