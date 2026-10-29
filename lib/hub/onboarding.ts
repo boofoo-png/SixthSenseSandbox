@@ -92,6 +92,8 @@ export type BusinessProfile = {
   documents: string[];
   invites: string[];
   inviteLink?: string;
+  /** Slugs of the competitors chosen on Research Competitors; unset means the default choice. */
+  trackedCompetitors?: string[];
 };
 
 export type OnboardingErrors = Record<string, string>;

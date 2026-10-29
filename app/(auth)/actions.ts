@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { ONE_DAY, ONE_YEAR, THIRTY_DAYS, cookieOptions } from "@/lib/hub/cookie-options";
 import { redirect } from "next/navigation";
 import {
   checkPasswordPair,
@@ -37,20 +38,6 @@ import {
 } from "@/lib/hub/session";
 
 // Prototype sign-in (see docs/DECISIONS.md, 2026-10-22): cookies only, no database.
-
-const THIRTY_DAYS = 60 * 60 * 24 * 30;
-const ONE_DAY = 60 * 60 * 24;
-const ONE_YEAR = 60 * 60 * 24 * 365;
-
-function cookieOptions(maxAge?: number) {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    ...(maxAge ? { maxAge } : {}),
-  };
-}
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 

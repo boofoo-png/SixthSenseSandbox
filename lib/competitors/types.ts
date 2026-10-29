@@ -16,6 +16,10 @@ export type CompetitorPost = {
   hashtags: readonly string[];
   impressions: number;
   engagements: number;
+  /** Campaign theme the post belongs to (hospitality sample data). */
+  theme?: string;
+  /** One-sentence description of the post (hospitality sample data). */
+  summary?: string;
 };
 
 export type AdLibrary = "meta" | "tiktok" | "google";

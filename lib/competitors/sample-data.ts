@@ -10,7 +10,8 @@ export const SAMPLE_COMPETITORS: readonly Competitor[] = [
   { slug: "little-fern", name: "Little Fern Tea House", handle: "@littleferntea" },
 ];
 
-type PostingProfile = {
+/** How a sample competitor posts; also used by the hospitality sample data (./hospitality.ts). */
+export type PostingProfile = {
   competitor: string;
   /** Posts on days where day % everyNDays === 0. */
   everyNDays: number;
@@ -25,6 +26,10 @@ type PostingProfile = {
   captions: readonly string[];
   hashtags: readonly string[];
   seed: number;
+  /** Campaign theme for each caption, by index (optional). */
+  themes?: readonly string[];
+  /** Summary for each caption, by index (optional). */
+  summaries?: readonly string[];
 };
 
 // Each cafe has a distinct story: Brightside posts a lot but engages poorly,
@@ -143,11 +148,14 @@ function postsOn(profile: PostingProfile, date: string): CompetitorPost[] {
     const variation = postVariation(day, index, profile.seed);
     const impressions = Math.round(profile.baseImpressions * (1 + variation / 2));
     const rate = profile.baseEngagementRate * (1 + profile.rateSwing * cycle) * (1 + variation);
+    const captionIndex = mod(n, profile.captions.length);
     return {
       competitor: profile.competitor,
       platform: profile.platforms[mod(n, profile.platforms.length)],
       date,
-      caption: profile.captions[mod(n, profile.captions.length)],
+      caption: profile.captions[captionIndex],
+      ...(profile.themes ? { theme: profile.themes[captionIndex] } : {}),
+      ...(profile.summaries ? { summary: profile.summaries[captionIndex] } : {}),
       hashtags: pickHashtags(profile.hashtags, n),
       impressions,
       engagements: Math.max(0, Math.round(impressions * rate)),
@@ -155,18 +163,21 @@ function postsOn(profile: PostingProfile, date: string): CompetitorPost[] {
   });
 }
 
-/**
- * Fictional competitor posts for every day in a range. Each day's posts
- * depend only on its date, so any past range (even last year) has data.
- */
-export function samplePostsBetween({ start, end }: DateRange): CompetitorPost[] {
+/** Posts for every day in a range from the given posting profiles (each day depends only on its date). */
+export function postsForProfilesBetween(profiles: readonly PostingProfile[], { start, end }: DateRange): CompetitorPost[] {
   if (end < start) {
     return [];
   }
   const days = daysInRange({ start, end });
-  return PROFILES.flatMap((profile) =>
-    Array.from({ length: days }, (_, i) => postsOn(profile, shiftDate(start, i))).flat(),
-  );
+  return profiles.flatMap((profile) => Array.from({ length: days }, (_, i) => postsOn(profile, shiftDate(start, i))).flat());
+}
+
+/**
+ * Fictional competitor posts for every day in a range. Each day's posts
+ * depend only on its date, so any past range (even last year) has data.
+ */
+export function samplePostsBetween(range: DateRange): CompetitorPost[] {
+  return postsForProfilesBetween(PROFILES, range);
 }
 
 /** 30 days of fictional competitor posts ending on `endDate`. */

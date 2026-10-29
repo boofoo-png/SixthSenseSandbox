@@ -60,16 +60,25 @@ type CompetitorDetailProps = {
   query?: string;
   /** The date bar, rendered above the details. */
   dateBar?: ReactNode;
+  /** What to say about the sample figures; defaults to the fictional-business note. */
+  note?: string;
 };
 
 /** Everything about one competitor in the selected period: platforms, best and worst posts, hashtags, and running ads. */
-export function CompetitorDetail({ competitor, detail, platforms = [], query = "", dateBar }: CompetitorDetailProps) {
+export function CompetitorDetail({
+  competitor,
+  detail,
+  platforms = [],
+  query = "",
+  dateBar,
+  note = "Sample data: a fictional business used to show how competitor tracking will work.",
+}: CompetitorDetailProps) {
   return (
     <main className={pageClass}>
       <Link href={withQuery("/competitors", query)} className={linkClass}>All competitors</Link>
       <h1 className={`mt-3 ${titleClass}`}>{competitor.name}</h1>
       <p className="text-sm text-ink-muted">{competitor.handle}</p>
-      <p className={subtitleClass}>Sample data: a fictional business used to show how competitor tracking will work.</p>
+      <p className={subtitleClass}>{note}</p>
 
       {dateBar && <div className="mt-6">{dateBar}</div>}
 
