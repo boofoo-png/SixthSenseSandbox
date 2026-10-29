@@ -9,7 +9,7 @@ function profile(email = "jordan@example.com") {
       ...emptyOnboardingDraft(),
       industries: ["Wholesale"],
       regions: [{ country: "CA", province: "BC", area: "" }],
-      audience: "Commercial",
+      audiences: ["Commercial"],
       goals: ["traffic"],
       website: "example.com",
     },
@@ -22,6 +22,13 @@ function profile(email = "jordan@example.com") {
 describe("profile cookie", () => {
   it("round-trips a business profile", () => {
     expect(decodeProfile(encodeProfile(profile()))).toEqual(profile());
+  });
+
+  it("still reads profiles saved when only one audience could be chosen", () => {
+    // JSON leaves out undefined, so this is a profile with only the old single "audience".
+    const old = Buffer.from(JSON.stringify({ ...profile(), audiences: undefined, audience: "Industrial" })).toString("base64url");
+    expect(decodeProfile(old)?.audiences).toEqual(["Industrial"]);
+    expect(decodeProfile(old)).not.toHaveProperty("audience");
   });
 
   it("ignores missing or corrupted values", () => {

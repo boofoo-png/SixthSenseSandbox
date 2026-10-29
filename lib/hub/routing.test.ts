@@ -13,6 +13,11 @@ describe("isPublicPath", () => {
     expect(isPublicPath("/forgot-password")).toBe(true);
   });
 
+  it("treats the reset-password page as public, so a signed-out person can use the link", () => {
+    expect(isPublicPath("/reset-password")).toBe(true);
+    expect(redirectFor("/reset-password", "?token=abc", { signedIn: false, onboarded: false, signingUp: false })).toBeNull();
+  });
+
   it("treats every app page, and onboarding, as private", () => {
     expect(isPublicPath("/")).toBe(false);
     expect(isPublicPath("/campaigns")).toBe(false);

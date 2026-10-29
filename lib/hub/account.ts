@@ -71,6 +71,16 @@ const POSTAL: Record<CountryCode, { pattern: RegExp; message: string }> = {
 
 export const MIN_PASSWORD_LENGTH = 8;
 
+/** Check a new password typed twice; the same messages as Create an Account. Empty when fine. */
+export function checkPasswordPair(password: string, confirmPassword: string): AccountErrors {
+  const errors: AccountErrors = {};
+  if (!password) errors.password = "Create a password";
+  else if (password.length < MIN_PASSWORD_LENGTH) errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters`;
+  if (!confirmPassword) errors.confirmPassword = "Re-type your password";
+  else if (password !== confirmPassword) errors.confirmPassword = "Passwords don't match";
+  return errors;
+}
+
 /** Check the Create an Account form and return a tidy account, or a message per problem field. */
 export function validateNewAccount(
   fields: NewAccountFields,
@@ -106,12 +116,7 @@ export function validateNewAccount(
     if (!REGIONS[country].some((region) => region.code === value("province"))) errors.province = `Choose a ${label}`;
     if (postalCode && !POSTAL[country].pattern.test(postalCode)) errors.postalCode = POSTAL[country].message;
   }
-  if (fields.password && fields.password.length < MIN_PASSWORD_LENGTH) {
-    errors.password = `Use at least ${MIN_PASSWORD_LENGTH} characters`;
-  }
-  if (fields.confirmPassword && fields.password !== fields.confirmPassword) {
-    errors.confirmPassword = "Passwords don't match";
-  }
+  if (!keepPassword) Object.assign(errors, checkPasswordPair(fields.password, fields.confirmPassword));
 
   if (Object.keys(errors).length > 0 || !isCountryCode(country)) {
     return { ok: false, errors };
@@ -139,7 +144,8 @@ export function validateNewAccount(
 }
 
 /** What the account cookie holds: the account and a salted hash of its password. */
-export type StoredAccount = { account: Account; passwordHash: string };
+/** `savedAt` (ms) tells which account is oldest when the browser holds too many. */
+export type StoredAccount = { account: Account; passwordHash: string; savedAt?: number };
 
 /** Turn an account into the account cookie's value (base64url JSON, password hashed). */
 export function encodeStoredAccount(account: Account, password: string): string {
@@ -158,7 +164,7 @@ export function encodeStored(stored: StoredAccount): string {
 export function decodeStoredAccount(value: string | undefined): StoredAccount | null {
   const parsed = decodeCookieJson(value, isRecord);
   if (!parsed) return null;
-  const { account: raw, passwordHash } = parsed as Partial<StoredAccount>;
+  const { account: raw, passwordHash, savedAt } = parsed as Partial<StoredAccount>;
   if (typeof passwordHash !== "string" || !isRecord(raw)) return null;
   // Accounts saved before first and last name were separate had one "name" field.
   const { name: legacyName, ...rest } = raw as Account & { name?: unknown };
@@ -171,5 +177,5 @@ export function decodeStoredAccount(value: string | undefined): StoredAccount | 
   const required: (keyof Account)[] = ["firstName", "lastName", "role", "company", "address1", "city", "country", "province", "postalCode", "email", "phone"];
   if (!required.every((key) => typeof account[key] === "string" && account[key] !== "")) return null;
   if (!isCountryCode(account.country)) return null;
-  return { account, passwordHash };
+  return { account, passwordHash, ...(typeof savedAt === "number" ? { savedAt } : {}) };
 }

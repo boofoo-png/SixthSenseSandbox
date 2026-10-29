@@ -9,8 +9,8 @@ import { DEMO_ACCOUNT } from "@/lib/hub/constants";
 import { signIn } from "../actions";
 import { authLinkClass, sectionHeadingClass } from "../styles";
 
-/** The mid-fi Login form. `next` is the page to open after signing in. */
-export function LoginForm({ next }: { next: string }) {
+/** The mid-fi Login form. `next` is the page to open after signing in; `notice` is a message to show first. */
+export function LoginForm({ next, notice }: { next: string; notice?: string }) {
   const [state, formAction, pending] = useActionState(signIn, { email: "" });
 
   return (
@@ -21,6 +21,12 @@ export function LoginForm({ next }: { next: string }) {
         </h2>
         <hr className="mt-1 border-divider" />
       </div>
+
+      {notice && !state.error && (
+        <Alert severity="info" className="mb-4">
+          {notice}
+        </Alert>
+      )}
 
       {state.error && (
         <Alert severity="error" className="mb-4">

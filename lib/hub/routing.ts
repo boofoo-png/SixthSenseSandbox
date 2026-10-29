@@ -2,7 +2,7 @@
 // Only checks cookies: an optimistic check, not security.
 
 /** Pages anyone can open without signing in. */
-export const PUBLIC_PATHS: readonly string[] = ["/login", "/create-account", "/forgot-password"];
+export const PUBLIC_PATHS: readonly string[] = ["/login", "/create-account", "/forgot-password", "/reset-password"];
 
 /** Pages a signed-in user has no reason to see. */
 const SIGNED_OUT_ONLY: readonly string[] = ["/login", "/create-account"];
@@ -32,7 +32,7 @@ export function redirectFor(pathname: string, search: string, { signedIn, onboar
     return next === "/" ? "/login" : `/login?next=${encodeURIComponent(next)}`;
   }
   if (!onboarded) {
-    return pathname === ONBOARDING_PATH || pathname === "/forgot-password" ? null : ONBOARDING_PATH;
+    return pathname === ONBOARDING_PATH || pathname === "/forgot-password" || pathname === "/reset-password" ? null : ONBOARDING_PATH;
   }
   return SIGNED_OUT_ONLY.includes(pathname) || pathname === ONBOARDING_PATH ? "/" : null;
 }

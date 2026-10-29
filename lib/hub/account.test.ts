@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  checkPasswordPair,
   decodeStoredAccount,
   encodeStored,
   encodeStoredAccount,
@@ -152,6 +153,18 @@ describe("validateNewAccount when coming back from step 2", () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.errors.confirmPassword).toBe("Passwords don't match");
+  });
+});
+
+describe("checkPasswordPair", () => {
+  it("accepts a long enough password typed the same twice", () => {
+    expect(checkPasswordPair("new-password", "new-password")).toEqual({});
+  });
+
+  it("uses the same messages as Create an Account", () => {
+    expect(checkPasswordPair("", "")).toEqual({ password: "Create a password", confirmPassword: "Re-type your password" });
+    expect(checkPasswordPair("short", "short")).toEqual({ password: "Use at least 8 characters" });
+    expect(checkPasswordPair("new-password", "other-password")).toEqual({ confirmPassword: "Passwords don't match" });
   });
 });
 

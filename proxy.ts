@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE, SIGNUP_COOKIE } from "@/lib/hub/constants";
-import { PROFILE_COOKIE, isOnboarded } from "@/lib/hub/profile";
+import { isOnboarded, profileValueFor } from "@/lib/hub/profile";
 import { redirectFor } from "@/lib/hub/routing";
 
 // Optimistic sign-in check (Next.js 16 authentication guide): reads only the session cookie and
@@ -9,7 +9,7 @@ export function proxy(request: NextRequest) {
   const email = request.cookies.get(SESSION_COOKIE)?.value ?? "";
   const visitor = {
     signedIn: email !== "",
-    onboarded: email !== "" && isOnboarded(email, request.cookies.get(PROFILE_COOKIE)?.value),
+    onboarded: email !== "" && isOnboarded(email, profileValueFor(request.cookies, email)),
     signingUp: Boolean(request.cookies.get(SIGNUP_COOKIE)?.value),
   };
   const target = redirectFor(request.nextUrl.pathname, request.nextUrl.search, visitor);

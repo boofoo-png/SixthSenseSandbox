@@ -16,9 +16,11 @@ import {
   PLATFORMS,
   SUB_INDUSTRIES,
   emptyOnboardingDraft,
+  isValidHandle,
   type OnboardingDraft,
 } from "@/lib/hub/onboarding";
 import { COUNTRIES, REGIONS, isCountryCode, type CountryCode } from "@/lib/hub/regions";
+import { inviteLinkFor } from "@/lib/hub/invite";
 import { goBackToStepOne, saveOnboarding, type OnboardingState } from "../actions";
 
 // Second Create an Account page from the mid-fi ("Tell us about your industry").
@@ -52,6 +54,45 @@ function ChipCheckbox({ name, value, label, defaultChecked }: { name: string; va
         {label}
       </span>
     </label>
+  );
+}
+
+/**
+ * An optional part of step 2 with Add later (docs/FUNCTIONALITY.md, step navigation). Skipped parts
+ * are not shown or submitted; Add now brings them back.
+ */
+function Optional({
+  laterLabel,
+  nowLabel,
+  children,
+}: {
+  laterLabel: string;
+  nowLabel: string;
+  children: ReactNode;
+}) {
+  const [skipped, setSkipped] = useState(false);
+  if (skipped) {
+    return (
+      <div className="flex flex-wrap items-center gap-3 rounded bg-hover px-4 py-3">
+        <p className="text-[14px] leading-[1.43] tracking-[0.17px] text-ink-muted">Skipped. You can add this later in Settings.</p>
+        <button type="button" aria-label={nowLabel} className={buttonClassName({ variant: "text", size: "small" })} onClick={() => setSkipped(false)}>
+          Add now
+        </button>
+      </div>
+    );
+  }
+  return (
+    <>
+      {children}
+      <button
+        type="button"
+        aria-label={laterLabel}
+        className={buttonClassName({ variant: "outlined", size: "small", className: "self-start rounded-full px-4" })}
+        onClick={() => setSkipped(true)}
+      >
+        Add later
+      </button>
+    </>
   );
 }
 
@@ -90,10 +131,12 @@ type OnboardingFormProps = {
   initialDraft?: OnboardingDraft | null;
   /** Show the "Fill with sample data" button (local development only). */
   showDevTools?: boolean;
+  /** The company from step 1, named in invite links. */
+  company?: string;
 };
 
 /** Step 2 of Create an Account. Continue creates the account; Back returns to step 1 keeping the answers. */
-export function OnboardingForm({ initialDraft = null, showDevTools = false }: OnboardingFormProps) {
+export function OnboardingForm({ initialDraft = null, showDevTools = false, company = "" }: OnboardingFormProps) {
   const [state, formAction] = useActionState(saveOnboarding, INITIAL);
   const { errors } = state;
   const submitted = state.values ?? initialDraft ?? emptyOnboardingDraft();
@@ -102,6 +145,29 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
 
   const [regions, setRegions] = useState(() => withIds(submitted.regions));
   const [socials, setSocials] = useState(() => withIds(submitted.socials));
+  const [connectErrors, setConnectErrors] = useState<Record<number, string>>({});
+  const [inviteLink, setInviteLink] = useState(submitted.inviteLink ?? "");
+  const [copied, setCopied] = useState(false);
+
+  function updateSocial(id: number, change: Partial<(typeof socials)[number]>) {
+    setSocials((current) => current.map((row) => (row.id === id ? { ...row, verified: false, ...change } : row)));
+    setConnectErrors((current) => ({ ...current, [id]: "" }));
+  }
+
+  /** Connect (simulated): check the handle and mark the account verified. */
+  function connect(id: number) {
+    const row = socials.find((item) => item.id === id);
+    if (!row || !isValidHandle(row.handle)) {
+      setConnectErrors((current) => ({ ...current, [id]: "Enter a handle like @yourbrand" }));
+      return;
+    }
+    setSocials((current) => current.map((item) => (item.id === id ? { ...item, verified: true } : item)));
+  }
+
+  async function copyInviteLink() {
+    await navigator.clipboard?.writeText(inviteLink).catch(() => undefined);
+    setCopied(true);
+  }
   const [competitors, setCompetitors] = useState(() => withIds(submitted.competitors));
   const [reportLinks, setReportLinks] = useState(() => withIds(submitted.reportLinks.map((link) => ({ link }))));
   const [wantsConversions, setWantsConversions] = useState(submitted.goals.includes("conversions"));
@@ -131,6 +197,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
     if (!form) return;
     flushSync(() => {
       setRegions((current) => [{ ...current[0], country: "CA" }, ...current.slice(1)]);
+      setSocials((current) => [{ ...current[0], platform: "Instagram", handle: "@harbourline.supply", verified: true }, ...current.slice(1)]);
       setWantsConversions(true);
       setConversionTarget(10);
     });
@@ -147,7 +214,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
     set("subIndustry", "Hotel and accommodation supplies");
     set("regionProvince", "BC");
     set("regionArea", "Lower Mainland");
-    set("audience", "Commercial");
+    tick("audience", ["Commercial", "Institutional"]);
     tick("goal", ["traffic", "awareness", "conversions"]);
     set("website", "harbourlinesupply.example");
     set("socialPlatform", "Instagram");
@@ -293,15 +360,26 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
               Add another
             </button>
           )}
-          <SelectField
-            className="mt-4 sm:max-w-[420px]"
-            label="Which general audience do you want to reach?"
-            name="audience"
-            placeholder="Choose a category"
-            options={AUDIENCES.map((value) => ({ value, label: value }))}
-            defaultValue={submitted.audience}
-            error={errors.audience}
-          />
+          <fieldset className="mt-4" aria-describedby={errors.audiences ? "audiences-error" : undefined}>
+            <legend className={h3Class}>Which general audience do you want to reach?</legend>
+            <p className={`mt-1 mb-2 ${groupLabelClass}`}>Choose all that apply</p>
+            <div className="flex flex-wrap gap-2" role="presentation">
+              {AUDIENCES.map((audience) => (
+                <ChipCheckbox
+                  key={`${audience}-${submitted.audiences.includes(audience)}`}
+                  name="audience"
+                  value={audience}
+                  label={audience}
+                  defaultChecked={submitted.audiences.includes(audience)}
+                />
+              ))}
+            </div>
+            {errors.audiences && (
+              <p id="audiences-error" className={`mt-2 ${errorTextClass}`}>
+                {errors.audiences}
+              </p>
+            )}
+          </fieldset>
         </Section>
 
         <section className="flex flex-col gap-4">
@@ -358,71 +436,91 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
             defaultValue={submitted.website}
             error={errors.website}
           />
-          <Alert severity="info">
-            Connecting to the platforms isn&apos;t available in the prototype yet. Sixth Sense saves your handles so it
-            can connect them later.
-          </Alert>
-          {socials.map((row, index) => (
-            <div key={row.id} className="grid gap-4 sm:grid-cols-[200px_1fr_auto]">
-              <SelectField
-                label="Platform"
-                name="socialPlatform"
-                options={PLATFORMS.map((value) => ({ value, label: value }))}
-                defaultValue={row.platform}
-                error={errors[`socials.${index}.platform`]}
-              />
-              <TextField
-                label="Handle"
-                name="socialHandle"
-                placeholder="@yourbrand"
-                maxLength={31}
-                defaultValue={row.handle}
-                error={errors[`socials.${index}.handle`]}
-              />
-              {index > 0 ? (
-                <button
-                  type="button"
-                  className={removeButtonClass}
-                  aria-label={`Remove account ${index + 1}`}
-                  onClick={() => setSocials((current) => current.filter((item) => item.id !== row.id))}
-                >
-                  Remove
-                </button>
-              ) : (
-                <span className="hidden sm:block sm:w-[76px]" />
-              )}
+          <Optional laterLabel="Add social accounts later" nowLabel="Add social accounts now">
+            <Alert severity="info">
+              Connecting to the platforms isn&apos;t available in the prototype yet, so Connect only checks the handle
+              and marks it verified (simulated). Sixth Sense saves your handles so it can connect them later.
+            </Alert>
+            {socials.map((row, index) => (
+              <div key={row.id} className="grid gap-4 sm:grid-cols-[200px_1fr_auto_auto]">
+                <SelectField
+                  label="Platform"
+                  name="socialPlatform"
+                  options={PLATFORMS.map((value) => ({ value, label: value }))}
+                  defaultValue={row.platform}
+                  onChange={(event) => updateSocial(row.id, { platform: event.target.value })}
+                  error={errors[`socials.${index}.platform`]}
+                />
+                <TextField
+                  label="Handle"
+                  name="socialHandle"
+                  placeholder="@yourbrand"
+                  maxLength={31}
+                  defaultValue={row.handle}
+                  onChange={(event) => updateSocial(row.id, { handle: event.target.value })}
+                  error={connectErrors[row.id] || errors[`socials.${index}.handle`]}
+                />
+                <input type="hidden" name="socialVerified" value={row.verified ? "1" : ""} />
+                {row.verified ? (
+                  <span className="inline-flex h-[56px] items-center gap-1 px-2 text-[14px] font-medium text-success">
+                    <span aria-hidden="true">&#10003;</span>Verified
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={`Connect account ${index + 1}`}
+                    className={buttonClassName({ variant: "contained", size: "small", className: "self-center rounded-full px-4" })}
+                    onClick={() => connect(row.id)}
+                  >
+                    Connect
+                  </button>
+                )}
+                {index > 0 ? (
+                  <button
+                    type="button"
+                    className={removeButtonClass}
+                    aria-label={`Remove account ${index + 1}`}
+                    onClick={() => setSocials((current) => current.filter((item) => item.id !== row.id))}
+                  >
+                    Remove
+                  </button>
+                ) : (
+                  <span className="hidden sm:block sm:w-[76px]" />
+                )}
+              </div>
+            ))}
+            {socials.length < MAX_ROWS && (
+              <button
+                type="button"
+                className={`${addButtonClass} self-start`}
+                aria-label="Add another account"
+                onClick={() => setSocials((current) => [...current, ...withIds([{ platform: "Instagram", handle: "", verified: false }])])}
+              >
+                Add another
+              </button>
+            )}
+            <div>
+              <CheckboxLabel
+                key={`consent-${submitted.analyticsConsent}`}
+                name="analyticsConsent"
+                defaultChecked={submitted.analyticsConsent}
+                aria-invalid={errors.analyticsConsent ? true : undefined}
+              >
+                I authorize Sixth Sense to access my connected social media accounts&apos; analytics (such as reach,
+                engagement, clicks, and follower data) so the platform can generate insights and reports for my business.
+                <span className="mt-1 block text-ink-muted">
+                  We only read analytics data. We never post, message, or change anything without your permission. You
+                  can disconnect at any time in Settings.
+                </span>
+              </CheckboxLabel>
+              {errors.analyticsConsent && <p className={`mt-1 ml-[26px] ${errorTextClass}`}>{errors.analyticsConsent}</p>}
             </div>
-          ))}
-          {socials.length < MAX_ROWS && (
-            <button
-              type="button"
-              className={`${addButtonClass} self-start`}
-              aria-label="Add another account"
-              onClick={() => setSocials((current) => [...current, ...withIds([{ platform: "Instagram", handle: "" }])])}
-            >
-              Add another
-            </button>
-          )}
-          <div>
-            <CheckboxLabel
-              key={`consent-${submitted.analyticsConsent}`}
-              name="analyticsConsent"
-              defaultChecked={submitted.analyticsConsent}
-              aria-invalid={errors.analyticsConsent ? true : undefined}
-            >
-              I authorize Sixth Sense to access my connected social media accounts&apos; analytics (such as reach,
-              engagement, clicks, and follower data) so the platform can generate insights and reports for my business.
-              <span className="mt-1 block text-ink-muted">
-                We only read analytics data. We never post, message, or change anything without your permission. You
-                can disconnect at any time in Settings.
-              </span>
-            </CheckboxLabel>
-            {errors.analyticsConsent && <p className={`mt-1 ml-[26px] ${errorTextClass}`}>{errors.analyticsConsent}</p>}
-          </div>
+          </Optional>
         </Section>
 
         <Section title="Competitors">
           <p className={groupLabelClass}>Optional</p>
+          <Optional laterLabel="Add competitors later" nowLabel="Add competitors now">
           {competitors.map((row, index) => (
             <div key={row.id} className="grid gap-4 sm:grid-cols-[1fr_1fr_auto]">
               <TextField
@@ -463,9 +561,11 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
               Add another
             </button>
           )}
+          </Optional>
         </Section>
 
         <Section title="Upload Documents">
+          <Optional laterLabel="Add documents later" nowLabel="Add documents now">
           <p className="text-[14px] leading-[1.43] tracking-[0.17px] text-ink-muted">
             Optionally, upload past marketing reports, ad results, or spreadsheets to give your insights more context.
           </p>
@@ -547,17 +647,48 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false }: On
               Add another
             </button>
           )}
+          </Optional>
         </Section>
 
         <Section title="Invite your team">
-          <TextField
-            label="Email addresses (optional)"
-            name="invites"
-            placeholder="Enter email addresses, separated with a comma"
-            helperText="Invites aren't sent in the prototype; Sixth Sense saves the addresses for later."
-            defaultValue={submitted.invites}
-            error={errors.invites}
-          />
+          <Optional laterLabel="Invite your team later" nowLabel="Invite your team now">
+            <TextField
+              label="Email addresses (optional)"
+              name="invites"
+              placeholder="Enter email addresses, separated with a comma"
+              helperText="Invites aren't sent in the prototype; Sixth Sense saves the addresses for later."
+              defaultValue={submitted.invites}
+              error={errors.invites}
+            />
+            <p className={groupLabelClass}>Or</p>
+            {inviteLink ? (
+              <div className="flex flex-col gap-2">
+                <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+                  <TextField label="Invite link" value={inviteLink} readOnly onFocus={(event) => event.target.select()} />
+                  <button
+                    type="button"
+                    aria-label="Copy invite link"
+                    className={buttonClassName({ variant: "outlined", className: "self-center" })}
+                    onClick={copyInviteLink}
+                  >
+                    {copied ? "Copied" : "Copy"}
+                  </button>
+                </div>
+                <p className={groupLabelClass}>
+                  In the prototype the link shows who invited you on Create an Account; joining a shared team comes later.
+                </p>
+              </div>
+            ) : (
+              <button
+                type="button"
+                className={`${addButtonClass} self-start`}
+                onClick={() => setInviteLink(inviteLinkFor(window.location.origin, company || "your team"))}
+              >
+                Generate a link
+              </button>
+            )}
+            <input type="hidden" name="inviteLink" value={inviteLink} />
+          </Optional>
         </Section>
 
         <StepButtons />

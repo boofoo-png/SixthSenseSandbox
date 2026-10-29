@@ -17,7 +17,7 @@ function draft(overrides: Partial<OnboardingDraft> = {}): OnboardingDraft {
     industries: ["Wholesale", "Hospitality"],
     subIndustry: "Hotel and accommodation supplies",
     regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
-    audience: "Commercial",
+    audiences: ["Commercial", "Institutional"],
     goals: ["traffic", "conversions"],
     conversionTarget: "10",
     website: "HarbourlineSupply.ca",
@@ -65,7 +65,7 @@ describe("validateOnboarding", () => {
       email: "jordan@example.com",
       industries: ["Wholesale", "Hospitality"],
       regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
-      audience: "Commercial",
+      audiences: ["Commercial", "Institutional"],
       goals: ["traffic", "conversions"],
       conversionTarget: 10,
       website: "https://harbourlinesupply.ca",
@@ -82,7 +82,7 @@ describe("validateOnboarding", () => {
     expect(errors).toMatchObject({
       industries: "Choose at least one industry",
       "regions.0.province": "Choose a province",
-      audience: "Choose an audience",
+      audiences: "Choose at least one audience",
       goals: "Choose at least one goal",
       website: "Enter your website",
     });
@@ -175,11 +175,37 @@ describe("validateOnboarding", () => {
     expect(errors.form).toBe("These answers are too long to save. Shorten some links or remove a few rows.");
   });
 
+  it("keeps several general audiences in list order, once each", () => {
+    const result = validateOnboarding(draft({ audiences: ["Institutional", "Residential", "Institutional"] }), "a@b.co");
+    expect(result.ok && result.profile.audiences).toEqual(["Residential", "Institutional"]);
+  });
+
+  it("keeps whether each social account was verified with Connect", () => {
+    const result = validateOnboarding(
+      draft({
+        socials: [
+          { platform: "Instagram", handle: "@harbourline", verified: true },
+          { platform: "TikTok", handle: "@harbourline.tt", verified: false },
+        ],
+      }),
+      "a@b.co",
+    );
+    expect(result.ok && result.profile.socials).toEqual([
+      { platform: "Instagram", handle: "@harbourline", verified: true },
+      { platform: "TikTok", handle: "@harbourline.tt", verified: false },
+    ]);
+  });
+
+  it("keeps a generated invite link", () => {
+    const result = validateOnboarding(draft({ inviteLink: "http://localhost:3000/create-account?invite=abc" }), "a@b.co");
+    expect(result.ok && result.profile.inviteLink).toBe("http://localhost:3000/create-account?invite=abc");
+  });
+
   it("rejects choices that are not on the lists", () => {
-    const errors = errorsOf(draft({ industries: ["Space Mining"], audience: "Everyone", goals: ["world-peace"] }));
+    const errors = errorsOf(draft({ industries: ["Space Mining"], audiences: ["Everyone"], goals: ["world-peace"] }));
     expect(errors).toMatchObject({
       industries: "Choose at least one industry",
-      audience: "Choose an audience",
+      audiences: "Choose at least one audience",
       goals: "Choose at least one goal",
     });
   });
@@ -214,12 +240,14 @@ describe("readOnboardingForm", () => {
     form.append("regionCountry", "CA");
     form.append("regionProvince", "ON");
     form.append("regionArea", "");
-    form.set("audience", "Commercial");
+    form.append("audience", "Commercial");
+    form.append("audience", "Industrial");
     form.append("goal", "traffic");
     form.set("conversionTarget", "10");
     form.set("website", "example.com");
     form.append("socialPlatform", "TikTok");
     form.append("socialHandle", "@brand");
+    form.append("socialVerified", "1");
     form.set("analyticsConsent", "on");
     form.append("competitorName", "Rival");
     form.append("competitorWebsite", "rival.example");
@@ -234,16 +262,17 @@ describe("readOnboardingForm", () => {
         { country: "CA", province: "BC", area: "Lower Mainland" },
         { country: "CA", province: "ON", area: "" },
       ],
-      audience: "Commercial",
+      audiences: ["Commercial", "Industrial"],
       goals: ["traffic"],
       conversionTarget: "10",
       website: "example.com",
-      socials: [{ platform: "TikTok", handle: "@brand" }],
+      socials: [{ platform: "TikTok", handle: "@brand", verified: true }],
       analyticsConsent: true,
       competitors: [{ name: "Rival", website: "rival.example" }],
       reportLinks: ["https://example.com/r"],
       documents: ["report.pdf"],
       invites: "a@b.co",
+      inviteLink: "",
     });
   });
 });

@@ -59,17 +59,21 @@ export type OnboardingDraft = {
   industries: string[];
   subIndustry: string;
   regions: { country: string; province: string; area: string }[];
-  audience: string;
+  /** General audiences (several can be chosen). */
+  audiences: string[];
   goals: string[];
   conversionTarget: string;
   website: string;
-  socials: { platform: string; handle: string }[];
+  /** `verified`: Connect was used on this row (simulated in the prototype). */
+  socials: { platform: string; handle: string; verified?: boolean }[];
   analyticsConsent: boolean;
   competitors: { name: string; website: string }[];
   reportLinks: string[];
   /** File names only; files are not uploaded in the prototype. */
   documents: string[];
   invites: string;
+  /** Link from Generate a link, if one was made. */
+  inviteLink?: string;
 };
 
 /** The saved answers, tidied. */
@@ -78,15 +82,16 @@ export type BusinessProfile = {
   industries: string[];
   subIndustry?: string;
   regions: { country: CountryCode; province: string; area: string }[];
-  audience: string;
+  audiences: string[];
   goals: GoalId[];
   conversionTarget?: number;
   website: string;
-  socials: { platform: string; handle: string }[];
+  socials: { platform: string; handle: string; verified: boolean }[];
   competitors: { name: string; website: string }[];
   reportLinks: string[];
   documents: string[];
   invites: string[];
+  inviteLink?: string;
 };
 
 export type OnboardingErrors = Record<string, string>;
@@ -98,7 +103,7 @@ export function emptyOnboardingDraft(): OnboardingDraft {
     industries: [],
     subIndustry: "",
     regions: [{ country: "CA", province: "", area: "" }],
-    audience: "",
+    audiences: [],
     goals: [],
     conversionTarget: "10",
     website: "",
@@ -127,16 +132,21 @@ export function readOnboardingForm(form: FormData): OnboardingDraft {
     industries: all("industry"),
     subIndustry: one("subIndustry"),
     regions: zip(["regionCountry", "regionProvince", "regionArea"], ([country, province, area]) => ({ country, province, area })),
-    audience: one("audience"),
+    audiences: all("audience"),
     goals: all("goal"),
     conversionTarget: one("conversionTarget"),
     website: one("website"),
-    socials: zip(["socialPlatform", "socialHandle"], ([platform, handle]) => ({ platform, handle })),
+    socials: zip(["socialPlatform", "socialHandle", "socialVerified"], ([platform, handle, verified]) => ({
+      platform,
+      handle,
+      verified: verified === "1",
+    })),
     analyticsConsent: form.get("analyticsConsent") !== null,
     competitors: zip(["competitorName", "competitorWebsite"], ([name, website]) => ({ name, website })),
     reportLinks: all("reportLink"),
     documents: all("documentName"),
     invites: one("invites"),
+    inviteLink: one("inviteLink"),
   };
 }
 
@@ -156,7 +166,7 @@ function isOnboardingDraft(value: unknown): value is OnboardingDraft {
     isStringList(d.industries) &&
     typeof d.subIndustry === "string" &&
     isRowList(d.regions, ["country", "province", "area"]) &&
-    typeof d.audience === "string" &&
+    isStringList(d.audiences) &&
     isStringList(d.goals) &&
     typeof d.conversionTarget === "string" &&
     typeof d.website === "string" &&
@@ -165,7 +175,8 @@ function isOnboardingDraft(value: unknown): value is OnboardingDraft {
     isRowList(d.competitors, ["name", "website"]) &&
     isStringList(d.reportLinks) &&
     isStringList(d.documents) &&
-    typeof d.invites === "string"
+    typeof d.invites === "string" &&
+    (d.inviteLink === undefined || typeof d.inviteLink === "string")
   );
 }
 
@@ -177,6 +188,11 @@ export function decodeOnboardingDraft(value: string | undefined): OnboardingDraf
 const clip = (value: string) => value.trim().slice(0, MAX_TEXT);
 const LINK_TOO_LONG = `Use a link of ${MAX_LINK} characters or fewer`;
 const HANDLE = /^@?[A-Za-z0-9._]{1,30}$/;
+
+/** True for a social handle like "@yourbrand" (letters, numbers, dots, underscores). */
+export function isValidHandle(handle: string): boolean {
+  return HANDLE.test(handle.trim());
+}
 
 /** "Example.com/shop" -> "https://example.com/shop"; null when it is not a website. */
 export function normalizeWebsite(value: string): string | null {
@@ -217,8 +233,8 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     regions.push({ country: row.country, province: row.province, area });
   });
 
-  const audience = (AUDIENCES as readonly string[]).includes(draft.audience) ? draft.audience : "";
-  if (!audience) errors.audience = "Choose an audience";
+  const audiences = AUDIENCES.filter((value) => draft.audiences.includes(value));
+  if (audiences.length === 0) errors.audiences = "Choose at least one audience";
 
   const goals = GOALS.map((goal) => goal.id).filter((id) => draft.goals.includes(id));
   if (goals.length === 0) errors.goals = "Choose at least one goal";
@@ -247,7 +263,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     } else if (!HANDLE.test(handle)) {
       errors[`socials.${index}.handle`] = "Enter a handle like @yourbrand";
     } else {
-      socials.push({ platform: row.platform, handle: handle.startsWith("@") ? handle : `@${handle}` });
+      socials.push({ platform: row.platform, handle: handle.startsWith("@") ? handle : `@${handle}`, verified: row.verified === true });
     }
   });
   if (socials.length > 0 && !draft.analyticsConsent) {
@@ -302,12 +318,15 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     return { ok: false, errors };
   }
 
+  const inviteLink = draft.inviteLink?.trim() ?? "";
+  const keepInviteLink = /^https?:\/\/\S+\/create-account\?invite=[\w-]+$/.test(inviteLink) && inviteLink.length <= MAX_LINK + 100;
+
   const profile: BusinessProfile = {
     email,
     industries,
     ...(subIndustry ? { subIndustry } : {}),
     regions,
-    audience,
+    audiences,
     goals,
     ...(conversionTarget !== undefined ? { conversionTarget } : {}),
     website,
@@ -316,6 +335,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
     reportLinks,
     documents,
     invites: [...new Set(invites)],
+    ...(keepInviteLink ? { inviteLink } : {}),
   };
   // Browsers silently drop cookies over about 4 KB, which would send the person back to this
   // page forever; say so instead of saving something that cannot be kept.

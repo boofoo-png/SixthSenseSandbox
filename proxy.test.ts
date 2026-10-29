@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
 import { DEMO_ACCOUNT, SESSION_COOKIE, SIGNUP_COOKIE } from "@/lib/hub/constants";
 import { validateOnboarding, emptyOnboardingDraft } from "@/lib/hub/onboarding";
-import { PROFILE_COOKIE, encodeProfile } from "@/lib/hub/profile";
+import { PROFILE_COOKIE, encodeProfile, profileCookieName } from "@/lib/hub/profile";
 import { config, proxy } from "./proxy";
 
 function profileFor(email: string) {
@@ -12,7 +12,7 @@ function profileFor(email: string) {
       ...emptyOnboardingDraft(),
       industries: ["Wholesale"],
       regions: [{ country: "CA", province: "BC", area: "" }],
-      audience: "Commercial",
+      audiences: ["Commercial"],
       goals: ["traffic"],
       website: "example.com",
     },
@@ -45,7 +45,7 @@ describe("proxy", () => {
     const session = { [SESSION_COOKIE]: "jordan@example.com" };
     expect(location("/", session)).toBe("http://localhost:3000/onboarding");
     expect(location("/onboarding", session)).toBeNull();
-    const finished = { ...session, [PROFILE_COOKIE]: profileFor("jordan@example.com") };
+    const finished = { ...session, [profileCookieName("jordan@example.com")]: profileFor("jordan@example.com") };
     expect(location("/", finished)).toBeNull();
     expect(location("/onboarding", finished)).toBe("http://localhost:3000/");
   });
@@ -56,6 +56,10 @@ describe("proxy", () => {
     expect(location("/onboarding", signup)).toBeNull();
     expect(location("/create-account", signup)).toBeNull();
     expect(location("/", signup)).toBe("http://localhost:3000/login");
+  });
+
+  it("still accepts a profile saved the old way, in the single shared cookie", () => {
+    expect(location("/", { [SESSION_COOKIE]: "jordan@example.com", [PROFILE_COOKIE]: profileFor("jordan@example.com") })).toBeNull();
   });
 
   it("does not count another account's profile in the same browser", () => {

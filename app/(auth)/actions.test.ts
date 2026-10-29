@@ -4,7 +4,9 @@ import { ACCOUNT_COOKIE, DEMO_ACCOUNT, SESSION_COOKIE } from "@/lib/hub/session"
 import { NEW_ACCOUNT_COOKIE, ONBOARDING_DRAFT_COOKIE, SIGNUP_COOKIE } from "@/lib/hub/constants";
 import { decodeOnboardingDraft } from "@/lib/hub/onboarding";
 import { verifyPassword } from "@/lib/hub/password";
-import { PROFILE_COOKIE, decodeProfile } from "@/lib/hub/profile";
+import { RESET_COOKIE, decodeReset } from "@/lib/hub/reset";
+import { decodeProfile, profileCookieName } from "@/lib/hub/profile";
+import { MAX_ACCOUNTS, accountCookieName } from "@/lib/hub/accounts";
 
 type Cookie = { value: string; options?: Record<string, unknown> };
 const jar = new Map<string, Cookie>();
@@ -14,6 +16,7 @@ vi.mock("next/headers", () => ({
     get: (name: string) => (jar.has(name) ? { name, value: jar.get(name)!.value } : undefined),
     set: (name: string, value: string, options?: Record<string, unknown>) => jar.set(name, { value, options }),
     delete: (name: string) => jar.delete(name),
+    getAll: () => [...jar].map(([name, cookie]) => ({ name, value: cookie.value })),
   }),
 }));
 
@@ -28,7 +31,8 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-const { cancelSignUp, createAccount, goBackToStepOne, saveOnboarding, signIn, signOut } = await import("./actions");
+const { cancelSignUp, createAccount, goBackToStepOne, requestPasswordReset, resetPassword, saveOnboarding, signIn, signOut } =
+  await import("./actions");
 
 function form(values: Record<string, string>): FormData {
   const data = new FormData();
@@ -159,7 +163,7 @@ describe("createAccount", () => {
     const url = await redirectedTo(() => createAccount({ errors: {}, values: {} }, form(NEW_ACCOUNT)));
     expect(url).toBe("/onboarding");
     expect(jar.has(SESSION_COOKIE)).toBe(false);
-    expect(jar.has(ACCOUNT_COOKIE)).toBe(false);
+    expect(jar.has(accountCookieName("jordan@example.com"))).toBe(false);
     const pending = decodeStoredAccount(jar.get(SIGNUP_COOKIE)?.value);
     expect(pending?.account.company).toBe("Harbourline Supply Co.");
     expect(jar.get(SIGNUP_COOKIE)?.value).not.toContain("my-password");
@@ -212,17 +216,17 @@ describe("saveOnboarding", () => {
     const state = await saveOnboarding({ errors: {}, values: null }, onboardingForm({ website: "" }));
     expect(state.errors.website).toBe("Enter your website");
     expect(state.values?.industries).toEqual(["Wholesale"]);
-    expect(jar.has(ACCOUNT_COOKIE)).toBe(false);
-    expect(jar.has(PROFILE_COOKIE)).toBe(false);
+    expect(jar.has(accountCookieName("jordan@example.com"))).toBe(false);
+    expect(jar.has(profileCookieName("jordan@example.com"))).toBe(false);
   });
 
   it("finishing step 2 creates the account, signs in, saves the profile, and opens the dashboard", async () => {
     jar.set(ONBOARDING_DRAFT_COOKIE, { value: "old draft" });
     expect(await finishSignUp()).toBe("/");
-    expect(decodeStoredAccount(jar.get(ACCOUNT_COOKIE)?.value)?.account.email).toBe("jordan@example.com");
-    expect(jar.get(ACCOUNT_COOKIE)?.options).toMatchObject({ httpOnly: true, maxAge: 60 * 60 * 24 * 365 });
+    expect(decodeStoredAccount(jar.get(accountCookieName("jordan@example.com"))?.value)?.account.email).toBe("jordan@example.com");
+    expect(jar.get(accountCookieName("jordan@example.com"))?.options).toMatchObject({ httpOnly: true, maxAge: 60 * 60 * 24 * 365 });
     expect(jar.get(SESSION_COOKIE)?.value).toBe("jordan@example.com");
-    const profile = decodeProfile(jar.get(PROFILE_COOKIE)?.value);
+    const profile = decodeProfile(jar.get(profileCookieName("jordan@example.com"))?.value);
     expect(profile?.email).toBe("jordan@example.com");
     expect(profile?.website).toBe("https://example.com");
     expect(jar.has(SIGNUP_COOKIE)).toBe(false);
@@ -253,7 +257,7 @@ describe("saveOnboarding", () => {
   it("still lets a signed-in account without a profile finish step 2", async () => {
     jar.set(SESSION_COOKIE, { value: "sam@example.com" });
     expect(await redirectedTo(() => saveOnboarding({ errors: {}, values: null }, onboardingForm()))).toBe("/");
-    expect(decodeProfile(jar.get(PROFILE_COOKIE)?.value)?.email).toBe("sam@example.com");
+    expect(decodeProfile(jar.get(profileCookieName("sam@example.com"))?.value)?.email).toBe("sam@example.com");
   });
 });
 
@@ -286,11 +290,113 @@ describe("goBackToStepOne", () => {
   });
 });
 
+describe("forgot password", () => {
+  async function linkFor(email: string) {
+    await finishSignUp();
+    const state = await requestPasswordReset({ email: "" }, form({ email }));
+    return state;
+  }
+
+  it("shows a reset link for the account saved in this browser", async () => {
+    const state = await linkFor("Jordan@Example.com");
+    expect(state.link).toMatch(/^\/reset-password\?token=[0-9a-f]{64}$/);
+    expect(decodeReset(jar.get(RESET_COOKIE)?.value)?.email).toBe("jordan@example.com");
+    expect(jar.get(RESET_COOKIE)?.options).toMatchObject({ httpOnly: true, maxAge: 15 * 60 });
+  });
+
+  it("says when no account with that email was created in this browser", async () => {
+    const state = await linkFor("someone@example.com");
+    expect(state.link).toBeUndefined();
+    expect(state.error).toBe(
+      "No account with that email was found in this browser. Accounts are saved only in the browser where they were created, once both sign-up steps are finished.",
+    );
+  });
+
+  it("does not reset the shared demo account", async () => {
+    const state = await requestPasswordReset({ email: "" }, form({ email: DEMO_ACCOUNT.email }));
+    expect(state.error).toBe("The demo account's password can't be changed.");
+  });
+
+  it("checks the email address", async () => {
+    const state = await requestPasswordReset({ email: "" }, form({ email: "not-an-email" }));
+    expect(state.error).toBe("Enter an email address like name@example.com");
+  });
+
+  it("sets the new password from the link, then sends you to log in", async () => {
+    const { link } = await linkFor("jordan@example.com");
+    const token = new URL(`http://x${link}`).searchParams.get("token") ?? "";
+    const url = await redirectedTo(() =>
+      resetPassword({ errors: {} }, form({ token, password: "brand-new-pass", confirmPassword: "brand-new-pass" })),
+    );
+    expect(url).toBe("/login?reset=1");
+    expect(jar.has(RESET_COOKIE)).toBe(false);
+    expect(jar.has(SESSION_COOKIE)).toBe(false);
+    expect(verifyPassword("brand-new-pass", decodeStoredAccount(jar.get(accountCookieName("jordan@example.com"))?.value)?.passwordHash ?? "")).toBe(true);
+  });
+
+  it("checks the new password the same way as Create an Account", async () => {
+    const { link } = await linkFor("jordan@example.com");
+    const token = new URL(`http://x${link}`).searchParams.get("token") ?? "";
+    const state = await resetPassword({ errors: {} }, form({ token, password: "brand-new-pass", confirmPassword: "other" }));
+    expect(state.errors.confirmPassword).toBe("Passwords don't match");
+  });
+
+  it("refuses a wrong, used, or expired link", async () => {
+    await linkFor("jordan@example.com");
+    const state = await resetPassword({ errors: {} }, form({ token: "0".repeat(64), password: "brand-new-pass", confirmPassword: "brand-new-pass" }));
+    expect(state.errors.form).toBe("This reset link has expired or was already used. Ask for a new one.");
+    expect(verifyPassword("my-password", decodeStoredAccount(jar.get(accountCookieName("jordan@example.com"))?.value)?.passwordHash ?? "")).toBe(true);
+  });
+});
+
+describe("several accounts in one browser", () => {
+  async function signUp(email: string, password: string) {
+    await redirectedTo(() =>
+      createAccount({ errors: {}, values: {} }, form({ ...NEW_ACCOUNT, email, password, confirmPassword: password })),
+    );
+    await redirectedTo(() => saveOnboarding({ errors: {}, values: null }, onboardingForm()));
+    await redirectedTo(() => signOut());
+  }
+
+  it("remembers every account, so each can log in and keeps its own answers", async () => {
+    await signUp("first@example.com", "first-password");
+    await signUp("second@example.com", "second-password");
+    for (const [email, password] of [["first@example.com", "first-password"], ["second@example.com", "second-password"]]) {
+      expect(await redirectedTo(() => signIn({ email: "" }, form({ email, password })))).toBe("/");
+      expect(decodeProfile(jar.get(profileCookieName(email))?.value)?.email).toBe(email);
+    }
+  });
+
+  it("lets an older account reset its password", async () => {
+    await signUp("first@example.com", "first-password");
+    await signUp("second@example.com", "second-password");
+    const { link } = await requestPasswordReset({ email: "" }, form({ email: "first@example.com" }));
+    expect(link).toMatch(/^\/reset-password\?token=/);
+  });
+
+  it("still logs in an account saved the old way, in the single shared cookie", async () => {
+    jar.set(ACCOUNT_COOKIE, { value: encodeStoredAccount({ ...ACCOUNT_DETAILS }, "my-password") });
+    expect(await redirectedTo(() => signIn({ email: "" }, form({ email: "jordan@example.com", password: "my-password" })))).toBe("/");
+  });
+
+  it(`keeps at most ${MAX_ACCOUNTS} accounts, dropping the oldest and its answers`, async () => {
+    for (let i = 0; i <= MAX_ACCOUNTS; i += 1) {
+      vi.setSystemTime(new Date(2026, 9, 29, 12, i));
+      await signUp(`p${i}@example.com`, "same-password");
+    }
+    vi.setSystemTime(new Date(2026, 9, 9, 12));
+    expect(jar.has(accountCookieName("p0@example.com"))).toBe(false);
+    expect(jar.has(profileCookieName("p0@example.com"))).toBe(false);
+    expect(jar.has(accountCookieName(`p${MAX_ACCOUNTS}@example.com`))).toBe(true);
+    expect([...jar.keys()].filter((name) => name.startsWith("ss_account_"))).toHaveLength(MAX_ACCOUNTS);
+  });
+});
+
 describe("signOut", () => {
   it("ends the session but keeps the account so it can sign in again", async () => {
     await finishSignUp();
     expect(await redirectedTo(() => signOut())).toBe("/login");
     expect(jar.has(SESSION_COOKIE)).toBe(false);
-    expect(jar.has(ACCOUNT_COOKIE)).toBe(true);
+    expect(jar.has(accountCookieName("jordan@example.com"))).toBe(true);
   });
 });

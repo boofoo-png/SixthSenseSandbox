@@ -52,16 +52,14 @@ describe("OnboardingForm", () => {
     expect(regions()).toHaveLength(1);
   });
 
-  it("offers the four general audiences", () => {
+  it("lets you choose several of the four general audiences", () => {
     render(<OnboardingForm />);
-    const audience = screen.getByRole("combobox", { name: "Which general audience do you want to reach?" });
-    expect(within(audience).getAllByRole("option").map((option) => option.textContent)).toEqual([
-      "Choose a category",
-      "Residential",
-      "Commercial",
-      "Industrial",
-      "Institutional",
-    ]);
+    const group = within(section("Which general audience do you want to reach?"));
+    const boxes = group.getAllByRole("checkbox") as HTMLInputElement[];
+    expect(boxes.map((box) => box.value)).toEqual(["Residential", "Commercial", "Industrial", "Institutional"]);
+    fireEvent.click(group.getByRole("checkbox", { name: "Commercial" }));
+    fireEvent.click(group.getByRole("checkbox", { name: "Institutional" }));
+    expect(boxes.filter((box) => box.checked).map((box) => box.value)).toEqual(["Commercial", "Institutional"]);
   });
 
   it("shows the conversion slider only when that goal is ticked", () => {
@@ -105,12 +103,14 @@ describe("OnboardingForm", () => {
     const industries = within(section("Industries"));
     expect((industries.getByRole("checkbox", { name: "Wholesale" }) as HTMLInputElement).checked).toBe(true);
     expect((screen.getByRole("combobox", { name: "Province" }) as HTMLSelectElement).value).toBe("BC");
-    expect((screen.getByRole("combobox", { name: "Which general audience do you want to reach?" }) as HTMLSelectElement).value).toBe(
-      "Commercial",
-    );
+    expect(
+      (within(section("Which general audience do you want to reach?")).getByRole("checkbox", { name: "Commercial" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
     expect((within(section("Goals")).getByRole("checkbox", { name: "Increase conversions by X%" }) as HTMLInputElement).checked).toBe(true);
     expect(screen.getByRole("slider")).toBeDefined();
     expect((screen.getByRole("textbox", { name: "Website" }) as HTMLInputElement).value).not.toBe("");
+    expect(screen.getByText("Verified")).toBeDefined();
   });
 
   it("does not refill new rows with old answers after an error", async () => {
@@ -160,14 +160,64 @@ describe("OnboardingForm", () => {
     await waitFor(() => expect((screen.getByRole("button", { name: "Back" }) as HTMLButtonElement).disabled).toBe(false));
   });
 
+  it("verifies a social account with Connect (simulated), and un-verifies it if the handle changes", () => {
+    const { container } = render(<OnboardingForm />);
+    const handle = screen.getByRole("textbox", { name: "Handle" });
+    fireEvent.change(handle, { target: { value: "@harbourline" } });
+    fireEvent.click(screen.getByRole("button", { name: "Connect account 1" }));
+    expect(screen.getByText("Verified")).toBeDefined();
+    const verified = () => (container.querySelector('input[name="socialVerified"]') as HTMLInputElement).value;
+    expect(verified()).toBe("1");
+    fireEvent.change(handle, { target: { value: "@other" } });
+    expect(screen.queryByText("Verified")).toBeNull();
+    expect(verified()).toBe("");
+  });
+
+  it("does not verify a handle that is not valid", () => {
+    render(<OnboardingForm />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Handle" }), { target: { value: "has spaces!" } });
+    fireEvent.click(screen.getByRole("button", { name: "Connect account 1" }));
+    expect(screen.queryByText("Verified")).toBeNull();
+    expect(screen.getByText("Enter a handle like @yourbrand")).toBeDefined();
+  });
+
+  it("generates an invite link that names the company, with a Copy button", () => {
+    const { container } = render(<OnboardingForm company="Harbourline Supply Co." />);
+    fireEvent.click(screen.getByRole("button", { name: "Generate a link" }));
+    const link = (screen.getByRole("textbox", { name: "Invite link" }) as HTMLInputElement).value;
+    expect(link).toMatch(/\/create-account\?invite=[\w-]+$/);
+    expect((container.querySelector('input[name="inviteLink"]') as HTMLInputElement).value).toBe(link);
+    expect(screen.getByRole("button", { name: "Copy invite link" })).toBeDefined();
+  });
+
+  it("lets each optional section be added later, and brought back with Add now", () => {
+    const { container } = render(<OnboardingForm />);
+    for (const name of ["Add social accounts later", "Add competitors later", "Add documents later", "Invite your team later"]) {
+      fireEvent.click(screen.getByRole("button", { name }));
+    }
+    expect(screen.getAllByText("Skipped. You can add this later in Settings.")).toHaveLength(4);
+    expect(container.querySelector('input[name="competitorName"]')).toBeNull();
+    expect(container.querySelector('input[name="socialHandle"]')).toBeNull();
+    expect(container.querySelector('input[name="invites"]')).toBeNull();
+    expect(screen.getByRole("textbox", { name: "Website" })).toBeDefined();
+    fireEvent.click(screen.getByRole("button", { name: "Add competitors now" }));
+    expect(container.querySelector('input[name="competitorName"]')).not.toBeNull();
+  });
+
   it("shows the problems from the server next to their fields", async () => {
     vi.mocked(saveOnboarding).mockResolvedValue({
-      errors: { industries: "Choose at least one industry", website: "Enter your website", "regions.0.province": "Choose a province" },
+      errors: {
+        industries: "Choose at least one industry",
+        audiences: "Choose at least one audience",
+        website: "Enter your website",
+        "regions.0.province": "Choose a province",
+      },
       values: emptyOnboardingDraft(),
     });
     render(<OnboardingForm />);
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await waitFor(() => expect(screen.getByText("Choose at least one industry")).toBeDefined());
+    expect(screen.getByText("Choose at least one audience")).toBeDefined();
     expect(screen.getByRole("alert").textContent).toContain("Check the highlighted answers");
     expect(screen.getByRole("textbox", { name: "Website" }).getAttribute("aria-invalid")).toBe("true");
     expect(screen.getByRole("combobox", { name: "Province" }).getAttribute("aria-invalid")).toBe("true");

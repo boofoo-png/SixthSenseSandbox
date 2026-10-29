@@ -45,6 +45,8 @@ type CreateAccountFormProps = {
   keepingPassword?: boolean;
   /** Show the "Fill with sample data" button (local development only). */
   showDevTools?: boolean;
+  /** Company named in an invite link, if the person arrived through one. */
+  invitedBy?: string;
 };
 
 /** Valid made-up details for testing; the email is new each time. */
@@ -66,7 +68,12 @@ function sampleAccount(): Record<string, string> {
 }
 
 /** The mid-fi "Create an Account" form (step 1). Problems are checked on the server and shown per field. */
-export function CreateAccountForm({ initialValues = {}, keepingPassword = false, showDevTools = false }: CreateAccountFormProps) {
+export function CreateAccountForm({
+  initialValues = {},
+  keepingPassword = false,
+  showDevTools = false,
+  invitedBy,
+}: CreateAccountFormProps) {
   const [state, formAction] = useActionState(createAccount, INITIAL);
   const { errors } = state;
   const values = state === INITIAL ? initialValues : state.values;
@@ -87,6 +94,12 @@ export function CreateAccountForm({ initialValues = {}, keepingPassword = false,
     <section className="w-full max-w-[624px]">
       <p className="text-[12px] leading-[2.66] tracking-[1px] uppercase text-ink-muted">Step 1 of 2</p>
       <h1 className="text-[34px] leading-[1.235] tracking-[0.25px] font-normal text-ink">Create an Account</h1>
+
+      {invitedBy && (
+        <Alert severity="info" className="mt-6">
+          {`You were invited to join ${invitedBy} on Sixth Sense.`}
+        </Alert>
+      )}
 
       {hasErrors && (
         <Alert severity="error" className="mt-6">

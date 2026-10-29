@@ -3,12 +3,14 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import {
+  checkPasswordPair,
   encodeStored,
   encodeStoredAccount,
   validateNewAccount,
   type AccountErrors,
   type NewAccountField,
   type NewAccountFields,
+  type StoredAccount,
 } from "@/lib/hub/account";
 import { NEW_ACCOUNT_COOKIE, ONBOARDING_DRAFT_COOKIE, SIGNUP_COOKIE } from "@/lib/hub/constants";
 import {
@@ -16,12 +18,18 @@ import {
   readOnboardingForm,
   validateOnboarding,
   type OnboardingDraft,
+  type BusinessProfile,
   type OnboardingErrors,
 } from "@/lib/hub/onboarding";
-import { PROFILE_COOKIE, encodeProfile } from "@/lib/hub/profile";
+import { accountCookieName, accountsToEvict, findAccount } from "@/lib/hub/accounts";
+import { hashPassword } from "@/lib/hub/password";
+import { PROFILE_COOKIE, decodeProfile, encodeProfile, profileCookieName } from "@/lib/hub/profile";
+import { RESET_COOKIE, RESET_LIFETIME_MS, checkResetToken, createReset, decodeReset, encodeReset } from "@/lib/hub/reset";
 import { ONBOARDING_PATH } from "@/lib/hub/routing";
+import { EMAIL_PATTERN } from "@/lib/hub/text";
 import {
   ACCOUNT_COOKIE,
+  DEMO_ACCOUNT,
   SESSION_COOKIE,
   checkCredentials,
   decodeStoredAccount,
@@ -44,6 +52,29 @@ function cookieOptions(maxAge?: number) {
   };
 }
 
+type CookieStore = Awaited<ReturnType<typeof cookies>>;
+
+/** Save an account in its own cookie; an older single shared cookie for the same email goes away. */
+function saveAccount(store: CookieStore, stored: StoredAccount) {
+  const email = stored.account.email;
+  store.set(accountCookieName(email), encodeStored({ ...stored, savedAt: stored.savedAt ?? Date.now() }), cookieOptions(ONE_YEAR));
+  if (decodeStoredAccount(store.get(ACCOUNT_COOKIE)?.value)?.account.email === email) store.delete(ACCOUNT_COOKIE);
+}
+
+/** Save a business profile in its account's own cookie. */
+function saveProfile(store: CookieStore, profile: BusinessProfile) {
+  store.set(profileCookieName(profile.email), encodeProfile(profile), cookieOptions(ONE_YEAR));
+  if (decodeProfile(store.get(PROFILE_COOKIE)?.value)?.email === profile.email) store.delete(PROFILE_COOKIE);
+}
+
+/** Keep the browser's cookies within limits by dropping the oldest saved accounts (see lib/hub/accounts.ts). */
+function dropOldAccounts(store: CookieStore, keepEmail: string) {
+  for (const email of accountsToEvict(store.getAll(), keepEmail)) {
+    store.delete(accountCookieName(email));
+    store.delete(profileCookieName(email));
+  }
+}
+
 /**
  * Forget an unfinished sign-up held in this browser. Called on sign-in and sign-out so one
  * person's step 1 details cannot take over another account or be seen by the next visitor.
@@ -64,7 +95,7 @@ export type SignInState = { email: string; error?: string };
 export async function signIn(_previous: SignInState, formData: FormData): Promise<SignInState> {
   const email = text(formData, "email");
   const store = await cookies();
-  const user = checkCredentials(email, text(formData, "password"), decodeStoredAccount(store.get(ACCOUNT_COOKIE)?.value));
+  const user = checkCredentials(email, text(formData, "password"), findAccount(store, email));
   if (!user) {
     return { email, error: "We couldn't sign you in. Check your details and try again." };
   }
@@ -146,13 +177,14 @@ export async function saveOnboarding(_previous: OnboardingState, formData: FormD
     return { errors: result.errors, values: draft };
   }
   if (pending) {
-    store.set(ACCOUNT_COOKIE, encodeStored(pending), cookieOptions(ONE_YEAR));
+    saveAccount(store, { ...pending, savedAt: Date.now() });
     store.set(SESSION_COOKIE, email, cookieOptions());
     store.delete(SIGNUP_COOKIE);
     // The dashboard shows its "New account" version until the next sign-in.
     store.set(NEW_ACCOUNT_COOKIE, "1", cookieOptions());
   }
-  store.set(PROFILE_COOKIE, encodeProfile(result.profile), cookieOptions(ONE_YEAR));
+  saveProfile(store, result.profile);
+  dropOldAccounts(store, email);
   store.delete(ONBOARDING_DRAFT_COOKIE);
   redirect("/");
 }
@@ -165,8 +197,8 @@ export async function goBackToStepOne(formData: FormData): Promise<void> {
     // An account that was signed in before finishing step 2 becomes a sign-up again, so step 1
     // can be edited; finishing step 2 signs it back in.
     const email = store.get(SESSION_COOKIE)?.value;
-    const account = decodeStoredAccount(store.get(ACCOUNT_COOKIE)?.value);
-    if (email && account && account.account.email === email) {
+    const account = email ? findAccount(store, email) : null;
+    if (account) {
       store.set(SIGNUP_COOKIE, encodeStored(account), cookieOptions(ONE_DAY));
       store.delete(SESSION_COOKIE);
     }
@@ -174,6 +206,48 @@ export async function goBackToStepOne(formData: FormData): Promise<void> {
   if (value) store.set(ONBOARDING_DRAFT_COOKIE, value, cookieOptions(ONE_DAY));
   else store.delete(ONBOARDING_DRAFT_COOKIE);
   redirect("/create-account");
+}
+
+export type ResetRequestState = { email: string; error?: string; link?: string };
+
+/**
+ * Forgot Password: for the account saved in this browser, make a reset link. A real app would
+ * email it; the prototype shows it on screen (docs/FUNCTIONALITY.md, docs/DECISIONS.md).
+ */
+export async function requestPasswordReset(_previous: ResetRequestState, formData: FormData): Promise<ResetRequestState> {
+  const email = text(formData, "email").trim().toLowerCase();
+  if (!EMAIL_PATTERN.test(email)) return { email, error: "Enter an email address like name@example.com" };
+  if (email === DEMO_ACCOUNT.email) return { email, error: "The demo account's password can't be changed." };
+  const store = await cookies();
+  if (!findAccount(store, email)) {
+    return {
+      email,
+      error:
+        "No account with that email was found in this browser. Accounts are saved only in the browser where they were created, once both sign-up steps are finished.",
+    };
+  }
+  const { token, stored } = createReset(email, Date.now());
+  store.set(RESET_COOKIE, encodeReset(stored), cookieOptions(RESET_LIFETIME_MS / 1000));
+  return { email, link: `/reset-password?token=${token}` };
+}
+
+export type ResetPasswordState = { errors: Partial<Record<"password" | "confirmPassword" | "form", string>> };
+
+/** Set a new password from a reset link, then send the person to log in with it. */
+export async function resetPassword(_previous: ResetPasswordState, formData: FormData): Promise<ResetPasswordState> {
+  const store = await cookies();
+  const email = checkResetToken(decodeReset(store.get(RESET_COOKIE)?.value), text(formData, "token"), Date.now());
+  const saved = email ? findAccount(store, email) : null;
+  if (!saved) {
+    return { errors: { form: "This reset link has expired or was already used. Ask for a new one." } };
+  }
+  const password = text(formData, "password");
+  const errors = checkPasswordPair(password, text(formData, "confirmPassword"));
+  if (Object.keys(errors).length > 0) return { errors };
+  saveAccount(store, { ...saved, passwordHash: hashPassword(password) });
+  store.delete(RESET_COOKIE);
+  store.delete(SESSION_COOKIE);
+  redirect("/login?reset=1");
 }
 
 /** End the session. The account stays so the person can sign in again. */
