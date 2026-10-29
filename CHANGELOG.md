@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Fill with sample data" buttons on both sign-up steps, shown only when running locally.
 - Dashboard at / from the mid-fi, in two versions: "New account" right after sign-up and "Have account before" (Welcome Back!, Insight Report, Revisit Findings) after signing in; plus an Ask anything page at /ask.
 - Top bar with a navigation drawer (menu, search, notifications, profile, settings) and Coming soon pages for the areas not built yet.
+- Team functionality list as the feature reference (docs/FUNCTIONALITY.md), with what is built so far.
+- Forgot Password: a reset link for an account saved in this browser, shown on screen in the prototype; it expires after 15 minutes and works once (/forgot-password, /reset-password).
+- Connect on each linked social account (simulated verification, labelled as such), Generate a link for team invites (Create an Account shows who invited you), and Add later / Add now on the optional parts of sign-up step 2.
 
 ### Removed
 - The fixed "This week (..., so far ...) compared with the same days last week" sentence, replaced by the date bar.
@@ -59,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Product renamed to Sixth Sense and rebuilt around the team's mid-fi: seven areas (Insight Report, Revisit Findings, Research Competitors, Explore Audience and Trend, AI Management, Content Creation, Campaigns).
 - Existing pages restyled with the SIXTH SENSE kit; light mode only (dark mode removed).
 - The old overview moved from / to /insights as the start of Insight Report.
+- Sign-up step 2 lets you choose several general audiences instead of one.
+- Every account made in a browser is remembered (up to 5, oldest dropped first), each with its own step 2 answers, instead of each new account replacing the last.
 
 ### Fixed
 - Followers change no longer counts platforms that only have data in one of the two weeks.
@@ -72,3 +77,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Leftover sign-up details are cleared on sign-in and sign-out, so they cannot take over another account or be seen by the next person; step 1 offers Cancel sign-up instead of a Back that signed people out without saying so.
 - Continue and Back on the sign-up steps lock while one is running, so the two cannot conflict.
 - AI Studio and the printable report can be reached again (links on Content Creation, AI Management, and Insight Report); the unused Geist fonts are no longer downloaded.
+- Older accounts made in the same browser could not log in or reset their passwords ("No account with that email was created in this browser"); the message now explains where accounts are saved.

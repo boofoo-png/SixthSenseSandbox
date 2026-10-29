@@ -1,8 +1,8 @@
 # Implementation Plan: Sixth Sense (Mid-fi Build)
 
-_Last updated: 2026-10-23_
+_Last updated: 2026-10-29_
 
-Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
+What each area must do comes from docs/FUNCTIONALITY.md (the team's functionality list, 2026-10-29). Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
 
 ## Goal
 The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What would you like to do?") and reaches seven areas - Insight Report, Revisit Findings, Research Competitors, Explore Audience and Trend, AI Management, Content Creation, and Campaigns - after logging in or creating an account and completing onboarding. Everything uses sample data for a fictional hospitality supplier, AI output is tested templates labelled "Suggestions", and the UI uses the blue SIXTH SENSE (MUI) kit in light mode.
@@ -36,6 +36,10 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [x] 2.9 /onboarding screen, "Tell us about your industry": the sections from 2.3 in the mid-fi order; Connect, Upload, and Invite only record the entry and say so; Continue goes to the dashboard; Create an Account and the route rule then send new users to /onboarding before the dashboard (app/(auth)/onboarding/, lib/hub/routing.ts)
 - [ ] 2.10 /settings edits the onboarding answers and /profile shows the account details, each with Save Changes and a confirmation; Sign out in the profile page and the drawer (app/(dashboard)/settings/, profile/)
 - [x] 2.11 Back on step 2: the account is created only when step 2 is finished (step 1 is held in a sign-up cookie); Back keeps the step 2 answers and returns to step 1 filled in, where blank passwords keep the one already chosen; Back also shows for accounts signed in before finishing step 2 (app/(auth)/actions.ts, create-account/, onboarding/, lib/hub/routing.ts, proxy.ts)
+- [x] 2.12 Forgot Password (FUNCTIONALITY.md): enter the email, get a reset link (shown on screen in the prototype, since nothing is emailed), and choose a new password for the account saved in this browser; the link expires (app/(auth)/forgot-password/, reset-password/, lib/hub/reset.ts)
+- [x] 2.13 Link social media with verify: each account row has Connect, which marks the handle verified; verification is simulated and labelled so, since real connections need each platform's approval (app/(auth)/onboarding/, lib/hub/onboarding.ts)
+- [x] 2.14 Invite team: Generate an invite link (with Copy) as well as email invites, and Invite later; opening the link shows who invited you on Create an Account (lib/hub/invite.ts, onboarding, create-account)
+- [x] 2.15 Add Later on the optional steps (link social media, competitors, upload documents, invite team): skips that section with a note that it can be added in Settings, and Add now brings it back (onboarding)
 
 ## Phase 3 - Dashboard (test-first)
 - [x] 3.1 Dashboard at / from the mid-fi's two versions: "New account" (right after sign-up: What would you like to do?, Ask anything, and Research Competitors, Explore Audience and Trend, AI Management, Content Creation) and "Have account before" (after signing in: Welcome Back! plus Insight Report and Revisit Findings on top); each tile has an icon, a title with an arrow that shows a short description, and Select; Ask anything opens /ask, which repeats the question and says answers are coming. The old overview moved to /insights as the start of Insight Report (app/(dashboard)/page.tsx, _components/dashboard-tiles.tsx, ask/, insights/)
@@ -50,9 +54,15 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [ ] 5.1 Rework /competitors to the mid-fi: "Review your competitors.", filter chips (Most viewed post, Most liked post, Most popular item, Most popular trends, Common reused layouts, Most used by users), and post cards with brand, date, title, summary, and tags; reuse the existing competitor activity and chart code where it fits (app/(dashboard)/competitors/, lib/competitors/)
 - [ ] 5.2 "Comparison on trends between you and your competitors": your posts vs competitor posts side by side (engagement, views, likes, shares this week) (lib/hub/compare.ts, competitors page)
 - [ ] 5.3 "Updates and suggestions": rule-based recommendations from the comparison, plus Save to findings (lib/hub/recommendations.ts, competitors page)
+- [ ] 5.4 Competitor tracking (FUNCTIONALITY.md) for the hospitality supplier: posting frequency, engagement, best and worst posts, hashtags, and active ads, starting with the competitors added during sign-up plus fictional sample competitors (lib/competitors/, lib/hub/sample-data.ts)
+- [ ] 5.5 Trend and campaign pattern detection: recurring themes across competitors' campaigns, with examples (lib/competitors/themes.ts, competitors page)
+- [ ] 5.6 Audience-based selection: choose which competitors to track for the selected target audience, starting with those added during sign-up (lib/hub/storage.ts, competitors page)
 
-## Phase 6 - Explore Audience and Trend, Ask anything, Revisit Findings (site map flows, test-first)
-- [ ] 6.1 /explore: trends (search, Industry / Location / Time Period filters, empty state with Clear Filters, trend details) and audiences (search, audience profiles with needs, challenges, interests, related trends), each with Save and Create Campaign (app/(dashboard)/explore/)
+## Phase 6 - Target Audience ("Explore Audience and Trend"), Ask anything, Revisit Findings (test-first)
+- [ ] 6.1 Trend search by category (FUNCTIONALITY.md): /explore lists trends by category, filtered by demographics, age, and interests, with an empty state and Clear Filters (lib/hub/trends.ts, app/(dashboard)/explore/)
+- [ ] 6.4 Choose how results are shown: charts or lists, remembered while browsing (explore page)
+- [ ] 6.5 Default audience: save a target audience as the default, pre-filled from sign-up, so searches and reports start from it (lib/hub/audience.ts, explore page, Settings)
+- [ ] 6.6 Suggest a target audience: template-based suggestion from direct competitors' data and the business profile, labelled "Suggestions"; the same suggestion feeds the Campaigns audience builder (9.4) (lib/hub/audience-suggest.ts, explore page)
 - [ ] 6.2 /ask: answer template that asks which audience to focus on when unclear, otherwise "Here's what I found" with supporting sources, Save Findings, and Create Campaign (lib/hub/ask.ts, app/(dashboard)/ask/)
 - [ ] 6.3 /findings (Revisit Findings): saved items filtered by All / Trends / Audiences / Competitors, with View, Create Campaign, Remove, and an empty state (app/(dashboard)/findings/)
 
@@ -88,6 +98,7 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - Explore Audience and Trend, Revisit Findings, and Ask anything have no mid-fi screens yet; build from the site map or wait for designs?
 - Which Content Creation tool comes after Social Post?
 - What should Compare do, and what file should a campaign brief export to beyond print / Save as PDF?
+- "Audience types" in the functionality list: is it the one general audience from the mid-fi (Residential, Commercial, Industrial, Institutional), or several? Answered 2026-10-29: several; step 2 now uses tick-all-that-apply chips.
 - The session cookie holds the email unsigned, so anyone can set it by hand and appear signed in (code review 2026-10-23, finding 6; accepted for the prototype). Sign it (HMAC with a secret in .env.local) or replace it with real auth before any real use.
 
 ---

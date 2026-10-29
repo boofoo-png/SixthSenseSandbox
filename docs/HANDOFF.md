@@ -112,3 +112,17 @@
 - Finding 6 is still open by choice: the session cookie is the email, unsigned. Recorded under Open questions in the plan.
 - React holds later form actions until pending ones finish; tests that leave a server action pending must resolve it, or later tests in the file time out (see the "locks Continue and Back" test).
 - `useFormStatus` drives the locked buttons; it reports which action is running, so Continue shows its spinner only for Continue.
+
+## 2026-10-29 - feat/sixth-sense
+
+**Done:** Saved the team's updated functionality list as docs/FUNCTIONALITY.md and re-planned around it (new steps 2.12-2.15, 5.4-5.6, and Phase 6 as Target Audience: 6.1, 6.4-6.6). Built 2.12 (Forgot Password with an on-screen reset link), 2.13 (Connect with simulated verification), 2.14 (invite link and Invite later), 2.15 (Add later / Add now on optional step 2 parts). Also: several general audiences on step 2 (answers the "audience types" open question), and every account in a browser remembered in its own cookies (fixes older accounts failing to log in or reset). Commit 0c62e8e.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 554/554 passed across 59 files; `npm run build` passed. On the dev server: full reset flow (unknown email message, link, new password, link refused on reuse, old password refused, new one works); Connect and invite link saved to the profile; invite link shows "You were invited to join ..."; several audiences saved; two accounts in one browser both log in and the older one can reset. No CI configured. PR not opened automatically (gh CLI not installed): https://github.com/boofoo-png/SixthSenseSandbox/pull/new/feat/sixth-sense
+
+**Next:** Phase 6 Target Audience (6.1 trend search by category with demographics, age, and interests filters; 6.4 charts or lists; 6.5 default audience; 6.6 suggested audience), then 5.4-5.6 (competitor tracking from sign-up competitors, recurring themes, audience-based selection), and 2.10 (Settings and Profile).
+
+**Notes / risks:**
+- Account cookies are now `ss_account_<base64url email>` and `ss_profile_<base64url email>`; the old single `ss_account` and `ss_profile` are still read. At most 5 accounts are kept within a 12 KB budget (Node's default request header limit is 16 KB).
+- Reset tokens live in `ss_reset` as a SHA-256 hash for 15 minutes; the demo account cannot be reset.
+- Test-harness gotcha when driving forms with curl: the page's hidden fields (`socialVerified`, `inviteLink`) are already in the form, so sending them again makes the server read the first, empty value.
+- The session cookie is still unsigned (review finding 6, in the plan's open questions).
