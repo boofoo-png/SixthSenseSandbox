@@ -1,0 +1,49 @@
+html{
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.wrapper-tabs{
+    background-color: #EBFFB5;
+    padding: 10px;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    gap: 15px;
+
+}
+
+.container-content{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: start;
+    gap: 20px;
+}
+
+.wrapper-content{
+    background-color: #03535F;
+    color: white;
+    padding: 15px;
+    border-radius: 20px;
+}
+
+.c-tab{
+    border: none;
+    border-radius: 20px;
+    padding-bottom: 10px;
+    padding-top: 10px;
+    padding-left: 15px;
+    padding-right: 15px;
+    background-color: #EBFFB5;
+    color: #03535F;
+    /* box-shadow: 3px 3px 3px #abba83; */
+    text-align: center;
+    cursor: pointer;
+}
+
+.c-tab.c-tab--selected{
+    background-color: #03535F;
+    color: white;
+    box-shadow: 3px 3px 3px #02373f;
+}
+
