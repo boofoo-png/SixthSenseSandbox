@@ -199,3 +199,49 @@ Decision: Each account is saved in its own `ss_account_<key>` cookie and its bus
 Alternatives considered: One cookie holding a list of all accounts was rejected because a single cookie is limited to about 4 KB, which a few accounts with profiles would exceed. Keeping accounts in browser storage (localStorage) was rejected because the proxy and server actions cannot read it. A database remains the real answer once accounts are real.
 
 Supersedes: in "Prototype accounts are saved in a browser cookie with a hashed password" (2026-10-22) and "Onboarding answers saved as a business profile cookie" (2026-10-23), the single `ss_account` and `ss_profile` cookies.
+
+## 2026-10-30 - Login follows the high-fi look in its own route group, with darker text than the frame
+
+Context: The team's newer "Log In" frame (node 9914:13059) replaces the mid-fi login with a logo, Montserrat, a full-page lime-to-blue gradient, and a glass card. The other sign-in pages have no high-fi versions in this work yet. The frame's near-white heading and field text and its black links are hard to read on the gradient, and it leaves out Remember Me, which docs/FUNCTIONALITY.md requires.
+
+Decision: /login moves to an `app/(login)/` route group with its own layout, so its look and font do not change Create Account or Forgot Password. The styleguide colors become `brand-*` tokens in app/globals.css, and Montserrat is loaded only in that layout. Text on the card uses the styleguide's navy (#001F3E) and the card is 40% cream rather than 20%, so text stays readable wherever the card lands on the gradient. Create Account and Forgot Your Password sit inside the card. Remember Me, show password, the sign-in error, and the demo account note stay.
+
+Alternatives considered: Copying the frame's colors exactly was rejected because the text fails readable contrast. Restyling the shared (auth) layout was rejected because the other pages would change with no design to follow.
+
+Supersedes: for /login only, the mid-fi login screen and the Roboto font in "SIXTH SENSE design system as Tailwind tokens, no MUI dependency" (2026-10-22).
+
+## 2026-10-30 - Auto-post stays disabled although it is on the team's functionality list
+
+Context: The team's updated list (docs/FUNCTIONALITY.md) adds an Auto-post function under AI Community Management: schedule content releases and post automatically. The 2026-10-14 decision says no feature publishes to social platforms, and social connections in the prototype are simulated.
+
+Decision: Keep the 2026-10-14 decision. Users can schedule content onto the calendar, but nothing posts automatically, and Auto Publishing is a disabled "coming later" switch with a note that the business posts itself. The function is marked as not built in docs/FUNCTIONALITY.md.
+
+Alternatives considered: A simulated auto-post that marks posts as Posted when their time passes was rejected, because the original reasoning still applies and a post that looks published could mislead testers. Real publishing was rejected for the prototype (needs real accounts, a server, stored tokens, and each platform's approval).
+
+## 2026-10-30 - Report exports are PDF or CSV; scheduled reports catch up in the browser
+
+Context: The list adds Report Exports (the user selects a format) and Schedule reports (export automatically at the selected time). Reports can only be printed today, and the app has no server job, database, or email service, so nothing can run while it is closed.
+
+Decision: Exports offer PDF, through the existing print dialog (2026-10-14 decision), and CSV, built in the browser with no new dependency. Cells that spreadsheets would run as formulas are escaped. Schedules (frequency, time, format) are saved in the browser's localStorage under a versioned key, like planned posts. Reports that came due are listed as ready the next time the app is opened, each covering its own period; CSV downloads from the list, and PDF opens the report ready to print because a browser cannot save a PDF unprompted. The page states this limit.
+
+Alternatives considered: Adding XLSX was rejected because it needs a spreadsheet library for little gain over CSV, which Excel opens. A real server job was rejected because it needs a database, a scheduler, and an email service. Saving the schedule without ever producing a report was rejected because nothing would actually be exported.
+
+## 2026-10-30 - All Content Creation tools are templates; uploaded files stay in the browser
+
+Context: The list adds Video, Blog, Ad Copy, Edit Posts, Improve Copy, Repurpose Content, and Upload Your File, described as AI-powered, beside Social Post. The plan had left them as "Coming soon". The prototype's suggestions are templates (2026-10-13 decision) and it has no server storage for files.
+
+Decision: Build all eight tools with deterministic templates in tested modules under lib/hub/content/, labelled "Suggestions". Upload Your File reads TXT, MD, and CSV in the browser; PDF, DOCX, XLSX, PNG, and JPG show the file name and ask for pasted text. No file leaves the browser.
+
+Alternatives considered: Real AI through the Claude API was not reopened here; it still needs an API key, a server route, and per-use cost, and the template modules can feed a model later. Parsing PDF, DOCX, and XLSX was rejected for now because it needs several libraries for one prototype screen.
+
+Supersedes: the plan's out-of-scope line leaving these tools as "Coming soon" (a plan note, not a recorded decision).
+
+## 2026-10-30 - Login uses the updated frame's colors, including its cream text
+
+Context: The team updated the "Log In" frame (node 9914:13059): a green radial gradient, a cream logo with a welcome and tagline, a "Let's start" card, and cream text. The user asked for /login to match it. Measured on the rendered page, cream text on the card reaches about 2.1:1 to 2.8:1 contrast, below the 4.5:1 WCAG AA minimum for normal text, and the blue Forgot Your Password link about 4:1.
+
+Decision: Follow the frame's colors and layout. The gradient is saved as public/brand/login-gradient.svg because CSS radial gradients cannot rotate. Remember me, show password, the sign-in error, and the demo account note stay, although the frame does not show show password or the note. The low contrast is raised with the team as an open question in the plan rather than changed in code.
+
+Alternatives considered: Keeping the navy text from the earlier version was rejected because it would no longer match the frame the user asked to follow.
+
+Supersedes: "Login follows the high-fi look in its own route group, with darker text than the frame" (2026-10-30), for its text and card colors and the frame contents. The route group and tokens stay.

@@ -1,8 +1,8 @@
 # Implementation Plan: Sixth Sense (Mid-fi Build)
 
-_Last updated: 2026-10-29_
+_Last updated: 2026-10-30_
 
-What each area must do comes from docs/FUNCTIONALITY.md (the team's functionality list, 2026-10-29). Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
+What each area must do comes from docs/FUNCTIONALITY.md (the team's functionality list, updated 2026-10-30). Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
 
 ## Goal
 The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What would you like to do?") and reaches seven areas - Insight Report, Revisit Findings, Research Competitors, Explore Audience and Trend, AI Management, Content Creation, and Campaigns - after logging in or creating an account and completing onboarding. Everything uses sample data for a fictional hospitality supplier, AI output is tested templates labelled "Suggestions", and the UI uses the blue SIXTH SENSE (MUI) kit in light mode.
@@ -12,7 +12,8 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - Real social account connections, uploading files to a server, or sending team invites (onboarding shows these steps but only records them in the prototype)
 - Publishing posts to social platforms; Auto Publishing is shown as "coming later" (see DECISIONS.md 2026-10-14)
 - Real AI (Claude API), real ad-platform data (spend, ROAS, conversions), or real competitor data
-- Video, Blog, Ad Copy, Improve Copy, Repurpose, and Upload tools in Content Creation (cards show "Coming soon"; Social Post is built first)
+- Reading PDF, DOCX, XLSX, or image files in Upload Your File (those show the file name and ask for pasted text; see DECISIONS.md 2026-10-30)
+- Reports that run while the app is closed, emailed reports, and Excel exports (see DECISIONS.md 2026-10-30)
 - A world map for Performance by Country (shown as a ranked table or bar chart)
 - Building the teammates' assigned components (Tabs, Dropdown, Checkbox, Badge, Carousel); native elements styled with the kit until theirs land
 
@@ -40,6 +41,7 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [x] 2.13 Link social media with verify: each account row has Connect, which marks the handle verified; verification is simulated and labelled so, since real connections need each platform's approval (app/(auth)/onboarding/, lib/hub/onboarding.ts)
 - [x] 2.14 Invite team: Generate an invite link (with Copy) as well as email invites, and Invite later; opening the link shows who invited you on Create an Account (lib/hub/invite.ts, onboarding, create-account)
 - [x] 2.15 Add Later on the optional steps (link social media, competitors, upload documents, invite team): skips that section with a note that it can be added in Settings, and Add now brings it back (onboarding)
+- [x] 2.16 /login follows the high-fi "Log In" frame (node 9914:13059, updated 2026-10-30): cream logo, welcome and tagline, Montserrat, green gradient page, "Let's start" glass card, pill fields and button, in its own (login) route group, scaled to the screen height so it fits without scrolling; Remember me, show password, and the demo account note stay (app/(login)/, public/brand/, app/globals.css)
 
 ## Phase 3 - Dashboard (test-first)
 - [x] 3.1 Dashboard at / from the mid-fi's two versions: "New account" (right after sign-up: What would you like to do?, Ask anything, and Research Competitors, Explore Audience and Trend, AI Management, Content Creation) and "Have account before" (after signing in: Welcome Back! plus Insight Report and Revisit Findings on top); each tile has an icon, a title with an arrow that shows a short description, and Select; Ask anything opens /ask, which repeats the question and says answers are coming. The old overview moved to /insights as the start of Insight Report (app/(dashboard)/page.tsx, _components/dashboard-tiles.tsx, ask/, insights/)
@@ -67,15 +69,26 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [ ] 6.3 /findings (Revisit Findings): saved items filtered by All / Trends / Audiences / Competitors, with View, Create Campaign, Remove, and an empty state (app/(dashboard)/findings/)
 
 ## Phase 7 - Content Creation (test-first)
-- [ ] 7.1 /content hub: "Create AI-powered content" (Social Post, Video, Blog, Ad Copy) and "Edit and enhance content" (Edit Posts, Improve Copy, Repurpose content, Upload your file) cards; only Social Post is active (app/(dashboard)/content/)
-- [ ] 7.2 /content/social-post: Post Details (platform, saved audience, content goal, tone of voice, idea) and AI Content Suggestions (caption with Copy, visual guidelines, keywords and hashtags) with Generate, Regenerate, and Save Content, reusing the AI Studio caption, hashtag, and content-brief modules (app/(dashboard)/content/social-post/, lib/ai-studio/)
+- [ ] 7.1 /content hub: "Create AI-powered content" (Social Post, Video, Blog, Ad Copy) and "Edit and enhance content" (Edit Posts, Improve Copy, Repurpose content, Upload your file) cards; a card shows "Coming soon" until its tool below is built (app/(dashboard)/content/)
+- [ ] 7.2 /content/social-post: Post Details (target audience, platform, content goal, tone of voice, blank space for the raw idea) and AI Content Suggestions (content ideas, caption with Copy, visual guidelines, keywords and hashtags) with Generate, Regenerate, and Save Content, reusing the AI Studio caption, hashtag, and content-brief modules (app/(dashboard)/content/social-post/, lib/ai-studio/)
+- [ ] 7.3 /content/video: platform, video format, duration, and idea; suggests concepts, a script, a storyboard, and creative guidelines, with the script fitting the duration (lib/hub/content/video.ts, app/(dashboard)/content/video/)
+- [ ] 7.4 /content/blog: topic and content goal; suggests titles, an article outline, writing suggestions, and SEO keywords (lib/hub/content/blog.ts, app/(dashboard)/content/blog/)
+- [ ] 7.5 /content/ad-copy: product or service; suggests headlines, ad copy, calls to action, and creative recommendations (lib/hub/content/ad-copy.ts, app/(dashboard)/content/ad-copy/)
+- [ ] 7.6 /content/improve-copy: paste text, choose what to improve (clarity, tone, engagement, messaging); rule-based suggestions beside the original, with Copy (lib/hub/content/improve-copy.ts, app/(dashboard)/content/improve-copy/)
+- [ ] 7.7 /content/edit-posts: choose a saved or planned post; revise its caption, get visual recommendations and alternative versions, and save the result back; empty state when there are no posts (lib/hub/content/edit-post.ts, app/(dashboard)/content/edit-posts/)
+- [ ] 7.8 /content/repurpose: paste or choose content and pick platforms; adapted captions within each platform's length limit, hashtags, and visual recommendations per platform (lib/hub/content/repurpose.ts, app/(dashboard)/content/repurpose/)
+- [ ] 7.9 /content/upload: choose or drop a file (same types and 3MB limit as sign-up, shared validation); TXT, MD, and CSV are read in the browser and PDF, DOCX, XLSX, PNG, and JPG show the file name and ask for pasted text; the text then gets edit, improve, and repurpose suggestions from 7.6-7.8. Nothing is uploaded and the page says so (lib/hub/content/upload.ts, app/(dashboard)/content/upload/)
 
-## Phase 8 - AI Management (test-first)
-- [ ] 8.1 AI Posting Plan: recommended frequency, best days, best times, and content mix from sample engagement, reusing lib/ai-studio/best-time.ts (lib/hub/posting-plan.ts, posting-plan.test.ts)
-- [ ] 8.2 /ai-management: the posting plan, the content calendar (reuse the AI Studio calendar with platform filters), upcoming posts, connected accounts from onboarding, and Auto Publishing shown as a disabled "coming later" switch with a note that the business posts itself (app/(dashboard)/ai-management/)
+## Phase 8 - AI Management, listed as "AI Community Management" (test-first)
+- [ ] 8.1 Planning: recommended post frequency, dates, and times, plus content mix, from sample engagement, reusing lib/ai-studio/best-time.ts (lib/hub/posting-plan.ts, posting-plan.test.ts)
+- [ ] 8.2 /ai-management: the posting plan, upcoming posts, and connected accounts from onboarding (app/(dashboard)/ai-management/)
+- [ ] 8.3 Calendar: one calendar of planned posts and campaigns across all platforms with platform filters, reusing the AI Studio calendar; campaigns appear once 9.1 and 9.2 give them dates (lib/hub/calendar.ts, ai-management page)
+- [ ] 8.4 Schedule content: choose a release date and time for saved content, which adds it to the calendar as "Scheduled"; Auto Publishing stays a disabled "coming later" switch with a note that the business posts itself (DECISIONS.md 2026-10-14, reaffirmed 2026-10-30) (ai-management page)
+- [ ] 8.5 Report Exports: choose PDF or CSV on the report page; PDF opens the existing print dialog and CSV downloads the report's numbers from the browser, escaping cells that spreadsheets would run as formulas (lib/reports/export-csv.ts, export-csv.test.ts, the report page: /reports until 10.5 moves it)
+- [ ] 8.6 Schedule reports: choose daily, weekly, or monthly, a time, and a format, saved in the browser under a versioned key; reports that came due while the app was closed are listed as ready the next time it opens, each covering its own period. CSV downloads from the list; PDF opens the report ready to print, since a browser cannot save a PDF unprompted. The page explains that reports are only prepared when the app is open (lib/reports/schedule.ts, schedule.test.ts, ai-management page)
 
 ## Phase 9 - Campaigns (test-first)
-- [ ] 9.1 Campaign brief template: Objective, Audience, Key Message, Channels, Next Steps from the products, goal (Awareness / Lead / Sales), audience, and saved findings (lib/hub/brief.ts, brief.test.ts)
+- [ ] 9.1 Campaign brief template: Objective, Audience, Key Message, Channels, Next Steps from the products, goal (Awareness / Lead / Sales), audience, and saved findings, plus start and end dates for the calendar (8.3) (lib/hub/brief.ts, brief.test.ts)
 - [ ] 9.2 /campaigns: Create New Opportunities and a list of saved campaigns (app/(dashboard)/campaigns/)
 - [ ] 9.3 /campaigns/new, "Let's Build Your Campaign!": products or services, goal, choose a saved audience or build one, Generate draft, then edit or save, and print / Save as PDF (reusing the Reports print approach) (app/(dashboard)/campaigns/new/)
 - [ ] 9.4 Audience builder: audience name, description, audience type (B2B / B2C / Both), customer segment, "Suggest an audience for me" (template from the business profile and competitor data), location from the profile with Change, age range, interests, needs; Save Audience and Cancel (app/(dashboard)/campaigns/audiences/new/, lib/hub/audience-suggest.ts)
@@ -96,11 +109,15 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - What fictional name should the sample business use? The mid-fi says "Hotel Depot"; a clearly made-up name avoids confusion with any real company (same reason as the fictional competitors).
 - The mid-fi's palette frame (#1E1E1E, #FFFFFF, #E1DED9, #FFBF65) is not used by any screen; is it for the logo or marketing pages?
 - Explore Audience and Trend, Revisit Findings, and Ask anything have no mid-fi screens yet; build from the site map or wait for designs?
-- Which Content Creation tool comes after Social Post?
+- Which Content Creation tool comes after Social Post? Answered 2026-10-30: the functionality list now covers all of them; Phase 7 builds the Create tools first, then Improve Copy, which Edit Posts and Upload reuse.
+- The functionality list says "AI Community Management" and the mid-fi says "AI Management". Should the area be renamed? (The plan keeps the mid-fi name until the team says.)
+- Auto-post is on the team's list but stays disabled (DECISIONS.md 2026-10-30). Does the team accept this function being shown as "coming later"?
 - What should Compare do, and what file should a campaign brief export to beyond print / Save as PDF?
 - "Audience types" in the functionality list: is it the one general audience from the mid-fi (Residential, Commercial, Industrial, Institutional), or several? Answered 2026-10-29: several; step 2 now uses tick-all-that-apply chips.
 - The session cookie holds the email unsigned, so anyone can set it by hand and appear signed in (code review 2026-10-23, finding 6; accepted for the prototype). Sign it (HMAC with a secret in .env.local) or replace it with real auth before any real use.
 - 5.1 descoped (2026-10-29): only the Most viewed post, Most liked post, and Most popular trends chips are offered; Most popular item, Common reused layouts, and Most used by users need data the prototype does not have. Add them when there is a data source, or drop them from the mid-fi?
+- /login was rebuilt from the updated "Log In" frame on 2026-10-30. Should Create Account, Forgot Password, and the rest of the app also move to the high-fi look?
+- The frame's cream text is hard to read on the light green part of the card (DECISIONS.md 2026-10-30). Should the team darken the gradient or the text?
 - 5.4-5.6 were built in lib/competitors/ (hospitality.ts, themes.ts, findings.ts) and lib/hub/tracking.ts, with the tracked choice saved in the business profile cookie, rather than the planned lib/hub/sample-data.ts and lib/hub/storage.ts; 4.1 and 4.2 are still open for trends, audiences, and saved findings.
 
 ---
