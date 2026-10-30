@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import AuthLayout from "./layout";
-import LoginPage from "./login/page";
+import LoginPage from "../(login)/login/page";
 import ForgotPasswordPage from "./forgot-password/page";
 import ResetPasswordPage from "./reset-password/page";
 import { requestPasswordReset, resetPassword } from "./actions";

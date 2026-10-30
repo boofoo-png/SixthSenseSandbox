@@ -31,6 +31,13 @@
   --info-bg: #e5f6fd;
   --info: #0288d1;
 
+  /* High-fi styleguide colorway. */
+  --brand-cream: #f6f8ed;
+  --brand-lime: #eaffab;
+  --brand-lime-bright: #ddfe56;
+  --brand-blue: #1d4990;
+  --brand-navy: #001f3e;
+
   --background: var(--canvas);
   --foreground: var(--ink);
 }
@@ -63,6 +70,11 @@
   --color-info-fg: var(--info-fg);
   --color-info-bg: var(--info-bg);
   --color-info: var(--info);
+  --color-brand-cream: var(--brand-cream);
+  --color-brand-lime: var(--brand-lime);
+  --color-brand-lime-bright: var(--brand-lime-bright);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-navy: var(--brand-navy);
   --font-roboto: var(--font-roboto-sans);
   --shadow-elevation-1: 0px 2px 1px -1px rgba(0, 0, 0, 0.2), 0px 1px 1px 0px rgba(0, 0, 0, 0.14),
     0px 1px 3px 0px rgba(0, 0, 0, 0.12);
