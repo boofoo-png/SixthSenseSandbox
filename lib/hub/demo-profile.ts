@@ -3,6 +3,10 @@ import type { BusinessProfile } from "./onboarding";
 import { decodeProfile, profileValueFor } from "./profile";
 
 // The demo account has no sign-up answers, so it gets a fictional sample business.
+
+/** The demo business's name (fictional, like its website). */
+export const DEMO_COMPANY = "Harbourline Supply Co.";
+
 export const DEMO_PROFILE: BusinessProfile = {
   email: DEMO_ACCOUNT.email,
   industries: ["Wholesale", "Hospitality"],

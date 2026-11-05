@@ -245,3 +245,14 @@ Decision: Follow the frame's colors and layout. The gradient is saved as public/
 Alternatives considered: Keeping the navy text from the earlier version was rejected because it would no longer match the frame the user asked to follow.
 
 Supersedes: "Login follows the high-fi look in its own route group, with darker text than the frame" (2026-10-30), for its text and card colors and the frame contents. The route group and tokens stay.
+
+## 2026-11-04 - Dashboard and signed-in shell follow the Figma Make
+
+Context: The team shared a Figma Make prototype, "Marketing Intelligence Hub" (figma.com/make/ZKaGiBF0XpdUruvGEjvrTa). Its dashboard is a "Marketing Overview" of six metric cards inside a sidebar layout on a green gradient, with a Sense AI drawer and a first-visit welcome and tour. The user asked to replace the dashboard with it, including everything on that page.
+
+Decision: / becomes the Make's Marketing Overview, and every signed-in page gets the Make's sidebar and top bar in place of the mid-fi top bar and menu drawer. The sidebar keeps this app's seven areas, because the Make's Audience, Calendar, Community, and Integrations pages do not exist here. The figures are tested sample data (the 30-day ones match the Make). The 7 days / 30 days switch writes the date bar's `period` so the choice carries to other pages. Sense AI gives a labelled sample answer. The welcome and tour show once, after sign-up, by clearing the `ss_new` cookie. Pages not redesigned yet keep their light look and Roboto type on a rounded panel inside the shell.
+
+Alternatives considered: Keeping the tiles and adding the cards below was offered and not chosen. Copying the Make's menu labels was rejected because most would lead to pages that do not exist.
+
+Supersedes: the top bar and navigation drawer in "Follow the mid-fi" (2026-10-22), and the tile dashboard decided with the `ss_new` cookie, for the dashboard's content. The cookie itself stays.
+

@@ -1,10 +1,7 @@
 import Image from "next/image";
-import { Montserrat } from "next/font/google";
 import type { ReactNode } from "react";
 import { APP_NAME } from "@/lib/navigation";
-
-// Typeface of the high-fi styleguide. Only this screen uses it so far; the rest of the app stays on Roboto.
-const montserrat = Montserrat({ subsets: ["latin"] });
+import { montserrat } from "../fonts";
 
 // The high-fi "Log In" frame: the logo, welcome, and tagline on the left, the page on a glass card on the right.
 // Sizes follow the screen height (the frame is 1117px tall) so the page fits without scrolling.

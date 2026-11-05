@@ -1,6 +1,6 @@
 # Implementation Plan: Sixth Sense (Mid-fi Build)
 
-_Last updated: 2026-10-30_
+_Last updated: 2026-11-04_
 
 What each area must do comes from docs/FUNCTIONALITY.md (the team's functionality list, updated 2026-10-30). Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
 
@@ -46,6 +46,9 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 ## Phase 3 - Dashboard (test-first)
 - [x] 3.1 Dashboard at / from the mid-fi's two versions: "New account" (right after sign-up: What would you like to do?, Ask anything, and Research Competitors, Explore Audience and Trend, AI Management, Content Creation) and "Have account before" (after signing in: Welcome Back! plus Insight Report and Revisit Findings on top); each tile has an icon, a title with an arrow that shows a short description, and Select; Ask anything opens /ask, which repeats the question and says answers are coming. The old overview moved to /insights as the start of Insight Report (app/(dashboard)/page.tsx, _components/dashboard-tiles.tsx, ask/, insights/)
 - [x] 3.2 Icons for the tiles and top bar (menu, person, settings, search) as small inline SVG components with accessible labels (components/icons.tsx)
+- [x] 3.3 Dashboard follows the Figma Make "Marketing Intelligence Hub" (2026-11-04): Marketing Overview with Competitor Activities, Market Interest, Audience Growth, Engagement, Planning, and Cross-Channel Momentum cards and a 7 days / 30 days switch stored as the date bar's `period`; sample figures for both periods, the sign-up competitors first, and the next Tuesday as the publishing window (lib/hub/overview.ts, app/(dashboard)/page.tsx)
+- [x] 3.4 Signed-in shell from the Make replaces the 1.3 top bar: green gradient, glass sidebar with the seven areas, Sense AI, the signed-in profile, settings, and sign out; top bar with Ask anything, notifications, and the business name; on phones the sidebar sits on top with the areas in a row; pages not yet redesigned sit on a light panel (lib/hub/workspace.ts, app/(dashboard)/layout.tsx, _components/sidebar.tsx, top-bar.tsx, page-surface.tsx, components/line-icons.tsx)
+- [x] 3.5 Sense AI drawer (suggested questions and a labelled sample answer) and the Make's first-visit welcome and seven-step tour, shown once right after sign-up (_components/sidebar.tsx, overview-tour.tsx, app/(dashboard)/actions.ts)
 
 ## Phase 4 - Research data and saved findings (test-first)
 - [ ] 4.1 Types for trends, audiences, competitor posts (brand, date, title, summary, finding tags), saved findings, and campaign briefs (lib/hub/types.ts)
