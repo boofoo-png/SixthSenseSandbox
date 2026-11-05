@@ -13,11 +13,11 @@ export default async function DashboardLayout({ children }: { children: ReactNod
 
   return (
     <div
-      className={`${montserrat.className} shell-gradient flex flex-1 flex-col print:block min-[621px]:grid min-[621px]:grid-cols-[220px_minmax(0,1fr)] min-[1101px]:grid-cols-[250px_minmax(0,1fr)]`}
+      className={`${montserrat.className} shell-gradient flex flex-1 flex-col print:block min-[621px]:grid min-[621px]:grid-cols-[238px_minmax(0,1fr)]`}
     >
       {/* The sidebar reads the address to keep the chosen dates, so it sits in Suspense (Next.js 16 docs). */}
-      <Suspense fallback={<Sidebar workspace={workspace} />}>
-        <SidebarWithDates workspace={workspace} />
+      <Suspense fallback={<Sidebar />}>
+        <SidebarWithDates />
       </Suspense>
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar workspace={workspace} />

@@ -93,7 +93,7 @@ describe("Dashboard: Marketing Overview (Figma Make)", () => {
     await renderDashboard();
     expect(within(card("Competitor Activities")).getByRole("link", { name: "View details" }).getAttribute("href")).toBe("/competitors");
     expect(within(card("Audience Growth")).getByRole("link", { name: "Explore audience" }).getAttribute("href")).toBe("/explore");
-    expect(within(card("Planning")).getByRole("link", { name: "Open calendar" }).getAttribute("href")).toBe("/ai-studio");
+    expect(within(card("Planning")).getByRole("link", { name: "Create content" }).getAttribute("href")).toBe("/content");
     expect(within(card("Cross-Channel Momentum")).getByRole("link", { name: "Open report" }).getAttribute("href")).toBe("/insights");
   });
 

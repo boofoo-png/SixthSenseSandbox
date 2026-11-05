@@ -250,9 +250,61 @@ Supersedes: "Login follows the high-fi look in its own route group, with darker 
 
 Context: The team shared a Figma Make prototype, "Marketing Intelligence Hub" (figma.com/make/ZKaGiBF0XpdUruvGEjvrTa). Its dashboard is a "Marketing Overview" of six metric cards inside a sidebar layout on a green gradient, with a Sense AI drawer and a first-visit welcome and tour. The user asked to replace the dashboard with it, including everything on that page.
 
-Decision: / becomes the Make's Marketing Overview, and every signed-in page gets the Make's sidebar and top bar in place of the mid-fi top bar and menu drawer. The sidebar keeps this app's seven areas, because the Make's Audience, Calendar, Community, and Integrations pages do not exist here. The figures are tested sample data (the 30-day ones match the Make). The 7 days / 30 days switch writes the date bar's `period` so the choice carries to other pages. Sense AI gives a labelled sample answer. The welcome and tour show once, after sign-up, by clearing the `ss_new` cookie. Pages not redesigned yet keep their light look and Roboto type on a rounded panel inside the shell.
+Decision: / becomes the Make's Marketing Overview, and every signed-in page gets the Make's sidebar and top bar in place of the mid-fi top bar and menu drawer. The sidebar uses the Make's menu and wording (updated 2026-11-05 at the user's request): Overview, Audience (/explore), Competitors, Content studio (/content), Community (/ai-management), Calendar (the AI Studio calendar), Reports (/insights), and Integrations (/settings). Revisit Findings and Campaigns are no longer in the sidebar until the Make or the team places them. The figures are tested sample data (the 30-day ones match the Make). The 7 days / 30 days switch writes the date bar's `period` so the choice carries to other pages. Sense AI gives a labelled sample answer. The welcome and tour show once, after sign-up, by clearing the `ss_new` cookie. Pages not redesigned yet keep their light look and Roboto type on a rounded panel inside the shell.
 
-Alternatives considered: Keeping the tiles and adding the cards below was offered and not chosen. Copying the Make's menu labels was rejected because most would lead to pages that do not exist.
+Alternatives considered: Keeping the tiles and adding the cards below was offered and not chosen. Keeping this app's seven area names in the sidebar was tried first and replaced on 2026-11-05 because it did not match the Make.
 
 Supersedes: the top bar and navigation drawer in "Follow the mid-fi" (2026-10-22), and the tile dashboard decided with the `ss_new` cookie, for the dashboard's content. The cookie itself stays.
+
+## 2026-11-05 - Target Audience follows the Figma Make's Audience page
+
+Context: The user asked to build the Audience page from the team's Figma Make "Marketing Intelligence Hub". It covers all four Target Audience functions (FUNCTIONALITY.md): search by category, filters with list or chart, a default audience, and suggested audiences.
+
+Decision: /explore becomes the Make's Audience page with its six sample audiences for a hospitality supplier. Search, filters, view, and the selected audience live in the page address (like the date range); filters are native selects until the team's Dropdown lands, applied with Apply filters, while typing shows matching audiences right away. The default audience is saved as `defaultAudience` in the business profile cookie, the same way tracked competitors are; until one is saved it comes from the first sign-up audience type (Commercial and Industrial to procurement teams, Institutional to senior living, Residential to property managers). Suggestions are templates naming the tracked competitors and say they are not live AI.
+
+Alternatives considered: The Make's filter buttons cycle through values on each click; rejected because a select shows every choice at once and works with the keyboard. Keeping filters only in component state was rejected because the plan asks for the view to be remembered while browsing.
+
+## 2026-11-05 - Research Competitors follows the Figma Make's Competitors page
+
+Context: The user asked to update /competitors to the Make's Competitors page. The Make shows fixed numbers for three named companies; the app already generates sample posts and ads for the competitors each business tracks.
+
+Decision: Use the Make's layout and wording, filled from the existing sample posts and ads for the tracked competitors and the date bar's period, so the numbers change with the competitors and dates chosen. Track / Tracking buttons save through the existing tracked-competitors action, one competitor at a time; sign-up competitors stay first. Audience match is a stable sample score. The Make's "Campaign alerts" toggle and "Live" badge are left out because nothing would send an alert; the channel panel is labelled Sample and links to the competitor's full profile instead. The mid-fi's findings chips (Most viewed post, and so on) and the weekly engagement chart are not on the Make page and are removed from it; their modules stay in lib/ for reuse.
+
+Alternatives considered: Copying the Make's fixed figures was rejected because they would not match the competitors a business tracks. Keeping the mid-fi sections below the Make layout was rejected to keep the page the Make's.
+
+Supersedes: the mid-fi layout of /competitors (plan 5.1) for this page.
+
+## 2026-11-05 - Content Creation follows the Figma Make's Content studio
+
+Context: The user asked to build the Content Creation page from the Make. The Make's "Content studio" is one composer with four formats (Social post, Campaign, Email, Article), today's ideas, and a campaign board; FUNCTIONALITY.md lists eight separate tools.
+
+Decision: /content becomes the Make's Content studio. Drafts are deterministic templates (lib/hub/content/studio.ts) chosen by the idea's theme and shaped by format, written for the default audience from the Audience page, and labelled as suggestions, not live AI (2026-10-30 decision). "Add to campaign" saves the draft in this browser's localStorage under a versioned key, since there are no campaigns yet; the board counts saved drafts and AI Studio's planned posts and links to the calendar. Copy is added so a draft can be used straight away. The other tools from FUNCTIONALITY.md stay open in the plan.
+
+Alternatives considered: Building the eight separate tool pages first was not chosen because the user asked to follow the Make. Real AI was not reopened (needs an API key, a server route, and per-use cost).
+
+## 2026-11-05 - Sidebar follows the team's updated Figma Make
+
+Context: The team updated the Make. Its sidebar now lists seven destinations (Overview, Audience, Competitors, Content Creation, Campaigns, AI Management, Reports) with no "Workspace" label, and has only Settings and Help icon buttons at the bottom; the Sense AI card and the profile block are gone. Community, Calendar, and Integrations were removed.
+
+Decision: Match it. Help opens the Sense AI drawer, as in the Make. Sign out moves to the Settings page, where the Make has it. Reports opens Insight Report. The Next.js development badge moves to the bottom-right (next.config.ts) because it covered the sidebar; it only shows during development.
+
+Supersedes: the sidebar menu and profile block in "Dashboard and signed-in shell follow the Figma Make" (2026-11-04).
+
+## 2026-11-05 - Content Creation, AI Management, and Campaigns follow the updated Figma Make
+
+Context: The team updated the Make the same day. Content Creation became a hub of eight tools (four to create, four to edit), matching FUNCTIONALITY.md; AI Management became a community inbox; and Campaigns became a campaign brief with a generated draft. The user asked for the app to match the current Make.
+
+Decision: Build all three. Content tools live at /content/<tool>, write from shared tested templates (lib/hub/content/), and save in the browser under a versioned key so Repurpose can reuse them. The Make's sample photos are stored in public/content rather than loaded from Unsplash. The inbox uses sample messages; approving a reply only records it in the browser, because no real accounts are connected. Campaign drafts are templates built from the brief and are labelled as mock proposals. Where the Make leaves something unclear, the smallest working choice is made: Edit Posts gets a caption box (an image has no text to edit), Upload allows 10 MB as the Make says but still only reads TXT, MD, and CSV (2026-10-30 decision), and the launch date is a date picker.
+
+Alternatives considered: Keeping the single Content studio composer was rejected because the Make replaced it. Building AI Management as the planned posting plan and calendar was not chosen because the Make shows an inbox; those plan items stay open.
+
+Supersedes: "Content Creation follows the Figma Make's Content studio" (2026-11-05, earlier the same day).
+
+## 2026-11-05 - Reports follows the Figma Make with the app's own numbers
+
+Context: The Make's Reports page shows total clicks, website traffic, conversions, and engagement, with PDF, CSV, and Presentation exports and a monthly schedule. The app's sample analytics have clicks, impressions, followers, and engagement, but no website traffic or conversions.
+
+Decision: Rebuild /insights (the sidebar's Reports) in the Make's layout with the app's sample analytics, so every number follows the chosen dates (the user chose this over copying the Make's fixed figures). Impressions and followers take the places of website traffic and conversions until real web or sales data is connected. PDF opens the existing printable report, CSV downloads the daily numbers with formula-safe cells, and the monthly export is saved in the browser and offers last month's report when Reports is next opened (2026-10-30 decision). Presentation is shown as not available. The old Insight Report sections (cafe competitor highlights, trends, platform table) are dropped from this page.
+
+Alternatives considered: Copying the Make's fixed numbers was rejected because they would never change and would suggest website traffic and conversions are tracked.
 

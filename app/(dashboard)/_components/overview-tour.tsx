@@ -14,14 +14,14 @@ export const TOUR_STEPS = [
     eyebrow: "Step 1 · Navigate",
     title: "Your workspace navigation",
     description:
-      "Move between your dashboard, insight report, saved findings, competitors, audience and trends, AI management, content, and campaigns from here.",
+      "Move between overview, audience, competitors, content creation, campaigns, AI management, and reports from here.",
   },
   {
     target: "topbar",
     eyebrow: "Step 2 · Find answers",
     title: "Search or ask Sense AI",
     description:
-      "Ask anything about your market, review notifications, or open Sense AI from the sidebar for a direct question.",
+      "Ask anything about your market, review notifications, or open Sense AI with Help in the sidebar for a direct question.",
   },
   {
     target: "metrics",

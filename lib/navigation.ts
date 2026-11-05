@@ -17,13 +17,6 @@ export type NavItem = { href: string; label: string } & (
     }
 );
 
-/** AI Studio (built before the mid-fi) already plans posts; AI Management and Content Creation grow from it. */
-const AI_STUDIO = {
-  href: "/ai-studio",
-  label: "AI Studio",
-  description: "Content ideas, captions, hashtags, best times to post, and a content calendar.",
-};
-
 /** The dashboard and the seven areas, in the order of the dashboard tiles (mid-fi). */
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Dashboard", status: "ready" },
@@ -40,54 +33,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
     ],
   },
   { href: "/competitors", label: "Research Competitors", status: "ready" },
-  {
-    href: "/explore",
-    label: "Explore Audience and Trend",
-    status: "coming-soon",
-    summary: "Find out what your customers care about and what is changing in your market.",
-    planned: [
-      "Search trends by industry, location, and time period",
-      "Trend details with related keywords and sources",
-      "Audience profiles with needs, challenges, and interests",
-      "Save what you find or start a campaign from it",
-    ],
-  },
-  {
-    href: "/ai-management",
-    label: "AI Management",
-    status: "coming-soon",
-    summary: "Plan when and how often to post.",
-    planned: [
-      "A posting plan: how often, the best days and times, and the content mix",
-      "A content calendar for each platform",
-      "Upcoming posts and connected accounts",
-      "Auto publishing is coming later; for now you post yourself",
-    ],
-    availableNow: AI_STUDIO,
-  },
-  {
-    href: "/content",
-    label: "Content Creation",
-    status: "coming-soon",
-    summary: "Create, re-purpose, and edit content with the help of AI.",
-    planned: [
-      "Social posts: caption, visual guidelines, keywords, and hashtags",
-      "Ideas for videos, blogs, and ad copy",
-      "Edit posts, improve copy, and repurpose content for other platforms",
-    ],
-    availableNow: AI_STUDIO,
-  },
-  {
-    href: "/campaigns",
-    label: "Campaigns",
-    status: "coming-soon",
-    summary: "Turn your research into a campaign.",
-    planned: [
-      "Choose the products, the goal (awareness, leads, or sales), and the audience",
-      "Build an audience, or let Sixth Sense suggest one",
-      "A campaign brief: objective, audience, key message, channels, and next steps",
-    ],
-  },
+  { href: "/explore", label: "Explore Audience and Trend", status: "ready" },
+  { href: "/ai-management", label: "AI Management", status: "ready" },
+  { href: "/content", label: "Content Creation", status: "ready" },
+  { href: "/campaigns", label: "Campaigns", status: "ready" },
 ];
 
 /** Pages behind the profile and settings buttons in the top bar. */
@@ -111,6 +60,20 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
     ],
   },
 ];
+
+/**
+ * The sidebar menu from the Figma Make "Marketing Intelligence Hub", in its order and wording.
+ * Updated by the team on 2026-11-05; Reports opens Insight Report.
+ */
+export const SIDEBAR_ITEMS = [
+  { label: "Overview", href: "/", icon: "overview" },
+  { label: "Audience", href: "/explore", icon: "audience" },
+  { label: "Competitors", href: "/competitors", icon: "building" },
+  { label: "Content Creation", href: "/content", icon: "download" },
+  { label: "Campaigns", href: "/campaigns", icon: "campaign" },
+  { label: "AI Management", href: "/ai-management", icon: "sparkles" },
+  { label: "Reports", href: "/insights", icon: "clipboard" },
+] as const;
 
 /** True when `pathname` is the page at `href` or one of its sub-pages. */
 export function isActivePath(href: string, pathname: string): boolean {

@@ -140,8 +140,24 @@ body {
   backdrop-filter: blur(18px);
 }
 
+/* Sidebar (Figma Make, updated 2026-11-05): a green glass panel with a soft highlight. */
+.shell-sidebar {
+  border: 1px solid rgba(246, 248, 237, 0.28);
+  border-left: 0;
+  background:
+    radial-gradient(circle at 25% 8%, rgba(234, 255, 171, 0.18), transparent 30%),
+    linear-gradient(145deg, rgba(137, 175, 104, 0.9), rgba(68, 129, 102, 0.94));
+  box-shadow:
+    inset -1px 0 0 rgba(246, 248, 237, 0.28),
+    12px 0 34px rgba(0, 31, 62, 0.14);
+  backdrop-filter: blur(22px);
+}
+
 .shell-nav-active {
-  background: linear-gradient(90deg, rgba(3, 82, 94, 1) 0%, rgba(3, 82, 94, 0.8) 44%, rgba(3, 82, 94, 0) 100%);
+  background: linear-gradient(90deg, rgba(0, 82, 72, 0.34), rgba(0, 69, 66, 0.2));
+  box-shadow:
+    inset 0 1px 0 rgba(246, 248, 237, 0.3),
+    0 8px 18px rgba(0, 31, 62, 0.08);
 }
 
 /* Navy glass panels: the Sense AI drawer and the tour popover. */

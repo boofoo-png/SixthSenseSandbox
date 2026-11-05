@@ -31,9 +31,8 @@ describe("Dashboard layout", () => {
     expect(screen.getByText("Page content")).toBeDefined();
   });
 
-  it("shows the signed-in account in the sidebar and top bar", async () => {
+  it("shows the signed-in business in the top bar", async () => {
     await renderLayout();
-    expect(screen.getByText(DEMO_ACCOUNT.name)).toBeDefined();
     expect(screen.getByRole("link", { name: /Harbourline Supply Co\./ }).getAttribute("href")).toBe("/profile");
   });
 

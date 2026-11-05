@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ACCOUNT_ITEMS, APP_NAME, NAV_ITEMS, isActivePath } from "./navigation";
+import { ACCOUNT_ITEMS, APP_NAME, NAV_ITEMS, SIDEBAR_ITEMS, isActivePath } from "./navigation";
 
 describe("APP_NAME", () => {
   it("is the product name from the mid-fi", () => {
@@ -36,7 +36,7 @@ describe("NAV_ITEMS", () => {
 
   it("marks only built areas as ready", () => {
     const ready = NAV_ITEMS.filter((item) => item.status === "ready").map((item) => item.href);
-    expect(ready).toEqual(["/", "/insights", "/competitors"]);
+    expect(ready).toEqual(["/", "/insights", "/competitors", "/explore", "/ai-management", "/content", "/campaigns"]);
   });
 
   it("describes what is planned for every area that is not built yet", () => {
@@ -45,15 +45,6 @@ describe("NAV_ITEMS", () => {
         expect(item.summary.length).toBeGreaterThan(0);
         expect(item.planned.length).toBeGreaterThan(0);
       }
-    }
-  });
-});
-
-describe("features already built", () => {
-  it("point the AI Management and Content Creation placeholders at AI Studio, which works today", () => {
-    for (const href of ["/ai-management", "/content"]) {
-      const item = NAV_ITEMS.find((entry) => entry.href === href);
-      expect(item?.status === "coming-soon" && item.availableNow?.href).toBe("/ai-studio");
     }
   });
 });
@@ -74,6 +65,27 @@ describe("all items", () => {
     for (const href of hrefs) {
       expect(href.startsWith("/")).toBe(true);
     }
+  });
+});
+
+describe("SIDEBAR_ITEMS", () => {
+  it("has the Figma Make's menu, in its order", () => {
+    expect(SIDEBAR_ITEMS.map((item) => item.label)).toEqual([
+      "Overview",
+      "Audience",
+      "Competitors",
+      "Content Creation",
+      "Campaigns",
+      "AI Management",
+      "Reports",
+    ]);
+  });
+
+  it("links every item to a page this app has, each to a different one", () => {
+    const known = [...NAV_ITEMS, ...ACCOUNT_ITEMS].map((item) => item.href);
+    const hrefs = SIDEBAR_ITEMS.map((item) => item.href);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
+    for (const href of hrefs) expect(known).toContain(href);
   });
 });
 

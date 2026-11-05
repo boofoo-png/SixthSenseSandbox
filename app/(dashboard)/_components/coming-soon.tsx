@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ACCOUNT_ITEMS, NAV_ITEMS, type NavItem } from "@/lib/navigation";
 import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "./styles";
 
@@ -14,7 +15,7 @@ export function comingSoonItem(href: string): ComingSoonItem {
 }
 
 /** Placeholder for a page that is planned but not built yet, listing what the mid-fi plans for it. */
-export function ComingSoon({ item }: { item: ComingSoonItem }) {
+export function ComingSoon({ item, children }: { item: ComingSoonItem; children?: ReactNode }) {
   return (
     <main className={pageClass}>
       <p className="text-[12px] leading-[2.66] tracking-[1px] uppercase text-ink-muted">Coming soon</p>
@@ -37,6 +38,7 @@ export function ComingSoon({ item }: { item: ComingSoonItem }) {
           </Link>
         </section>
       )}
+      {children}
       <Link href="/" className={`mt-6 inline-block ${linkClass}`}>
         Back to dashboard
       </Link>

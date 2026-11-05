@@ -1,138 +1,103 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { comparePeriods } from "@/lib/analytics/kpis";
 import { sampleDataBetween } from "@/lib/analytics/sample-data";
-import { buildSummary, formatPercent } from "@/lib/analytics/summary";
-import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
-import {
-  SAMPLE_COMPETITORS,
-  SAMPLE_TRENDS,
-  createSampleAds,
-  samplePostsBetween,
-} from "@/lib/competitors/sample-data";
-import { topTrends } from "@/lib/competitors/trends";
-import { dataRange, resolveDateRange, type SearchParams } from "@/lib/date-range";
-import InsightsPage from "./page";
+import { buildSummary } from "@/lib/analytics/summary";
+import { SCHEDULE_KEY } from "@/lib/reports/insights";
+import { dataRange, pageDates, resolveDateRange, type SearchParams } from "@/lib/date-range";
+import { resetScheduleForTests } from "./_components/export-panel";
+import ReportsPage from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/insights", useRouter: () => ({ push: vi.fn() }) }));
 
+beforeEach(() => {
+  window.localStorage.clear();
+  resetScheduleForTests();
+});
 afterEach(cleanup);
 
 // The test clock (vitest.setup.ts) is Fri 2026-10-09.
 const TODAY = "2026-10-09";
 
 async function renderPage(params: SearchParams = {}) {
-  render(await InsightsPage({ searchParams: Promise.resolve(params) } as PageProps<"/insights">));
+  render(await ReportsPage({ searchParams: Promise.resolve(params) } as PageProps<"/insights">));
 }
 
 function expectedFor(params: SearchParams) {
   const resolved = resolveDateRange(params, TODAY);
   const ranges = { current: resolved.current, comparison: resolved.comparison };
-  return { resolved, ranges, rows: sampleDataBetween(dataRange(resolved)) };
+  return { ranges, rows: sampleDataBetween(dataRange(resolved)) };
 }
 
-describe("Insight Report page", () => {
-  it("links to the printable report", async () => {
+const stat = (label: string) => screen.getByText(label).closest("article") as HTMLElement;
+
+describe("Reports (Figma Make, with the app's sample data)", () => {
+  it("has the Make's heading and says the numbers are samples", async () => {
     await renderPage();
-    expect(screen.getByRole("link", { name: "Open the printable report" }).getAttribute("href")).toBe("/reports");
+    expect(screen.getByRole("heading", { level: 1, name: "Make every result easy to understand" })).toBeDefined();
+    expect(screen.getByText(/these numbers show how reporting will work/)).toBeDefined();
   });
 
-  it("renders the heading and the date bar with the default dates", async () => {
-    await renderPage();
-    expect(screen.getByRole("heading", { level: 1, name: "Insight Report" })).toBeDefined();
-    expect(screen.getByRole("region", { name: "Date range" })).toBeDefined();
-    expect(screen.getByText("Showing Oct 4 - 9 compared with Sep 27 - Oct 2.")).toBeDefined();
-  });
-
-  it("renders the four KPI tiles, compared with the chosen period", async () => {
-    await renderPage();
-    const metrics = screen.getByRole("region", { name: "Key metrics" });
-    for (const label of ["Impressions", "Engagements", "Engagement rate", "Followers"]) {
-      expect(within(metrics).getByText(label)).toBeDefined();
-    }
-    expect(within(metrics).getAllByText(/vs Sep 27 - Oct 2$/).length).toBeGreaterThan(0);
-  });
-
-  it("renders the plain-English summary for the chosen dates", async () => {
-    await renderPage();
-    const { ranges, rows } = expectedFor({});
-    const lines = buildSummary(rows, { ranges, currentPhrase: "during Oct 4 - 9", comparisonPhrase: "Sep 27 - Oct 2" });
-    for (const line of lines) {
-      expect(screen.getByText(line)).toBeDefined();
-    }
-  });
-
-  it("follows the dates picked in the address", async () => {
-    await renderPage({ period: "last-30-days", compare: "last-year" });
-    expect(screen.getByText("Showing Sep 10 - Oct 9, 2026 compared with Sep 10 - Oct 9, 2025.")).toBeDefined();
-    const { ranges, rows } = expectedFor({ period: "last-30-days", compare: "last-year" });
+  it("shows clicks, impressions, followers, and engagement, compared with the last period", async () => {
+    await renderPage({ period: "last-30-days" });
+    const { rows, ranges } = expectedFor({ period: "last-30-days" });
     const { current } = comparePeriods(rows, ranges);
-    const metrics = screen.getByRole("region", { name: "Key metrics" });
-    expect(within(metrics).getByText(new Intl.NumberFormat("en-US").format(current.impressions))).toBeDefined();
-  });
-
-  it("shows market highlights with clicks and click-through rate", async () => {
-    await renderPage();
-    const { ranges, rows } = expectedFor({});
-    const { current } = comparePeriods(rows, ranges);
-    const highlights = screen.getByRole("region", { name: "Market highlights" });
-    expect(within(highlights).getByText(new Intl.NumberFormat("en-US").format(current.clicks))).toBeDefined();
-    expect(within(highlights).getByText(formatPercent(current.clickThroughRate, 2))).toBeDefined();
-  });
-
-  it("compares platforms in a table", async () => {
-    await renderPage();
-    const table = screen.getByRole("table", { name: "Platform comparison" });
-    const headers = within(table).getAllByRole("columnheader").map((h) => h.textContent);
-    expect(headers).toEqual(["Platform", "Impressions", "Engagement rate", "Change"]);
-    for (const platform of ["Instagram", "Facebook", "TikTok", "LinkedIn"]) {
-      expect(within(table).getByRole("rowheader", { name: platform })).toBeDefined();
+    expect(within(stat("Total clicks")).getByText(current.clicks >= 1000 ? `${Number((current.clicks / 1000).toFixed(1))}K` : String(current.clicks))).toBeDefined();
+    for (const label of ["Total clicks", "Impressions", "Followers", "Engagement"]) {
+      expect(within(stat(label)).getByText(/from last period|No earlier data/)).toBeDefined();
     }
   });
 
-  it("shows competitor activity highlights for the chosen dates", async () => {
-    await renderPage();
-    const { resolved, ranges } = expectedFor({});
-    const highlights = competitorHighlights(
-      competitorActivity(SAMPLE_COMPETITORS, samplePostsBetween(dataRange(resolved)), createSampleAds(TODAY), ranges),
-    );
-    const competitors = screen.getByRole("region", { name: "Competitor activity" });
-    const mostActive = highlights.mostActive!;
-    expect(
-      within(competitors).getByText(`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts)`),
-    ).toBeDefined();
-    const best = highlights.bestEngagement!;
-    expect(
-      within(competitors).getByText(`Best engagement: ${best.competitor.name} (${formatPercent(best.engagementRate, 1)})`),
-    ).toBeDefined();
-    expect(
-      within(competitors).getByText(`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`),
-    ).toBeDefined();
-  });
-
-  it("shows the top trends with relevant ones marked", async () => {
-    await renderPage();
-    const trends = screen.getByRole("region", { name: "Trends" });
-    const items = within(trends).getAllByRole("listitem");
-    const expected = topTrends(SAMPLE_TRENDS);
-    expect(items).toHaveLength(expected.length);
-    expect(items[0].textContent).toContain(expected[0].label);
-    expect(within(trends).getAllByText("Relevant to you").length).toBe(expected.filter((t) => t.relevant).length);
-  });
-
-  it("keeps the chosen dates in its links", async () => {
+  it("charts clicks by week for longer ranges and by day for short ones", async () => {
+    await renderPage({ period: "last-30-days" });
+    const chart = screen.getByRole("figure");
+    expect(within(chart).getAllByRole("listitem")[0].textContent).toMatch(/W1: \d+ clicks/);
+    cleanup();
     await renderPage({ period: "last-7-days" });
-    expect(screen.getByRole("link", { name: "View full analytics" }).getAttribute("href")).toBe("/analytics?period=last-7-days");
-    expect(screen.getByRole("link", { name: "Compare competitors" }).getAttribute("href")).toBe("/competitors?period=last-7-days");
+    expect(within(screen.getByRole("figure")).getAllByRole("listitem")).toHaveLength(7);
   });
 
-  it("follows today's date", async () => {
-    vi.setSystemTime(new Date(2026, 10, 20, 9));
-    try {
-      await renderPage();
-      expect(screen.getByText("Showing Nov 15 - 20 compared with Nov 8 - 13.")).toBeDefined();
-    } finally {
-      vi.setSystemTime(new Date(2026, 9, 9, 12));
-    }
+  it("writes the summary from the numbers, labelled as templates", async () => {
+    await renderPage();
+    const dates = pageDates({}, TODAY);
+    const first = buildSummary(sampleDataBetween(dates.dataRange), {
+      ranges: dates.ranges,
+      currentPhrase: `during ${dates.currentLabel}`,
+      comparisonPhrase: dates.comparisonLabel,
+    })[0];
+    const panel = screen.getByRole("region", { name: /^Marketing performance/ });
+    expect(within(panel).getByText(first)).toBeDefined();
+    expect(within(panel).getByText(/not live AI/)).toBeDefined();
+  });
+
+  it("exports a PDF through the printable report, keeping the dates", async () => {
+    await renderPage({ period: "last-30-days" });
+    const panel = screen.getByRole("region", { name: "Share this report" });
+    expect(within(panel).getByRole("link", { name: /PDF report/ }).getAttribute("href")).toBe("/reports?period=last-30-days");
+    expect(within(panel).getByRole("button", { name: /Presentation/ }).hasAttribute("disabled")).toBe(true);
+  });
+
+  it("downloads the numbers as CSV", async () => {
+    const createObjectURL = vi.fn(() => "blob:report");
+    Object.assign(URL, { createObjectURL, revokeObjectURL: vi.fn() });
+    await renderPage();
+    fireEvent.click(screen.getByRole("button", { name: /CSV data/ }));
+    expect(createObjectURL).toHaveBeenCalledOnce();
+    expect(screen.getByText(/^Downloaded sixth-sense-report-/)).toBeDefined();
+  });
+
+  it("schedules a monthly export in the browser", async () => {
+    await renderPage();
+    const button = screen.getByRole("button", { name: "Schedule monthly export" });
+    fireEvent.click(button);
+    expect(screen.getByRole("button", { name: "Monthly export scheduled" }).getAttribute("aria-pressed")).toBe("true");
+    expect(JSON.parse(window.localStorage.getItem(SCHEDULE_KEY) ?? "{}").since).toBe(TODAY);
+  });
+
+  it("offers last month's report once a new month has started since scheduling", async () => {
+    window.localStorage.setItem(SCHEDULE_KEY, JSON.stringify({ version: 1, since: "2026-09-12", lastReady: null }));
+    await renderPage();
+    expect(screen.getByText("Your monthly report for September 2026 is ready.")).toBeDefined();
+    expect(screen.getByRole("button", { name: "Download September 2026 as CSV" })).toBeDefined();
   });
 });

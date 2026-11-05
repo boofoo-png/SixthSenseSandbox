@@ -4,26 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { signOut } from "@/app/(auth)/actions";
-import { LineIcon, type LineIconName } from "@/components/line-icons";
+import { LineIcon } from "@/components/line-icons";
 import { dateQuery, withQuery } from "@/lib/date-range";
-import type { Workspace } from "@/lib/hub/workspace";
-import { APP_NAME, NAV_ITEMS, isActivePath } from "@/lib/navigation";
+import { APP_NAME, SIDEBAR_ITEMS, isActivePath } from "@/lib/navigation";
 
-// Sidebar from the Figma Make "Marketing Intelligence Hub": logo, the app's areas, Sense AI, and
-// the signed-in profile. It lists this app's seven areas rather than the Make's menu, whose
-// Audience, Calendar, and Integrations pages do not exist here.
-
-const NAV_ICONS: Record<string, LineIconName> = {
-  "/": "dashboard",
-  "/insights": "activity",
-  "/findings": "bookmark",
-  "/competitors": "target",
-  "/explore": "audience",
-  "/ai-management": "message",
-  "/content": "content",
-  "/campaigns": "megaphone",
-};
+// Sidebar from the Figma Make "Marketing Intelligence Hub" (updated by the team on 2026-11-05):
+// the logo, the Make's seven destinations, and Settings and Help (which opens Sense AI) at the
+// bottom. Sign out lives on the Settings page, as in the Make.
 
 const SENSE_PROMPTS = [
   "What is gaining momentum this week?",
@@ -31,108 +18,83 @@ const SENSE_PROMPTS = [
   "What content should we create next?",
 ] as const;
 
-const profileButtonClass =
-  "grid size-9 shrink-0 place-items-center rounded-lg border border-brand-cream/30 text-brand-cream transition-colors hover:bg-brand-cream/12 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime-bright";
+const utilityButtonClass =
+  "grid size-[38px] place-items-center rounded-full text-brand-navy transition-colors hover:bg-brand-navy/22 hover:text-brand-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime-bright";
 
 /** Sidebar that keeps the date bar's selection in its links. Wrap in Suspense (it reads the address). */
-export function SidebarWithDates({ workspace }: { workspace: Workspace }) {
+export function SidebarWithDates() {
   const searchParams = useSearchParams();
-  return <Sidebar workspace={workspace} query={dateQuery(new URLSearchParams(searchParams.toString()))} />;
+  return <Sidebar query={dateQuery(new URLSearchParams(searchParams.toString()))} />;
 }
 
 /** The signed-in sidebar. `query` is the date selection to keep when switching pages. */
-export function Sidebar({ workspace, query = "" }: { workspace: Workspace; query?: string }) {
+export function Sidebar({ query = "" }: { query?: string }) {
   const pathname = usePathname();
   const [senseOpen, setSenseOpen] = useState(false);
   const closeSense = useCallback(() => setSenseOpen(false), []);
+  const settingsActive = isActivePath("/settings", pathname);
 
   // The drawer sits beside the sidebar, not inside it: the sidebar's blur would trap a fixed panel.
   return (
     <>
-    <aside
-      data-tour="navigation"
-      className="relative z-10 flex flex-col rounded-b-[26px] border-brand-cream/18 bg-brand-cream/15 px-4 pt-5 pb-3.5 text-brand-cream shadow-[12px_0_38px_rgba(0,31,62,0.12)] backdrop-blur-[18px] print:hidden min-[621px]:sticky min-[621px]:top-0 min-[621px]:h-svh min-[621px]:rounded-none min-[621px]:rounded-r-[38px] min-[621px]:border-r min-[621px]:px-3.5 min-[621px]:pt-[34px] min-[621px]:pb-[22px] min-[1101px]:px-5"
-    >
-      <Link
-        href={withQuery("/", query)}
-        className="flex items-center gap-2.5 rounded-lg px-2.5 pb-[18px] text-[21px] tracking-[-0.02em] min-[621px]:pb-[54px]"
+      <aside
+        data-tour="navigation"
+        className="shell-sidebar relative z-10 flex flex-col rounded-b-[26px] px-4 pt-5 pb-3.5 text-brand-cream print:hidden min-[621px]:sticky min-[621px]:top-0 min-[621px]:h-svh min-[621px]:rounded-none min-[621px]:rounded-r-[34px] min-[621px]:pt-7 min-[621px]:pr-0 min-[621px]:pb-6 min-[621px]:pl-[27px]"
       >
-        <Image src="/brand/sixth-sense-mark.svg" alt="" width={34} height={35} className="h-[35px] w-[34px]" />
-        <strong className="font-semibold">SixthSense</strong>
-        <span className="sr-only">{APP_NAME} dashboard</span>
-      </Link>
-
-      <nav aria-label="Main" className="min-h-0 min-[621px]:overflow-y-auto">
-        <p className="mb-4 ml-3 hidden text-[10px] font-bold tracking-[0.13em] uppercase min-[621px]:block">Workspace</p>
-        <ul className="flex gap-2 overflow-x-auto pb-1.5 min-[621px]:flex-col min-[621px]:gap-2.5 min-[621px]:overflow-visible min-[621px]:pb-0">
-          {NAV_ITEMS.map((item) => {
-            const active = isActivePath(item.href, pathname);
-            return (
-              <li key={item.href} className="shrink-0">
-                <Link
-                  href={withQuery(item.href, query)}
-                  aria-current={active ? "page" : undefined}
-                  className={`flex min-h-11 min-w-[145px] items-center gap-3 rounded-3xl px-[15px] text-[14px] leading-tight font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime-bright min-[621px]:min-h-[50px] min-[621px]:min-w-0 min-[621px]:rounded-l-[28px] min-[621px]:rounded-r-none ${
-                    active ? "shell-nav-active" : "hover:bg-brand-cream/12"
-                  }`}
-                >
-                  <LineIcon name={NAV_ICONS[item.href] ?? "dashboard"} size={21} />
-                  <span className="min-w-0 flex-1">{item.label}</span>
-                  {item.status === "coming-soon" && (
-                    <span className="shrink-0 text-[10px] font-medium opacity-75">Soon</span>
-                  )}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="hidden flex-1 min-[621px]:block" />
-
-      <button
-        type="button"
-        onClick={() => setSenseOpen(true)}
-        aria-haspopup="dialog"
-        className="mx-0.5 my-4 hidden items-center gap-[9px] rounded-[10px] border border-brand-cream/24 bg-brand-cream/12 p-3 text-left transition-colors hover:bg-brand-cream/18 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime-bright min-[621px]:flex"
-      >
-        <span className="grid size-[30px] shrink-0 place-items-center rounded-lg bg-brand-lime text-brand-navy">
-          <LineIcon name="sparkles" size={17} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[12px] font-semibold">Sense AI</span>
-          <span className="block text-[10px]">Ask about your market</span>
-        </span>
-        <LineIcon name="chevron" size={16} />
-      </button>
-
-      <div className="flex items-center gap-[9px] border-t border-brand-cream/22 px-1 pt-[15px]">
-        <span
-          aria-hidden="true"
-          className="grid size-[31px] shrink-0 place-items-center rounded-full bg-brand-lime text-[10px] font-bold text-brand-navy"
-        >
-          {workspace.initials}
-        </span>
-        <div className="flex min-w-0 flex-1 flex-col">
-          <strong className="truncate text-[11px] font-semibold">{workspace.name}</strong>
-          <span className="truncate text-[10px]">{workspace.company}</span>
-        </div>
         <Link
-          href={withQuery("/settings", query)}
-          aria-label="Settings"
-          aria-current={isActivePath("/settings", pathname) ? "page" : undefined}
-          className={profileButtonClass}
+          href={withQuery("/", query)}
+          className="flex items-center gap-2.5 rounded-lg pb-[18px] text-[18px] font-bold min-[621px]:pr-[18px] min-[621px]:pb-[54px] min-[621px]:pl-[3px]"
         >
-          <LineIcon name="settings" size={17} />
+          <Image src="/brand/sixth-sense-mark.svg" alt="" width={40} height={42} className="h-[42px] w-10" />
+          <span>SixthSense</span>
+          <span className="sr-only">{APP_NAME} dashboard</span>
         </Link>
-        <form action={signOut}>
-          <button type="submit" aria-label="Sign out" className={profileButtonClass}>
-            <LineIcon name="logout" size={17} />
+
+        <nav aria-label="Main" className="min-h-0 min-[621px]:overflow-y-auto">
+          <ul className="flex gap-2 overflow-x-auto pb-1.5 min-[621px]:flex-col min-[621px]:gap-[7px] min-[621px]:overflow-visible min-[621px]:pb-0">
+            {SIDEBAR_ITEMS.map((item) => {
+              const active = isActivePath(item.href, pathname);
+              return (
+                <li key={item.href} className="shrink-0">
+                  <Link
+                    href={withQuery(item.href, query)}
+                    aria-current={active ? "page" : undefined}
+                    className={`flex min-h-11 min-w-[145px] items-center gap-[9px] rounded-3xl px-3.5 text-[16px] leading-tight font-medium tracking-[-0.015em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-lime-bright min-[621px]:min-h-[52px] min-[621px]:min-w-0 min-[621px]:rounded-l-[18px] min-[621px]:rounded-r-none ${
+                      active ? "shell-nav-active" : "hover:bg-brand-navy/10"
+                    }`}
+                  >
+                    <LineIcon name={item.icon} size={20} />
+                    <span className="min-w-0 flex-1">{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="hidden flex-1 min-[621px]:block" />
+
+        <div className="flex items-center justify-end gap-2.5 pt-2 min-[621px]:justify-start min-[621px]:pt-0 min-[621px]:pl-[9px]">
+          <Link
+            href={withQuery("/settings", query)}
+            aria-label="Settings"
+            aria-current={settingsActive ? "page" : undefined}
+            className={`${utilityButtonClass} ${settingsActive ? "bg-brand-navy/22 text-brand-cream" : ""}`}
+          >
+            <LineIcon name="settings" size={25} />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setSenseOpen(true)}
+            aria-haspopup="dialog"
+            aria-label="Help and Sense AI"
+            className={utilityButtonClass}
+          >
+            <LineIcon name="help" size={25} />
           </button>
-        </form>
-      </div>
-    </aside>
-    {senseOpen && <SenseDrawer onClose={closeSense} />}
+        </div>
+      </aside>
+      {senseOpen && <SenseDrawer onClose={closeSense} />}
     </>
   );
 }

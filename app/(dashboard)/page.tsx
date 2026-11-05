@@ -218,8 +218,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
             </strong>
           </div>
           <p className={bodyClass}>Next recommended publishing window</p>
-          <Link href="/ai-studio" className={`${cardLinkClass} mt-5`}>
-            Open calendar <LineIcon name="chevron" size={14} />
+          <Link href="/content" className={`${cardLinkClass} mt-5`}>
+            Create content <LineIcon name="chevron" size={14} />
           </Link>
         </article>
 

@@ -1,174 +1,129 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { formatChange } from "@/lib/analytics/change";
-import { todayIsoDate } from "@/lib/analytics/dates";
-import { comparePeriods, platformComparison } from "@/lib/analytics/kpis";
+import { shiftDate, todayIsoDate } from "@/lib/analytics/dates";
+import { comparePeriods } from "@/lib/analytics/kpis";
 import { sampleDataBetween } from "@/lib/analytics/sample-data";
 import { buildSummary, formatPercent } from "@/lib/analytics/summary";
-import { PLATFORM_LABELS } from "@/lib/analytics/types";
-import { competitorActivity, competitorHighlights } from "@/lib/competitors/activity";
-import {
-  SAMPLE_COMPETITORS,
-  SAMPLE_TRENDS,
-  createSampleAds,
-  samplePostsBetween,
-} from "@/lib/competitors/sample-data";
-import { topTrends } from "@/lib/competitors/trends";
-import type { TrendSource } from "@/lib/competitors/types";
-import { pageDates, withQuery, type PageDates } from "@/lib/date-range";
+import { pageDates, withQuery } from "@/lib/date-range";
+import { clickBars, reportCsv, reportFileName } from "@/lib/reports/insights";
+import { LineIcon } from "@/components/line-icons";
 import { DateRangeBar } from "../_components/date-range-bar";
-import { KpiTile } from "../_components/kpi-tile";
-import { KpiTiles } from "../_components/kpi-tiles";
-import { cardClass, cardHeadingClass, linkClass, pageClass, subtitleClass, titleClass } from "../_components/styles";
-import { SummaryCard } from "../_components/summary-card";
+import { MakePageHeader, PanelHeading, StatCard, makePageClass, panelClass } from "../_components/make-ui";
+import { ExportPanel } from "./_components/export-panel";
 
 export const metadata: Metadata = {
-  title: "Insight Report",
+  title: "Reports",
+  description: "Bring clicks, impressions, followers, and engagement together, then export or schedule recurring reports.",
 };
 
-const numberFormat = new Intl.NumberFormat("en-US");
+// Reports from the team's updated Figma Make (2026-11-05), filled with the app's sample analytics.
+// The Make's website traffic and conversions are not in the sample data, so impressions and
+// followers take their place (docs/DECISIONS.md 2026-11-05).
 
-const SOURCE_LABELS: Record<TrendSource, string> = {
-  social: "Social",
-  search: "Search",
-  industry: "Industry",
-};
+const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-function CompetitorActivityCard({ dates }: { dates: PageDates }) {
-  const highlights = competitorHighlights(
-    competitorActivity(
-      SAMPLE_COMPETITORS,
-      samplePostsBetween(dates.dataRange),
-      createSampleAds(dates.ranges.current.end),
-      dates.ranges,
-    ),
-  );
-  const { mostActive, bestEngagement } = highlights;
-
-  return (
-    <section aria-labelledby="competitor-activity" className={cardClass}>
-      <h2 id="competitor-activity" className={cardHeadingClass}>Competitor activity</h2>
-      {mostActive === null || bestEngagement === null ? (
-        <p className="mt-3 text-sm text-ink-muted">No competitor posts in this period.</p>
-      ) : (
-        <ul className="mt-3 space-y-2 text-ink-muted">
-          <li>{`Most active: ${mostActive.competitor.name} (${mostActive.postsThisWeek} posts)`}</li>
-          <li>{`Best engagement: ${bestEngagement.competitor.name} (${formatPercent(bestEngagement.engagementRate, 1)})`}</li>
-          <li>{`Ads running: ${highlights.activeAds} across ${highlights.competitorsWithAds} competitors`}</li>
-        </ul>
-      )}
-      <p className="mt-3 text-xs text-ink-muted">Sample data: fictional competitors.</p>
-      <Link href={withQuery("/competitors", dates.query)} className={`mt-3 inline-block ${linkClass}`}>Compare competitors</Link>
-    </section>
-  );
+function compact(value: number): string {
+  return value >= 1000 ? `${Number((value / 1000).toFixed(1))}K` : String(value);
 }
 
-function TrendsCard() {
-  const trends = topTrends(SAMPLE_TRENDS);
-  return (
-    <section aria-labelledby="trends" className={cardClass}>
-      <h2 id="trends" className={cardHeadingClass}>Trends</h2>
-      <ul className="mt-3 divide-y divide-divider">
-        {trends.map((trend) => (
-          <li key={trend.label} className="flex flex-wrap items-baseline justify-between gap-x-3 py-2">
-            <span className="font-medium text-ink">{trend.label}</span>
-            <span className="flex gap-3 text-sm text-ink-muted">
-              {trend.relevant && <span className="text-success">Relevant to you</span>}
-              <span>{SOURCE_LABELS[trend.source]}</span>
-              <span className="font-medium text-ink">{`+${formatPercent(trend.growth)}`}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 text-xs text-ink-muted">Sample trends, growth over the last week.</p>
-    </section>
-  );
+function fromLast(change: number | null): string {
+  return change === null ? "No earlier data to compare" : `${formatChange(change)} from last period`;
 }
 
-export default async function InsightsPage({ searchParams }: PageProps<"/insights">) {
+export default async function ReportsPage({ searchParams }: PageProps<"/insights">) {
   const today = todayIsoDate();
   const dates = pageDates(await searchParams, today);
   // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
   const rows = sampleDataBetween(dates.dataRange);
-  const comparison = comparePeriods(rows, dates.ranges);
-  const platforms = platformComparison(rows, dates.ranges);
+  const { current, change } = comparePeriods(rows, dates.ranges);
+  const bars = clickBars(rows, dates.ranges.current);
   const summary = buildSummary(rows, {
     ranges: dates.ranges,
     currentPhrase: `during ${dates.currentLabel}`,
     comparisonPhrase: dates.comparisonLabel,
   });
 
-  return (
-    <main className={pageClass}>
-      <h1 className={titleClass}>Insight Report</h1>
-      <p className={subtitleClass}>How your marketing did. Showing sample data.</p>
-      <Link href={withQuery("/reports", dates.query)} className={`mt-2 inline-block ${linkClass}`}>
-        Open the printable report
-      </Link>
+  // Last calendar month, for the monthly export.
+  const lastMonthEnd = shiftDate(`${today.slice(0, 7)}-01`, -1);
+  const lastMonth = { start: `${lastMonthEnd.slice(0, 7)}-01`, end: lastMonthEnd };
+  const lastMonthRows = sampleDataBetween(lastMonth);
 
-      <div className="mt-6">
+  return (
+    <main className={makePageClass}>
+      <MakePageHeader
+        eyebrow="Performance and reporting"
+        title="Make every result easy to understand"
+        description="Bring clicks, impressions, followers, and engagement together, then export or schedule recurring reports."
+        question="What drove our results this month?"
+      />
+
+      <div className={`${panelClass} mb-3 grid gap-3`}>
+        <p className="text-[12px] text-[#4f5d5f]">
+          <strong className="text-brand-navy">Sample data:</strong> these numbers show how reporting will work once your accounts are connected.
+        </p>
         <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
       </div>
 
-      <div className="mt-6">
-        <KpiTiles comparison={comparison} compareLabel={dates.comparisonLabel} />
+      <div className="mb-3 grid gap-3 min-[621px]:grid-cols-2 min-[1101px]:grid-cols-4">
+        <StatCard icon="activity" label="Total clicks" value={compact(current.clicks)} detail={fromLast(change.clicks)} />
+        <StatCard icon="audience" label="Impressions" value={compact(current.impressions)} detail={fromLast(change.impressions)} warm />
+        <StatCard icon="target" label="Followers" value={compact(current.followers)} detail={fromLast(change.followers)} warm />
+        <StatCard icon="message" label="Engagement" value={formatPercent(current.engagementRate, 1)} detail={fromLast(change.engagementRate)} />
       </div>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <SummaryCard lines={summary} />
-        </div>
-        <section aria-labelledby="market-highlights" className={cardClass}>
-          <h2 id="market-highlights" className={cardHeadingClass}>Market highlights</h2>
-          <div className="mt-3 grid gap-3">
-            <KpiTile
-              label="Clicks"
-              value={numberFormat.format(comparison.current.clicks)}
-              change={comparison.change.clicks}
-              compareLabel={dates.comparisonLabel}
-            />
-            <KpiTile
-              label="Click-through rate"
-              value={formatPercent(comparison.current.clickThroughRate, 2)}
-              change={comparison.change.clickThroughRate}
-              compareLabel={dates.comparisonLabel}
-            />
+      <div className="grid gap-3 min-[901px]:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
+        <section aria-labelledby="overview-title" className={`${panelClass} min-[901px]:min-h-[420px]`}>
+          <PanelHeading id="overview-title" eyebrow="Executive overview" title={`Marketing performance, ${dates.currentLabel}`}>
+            <span className="text-[11px] text-[#6f7377]">Compared with {dates.comparisonLabel}</span>
+          </PanelHeading>
+          <figure className="mt-5">
+            <figcaption className="sr-only">Clicks for each {bars.length > 0 && bars[0].label.startsWith("W") ? "week" : "day"} of the chosen dates</figcaption>
+            <ol className="flex h-[190px] items-end gap-2 border-b border-brand-teal/15 pb-1">
+              {bars.map((bar) => (
+                <li key={bar.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
+                  <span className="text-[10px] font-semibold text-brand-teal">{bar.value}</span>
+                  <i aria-hidden="true" className="block w-full max-w-[34px] rounded-t-[6px] rounded-b-[2px] bg-linear-to-t from-brand-teal to-[#5a9c88]" style={{ height: `${bar.height}%` }} />
+                  <span className="sr-only">
+                    {bar.label}: {bar.value} clicks
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <div aria-hidden="true" className="mt-1 flex gap-2">
+              {bars.map((bar, index) => (
+                <span key={bar.label} className="min-w-0 flex-1 truncate text-center text-[10px] text-[#6f7377]">
+                  {bars.length > 10 && index % 2 === 1 ? "" : bar.label}
+                </span>
+              ))}
+            </div>
+          </figure>
+          <div className="mt-5 flex items-start gap-3 rounded-[10px] border border-[rgba(116,195,101,0.52)] bg-brand-lime/35 p-3.5">
+            <span className="grid size-[30px] shrink-0 place-items-center rounded-[8px] bg-brand-lime-bright text-brand-navy">
+              <LineIcon name="sparkles" size={16} />
+            </span>
+            <div className="grid gap-1 text-[12px] leading-[1.55] text-[#3f4b4d]">
+              <strong className="text-[13px] text-brand-navy">Sense AI summary</strong>
+              {summary.slice(0, 3).map((line) => (
+                <p key={line}>{line}</p>
+              ))}
+              <small className="text-[11px] text-[#5f6b6d]">Written from your numbers with templates, not live AI.</small>
+            </div>
           </div>
         </section>
+
+        <ExportPanel
+          pdfHref={withQuery("/reports", dates.query)}
+          today={today}
+          current={{ csv: reportCsv(rows, dates.ranges.current), fileName: reportFileName(dates.ranges.current) }}
+          lastMonth={{
+            csv: reportCsv(lastMonthRows, lastMonth),
+            fileName: reportFileName(lastMonth),
+            label: `${MONTHS[Number(lastMonth.start.slice(5, 7)) - 1]} ${lastMonth.start.slice(0, 4)}`,
+            start: lastMonth.start,
+          }}
+        />
       </div>
-
-      <section className={`mt-8 ${cardClass}`}>
-        <h2 id="platform-comparison" className={cardHeadingClass}>Platform comparison</h2>
-        <div className="mt-3 overflow-x-auto">
-          <table aria-labelledby="platform-comparison" className="w-full min-w-md text-left text-sm">
-            <thead className="text-ink-muted">
-              <tr>
-                <th scope="col" className="py-2 pr-4 font-medium">Platform</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Impressions</th>
-                <th scope="col" className="py-2 pr-4 font-medium">Engagement rate</th>
-                <th scope="col" className="py-2 font-medium">Change</th>
-              </tr>
-            </thead>
-            <tbody className="text-ink">
-              {platforms.map(({ platform, current, change }) => (
-                <tr key={platform} className="border-t border-divider">
-                  <th scope="row" className="py-2 pr-4 font-medium">{PLATFORM_LABELS[platform]}</th>
-                  <td className="py-2 pr-4">{numberFormat.format(current.impressions)}</td>
-                  <td className="py-2 pr-4">{formatPercent(current.engagementRate, 1)}</td>
-                  <td className="py-2">{formatChange(change.engagementRate)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <div className="mt-8 grid gap-4 md:grid-cols-2">
-        <CompetitorActivityCard dates={dates} />
-        <TrendsCard />
-      </div>
-
-      <Link href={withQuery("/analytics", dates.query)} className={`mt-8 inline-block ${linkClass}`}>View full analytics</Link>
     </main>
   );
 }
+

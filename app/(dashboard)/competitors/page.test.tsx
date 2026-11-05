@@ -43,62 +43,89 @@ async function renderCompetitor(slug: string) {
 
 const region = (name: string) => screen.getByRole("region", { name });
 
-describe("Research Competitors (mid-fi)", () => {
-  it("has the mid-fi heading and says the figures are sample data", async () => {
+describe("Research Competitors (Figma Make)", () => {
+  it("has the Make's heading and says the figures are sample data", async () => {
     await renderPage();
-    expect(screen.getByRole("heading", { level: 1, name: "Review your competitors." })).toBeDefined();
-    expect(screen.getByText("Review public messaging and recent campaign examples.")).toBeDefined();
+    expect(screen.getByRole("heading", { level: 1, name: "See what your market is responding to" })).toBeDefined();
     expect(screen.getByText(/not real figures for these companies/)).toBeDefined();
   });
 
-  it("tracks the competitors added at sign-up, with posting frequency, engagement, and active ads", async () => {
+  it("sums up attention, active ads, and new campaigns", async () => {
     await renderPage();
-    const table = within(region("Competitor tracking")).getByRole("table");
-    const names = within(table).getAllByRole("rowheader").map((cell) => cell.textContent);
-    expect(names).toEqual(["Pacific Room Supply", "Island Linens"]);
-    expect(within(table).getByRole("columnheader", { name: "Posts" })).toBeDefined();
-    expect(within(table).getByRole("columnheader", { name: "Engagement rate" })).toBeDefined();
-    expect(within(table).getByRole("columnheader", { name: "Active ads" })).toBeDefined();
-    expect(within(table).getByRole("link", { name: "Pacific Room Supply" }).getAttribute("href")).toBe("/competitors/pacific-room-supply");
+    const stat = (label: string) => screen.getByText(label).closest("article") as HTMLElement;
+    expect(within(stat("Share of attention")).getByText(/leads the 2 you track/)).toBeDefined();
+    expect(within(stat("Active competitor ads")).getByText("Across Meta, Google, and TikTok")).toBeDefined();
+    expect(within(stat("New campaigns")).getByText(/^Started /)).toBeDefined();
   });
 
-  it("lets you choose which competitors to track, starting with those from sign-up", async () => {
+  it("starts with the competitors added at sign-up, tracked and on top", async () => {
     await renderPage();
-    const choose = region("Competitors you track");
-    const box = (name: string) => within(choose).getByRole("checkbox", { name: new RegExp(`^${name}`) }) as HTMLInputElement;
-    expect(box("Pacific Room Supply").checked).toBe(true);
-    expect(box("Coastline Linen Co.").checked).toBe(false);
-    expect(within(choose).getAllByText("Added at sign-up")).toHaveLength(2);
-    expect(within(choose).getByRole("button", { name: "Save competitors" })).toBeDefined();
+    const watchlist = region("Track the competitors your audience is likely to compare");
+    expect(within(watchlist).getByText("2 tracked")).toBeDefined();
+    const items = within(watchlist).getAllByRole("listitem");
+    expect(items.slice(0, 2).map((item) => within(item).getByRole("button").getAttribute("aria-label"))).toEqual([
+      expect.stringMatching(/^Stop tracking (Pacific Room Supply|Island Linens)$/),
+      expect.stringMatching(/^Stop tracking (Pacific Room Supply|Island Linens)$/),
+    ]);
+    expect(within(watchlist).getAllByText("Added during sign-up")).toHaveLength(2);
+    expect(within(watchlist).getAllByText(/% audience match$/)).toHaveLength(7);
+  });
+
+  it("tracks or stops tracking one competitor with its button", async () => {
+    await renderPage({ audience: "Institutional" });
+    const watchlist = region("Track the competitors your audience is likely to compare");
+    const form = (name: string) => within(watchlist).getByRole("button", { name }).closest("form") as HTMLFormElement;
+    const track = new FormData(form("Track Coastline Linen Co."));
+    expect(track.getAll("shown")).toEqual(["coastline-linen-co"]);
+    expect(track.getAll("track")).toEqual(["coastline-linen-co"]);
+    expect(track.get("query")).toBe("audience=Institutional");
+    const stop = new FormData(form("Stop tracking Island Linens"));
+    expect(stop.getAll("shown")).toEqual(["island-linens"]);
+    expect(stop.getAll("track")).toEqual([]);
   });
 
   it("filters the choice by one of your audiences", async () => {
     await renderPage({ audience: "Institutional" });
-    const choose = region("Competitors you track");
-    expect(within(choose).getByRole("link", { name: "Institutional" }).getAttribute("aria-current")).toBe("page");
-    const names = within(choose).getAllByRole("checkbox").map((box) => (box as HTMLInputElement).value);
-    expect(names).toEqual(["pacific-room-supply", "island-linens", "coastline-linen-co", "granite-facility-goods"]);
-    expect(within(choose).getByRole("link", { name: "All your audiences" }).getAttribute("href")).toBe("/competitors");
+    const watchlist = region("Track the competitors your audience is likely to compare");
+    expect(within(watchlist).getByRole("link", { name: "Institutional" }).getAttribute("aria-current")).toBe("page");
+    expect(within(watchlist).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(watchlist).getByRole("link", { name: "All your audiences" }).getAttribute("href")).toBe("/competitors");
   });
 
   it("ignores an audience that is not one of yours", async () => {
     await renderPage({ audience: "Industrial" });
-    expect(within(region("Competitors you track")).getAllByRole("checkbox")).toHaveLength(7);
+    expect(within(region("Track the competitors your audience is likely to compare")).getAllByRole("listitem")).toHaveLength(7);
   });
 
   it("confirms a saved choice", async () => {
     await renderPage({ saved: "1" });
-    expect(screen.getByText("Your competitor list was saved.")).toBeDefined();
+    expect(screen.getByRole("status").textContent).toBe("Your competitor list was saved.");
   });
 
-  it("filters posts by findings, like the mid-fi chips", async () => {
-    await renderPage({ finding: "most-liked" });
-    const posts = region("Recent posts");
-    expect(within(posts).getByRole("link", { name: "Most liked post" }).getAttribute("aria-current")).toBe("page");
-    const cards = within(posts).getAllByRole("article");
-    expect(cards.length).toBeGreaterThan(0);
-    expect(cards.length).toBeLessThanOrEqual(6);
-    expect(within(cards[0]).getByText("Most liked post")).toBeDefined();
+  it("shows one tracked competitor's posting, engagement, ads, best and worst posts, and hashtags", async () => {
+    await renderPage();
+    const panel = region("Pacific Room Supply performance");
+    expect(within(panel).getByText("Posting frequency")).toBeDefined();
+    expect(within(panel).getByText("Average engagement")).toBeDefined();
+    expect(within(panel).getByText("Active ads")).toBeDefined();
+    expect(within(panel).getByText("Best-performing post")).toBeDefined();
+    expect(within(panel).getByText("Most-used hashtags")).toBeDefined();
+    expect(within(panel).getByRole("link", { name: /Full profile/ }).getAttribute("href")).toBe("/competitors/pacific-room-supply");
+  });
+
+  it("switches the competitor with the picker, keeping it in the address", async () => {
+    await renderPage();
+    const picker = screen.getByRole("navigation", { name: "Tracked competitors" });
+    expect(within(picker).getByRole("link", { name: /Island Linens/ }).getAttribute("href")).toBe("/competitors?competitor=island-linens");
+    cleanup();
+    await renderPage({ competitor: "island-linens" });
+    expect(region("Island Linens performance")).toBeDefined();
+    expect(region("Island Linens channel activity")).toBeDefined();
+  });
+
+  it("falls back to the first tracked competitor for an unknown one", async () => {
+    await renderPage({ competitor: "granite-facility-goods" });
+    expect(region("Pacific Room Supply performance")).toBeDefined();
   });
 
   it("highlights recurring themes across the competitors you track", async () => {
@@ -108,8 +135,9 @@ describe("Research Competitors (mid-fi)", () => {
     const current = hospitalityPostsBetween(tracked, dataRange(resolved)).filter(
       (post) => post.date >= resolved.current.start && post.date <= resolved.current.end,
     );
-    const expected = recurringThemes(current, tracked).map((theme) => theme.theme);
-    const shown = within(region("Recurring themes")).queryAllByRole("heading", { level: 3 }).map((h) => h.textContent);
+    const expected = recurringThemes(current, tracked).map((theme) => theme.theme).slice(0, 3);
+    const panel = region("Recurring themes across competitor campaigns");
+    const shown = within(panel).queryAllByRole("listitem").map((item) => item.querySelector("strong")?.textContent);
     expect(shown).toEqual(expected);
   });
 
@@ -117,7 +145,7 @@ describe("Research Competitors (mid-fi)", () => {
     cookieJar.set(profileCookieName(DEMO_ACCOUNT.email), encodeProfile({ ...DEMO_PROFILE, trackedCompetitors: [] }));
     await renderPage();
     expect(screen.getByText(/not tracking any competitors yet/)).toBeDefined();
-    expect(screen.queryByRole("region", { name: "Competitor tracking" })).toBeNull();
+    expect(screen.queryByRole("navigation", { name: "Tracked competitors" })).toBeNull();
   });
 });
 

@@ -94,6 +94,8 @@ export type BusinessProfile = {
   inviteLink?: string;
   /** Slugs of the competitors chosen on Research Competitors; unset means the default choice. */
   trackedCompetitors?: string[];
+  /** Slug of the audience saved as the default on the Audience page; unset means the sign-up one. */
+  defaultAudience?: string;
 };
 
 export type OnboardingErrors = Record<string, string>;

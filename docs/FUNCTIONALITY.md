@@ -51,12 +51,12 @@ This list covers Account, Target Audience, Competitors, Content Creation, and AI
 | Link social media | Built: Connect checks the handle and marks it verified; verification is simulated and labelled so |
 | Invite team | Built: email invites, Generate a link (with Copy), and Invite later; the link shows who invited you on Create an Account |
 | Step navigation | Built: Continue and Back, plus Add later and Add now on the optional parts of step 2 |
-| Target Audience (all four) | Not built ("Explore Audience and Trend" is Coming soon) |
+| Target Audience (all four) | Built on /explore ("Audience" in the sidebar), following the Figma Make: search with suggestions, industry / age / region / interest filters with an empty state and Clear filters, list or chart, a default audience saved in the business profile (starting from the sign-up audience), and template suggestions from tracked competitors. Searches and reports do not read the default yet |
 | Competitor tracking | Built on /competitors for the hospitality supplier, starting with sign-up competitors |
 | Trend and campaign pattern detection | Built: recurring themes across tracked competitors |
 | Audience-based selection | Built: the tracked choice is saved in the business profile |
-| Content Creation (all eight cards) | Not built (planned as templates labelled "Suggestions"; Upload Your File will read TXT, MD, and CSV in the browser and ask for pasted text for other types) |
-| Planning, Calendar | Not built |
+| Content Creation (all eight cards) | Built on /content following the team's updated Figma Make: Social Post, Video, Blog, Ad Copy, Edit Posts, Improve Copy, Repurpose Content, and Upload Your File, each with template suggestions, Regenerate, and Save in the browser. Upload reads TXT, MD, and CSV; other types ask for pasted text |
+| Planning, Calendar | Not built. The Make's AI Management page is a community inbox (suggested replies and sentiment), built on /ai-management; planning and the calendar have no screen in the Make yet |
 | Auto-post function | Not planned for the prototype: content can be scheduled, but nothing posts automatically (DECISIONS.md 2026-10-30) |
-| Report Exports | Partly: Print / Save as PDF exists; the format choice and CSV are planned |
-| Schedule reports | Not built (planned to prepare due reports when the app is next opened, not while it is closed) |
+| Report Exports | Built on Reports: PDF (printable report) or CSV, chosen on the page |
+| Schedule reports | Built for a monthly export saved in the browser: last month's CSV is offered the next time Reports is opened (nothing runs while the app is closed or is emailed) |
