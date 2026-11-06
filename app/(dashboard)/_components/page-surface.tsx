@@ -10,7 +10,7 @@ export const MAKE_PAGES = ["/", "/explore", "/competitors", "/content", "/ai-man
 // their text stays readable.
 export function PageSurface({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  if ((MAKE_PAGES as readonly string[]).includes(pathname) || pathname.startsWith("/content/")) {
+  if ((MAKE_PAGES as readonly string[]).includes(pathname) || pathname.startsWith("/content/") || pathname.startsWith("/ai-management/")) {
     return <div className="flex min-w-0 flex-1 flex-col">{children}</div>;
   }
   return (

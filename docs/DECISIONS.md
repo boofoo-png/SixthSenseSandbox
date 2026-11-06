@@ -308,3 +308,13 @@ Decision: Rebuild /insights (the sidebar's Reports) in the Make's layout with th
 
 Alternatives considered: Copying the Make's fixed numbers was rejected because they would never change and would suggest website traffic and conversions are tracked.
 
+## 2026-11-05 - AI Management follows the functionality list: posting plan, calendar, and plan generator
+
+Context: The team's updated functionality list describes AI Management as an "AI Content Manager" (posting plan, content calendar, upcoming posts, Auto Publishing, a three-step plan generator, and separate schedules for Hotel Depot and Hospitality Emporium); the design file has matching screens. The Figma Make shows a community inbox instead, which had been built earlier the same day. The user chose the functionality list (and asked to be asked about each list-vs-Make conflict rather than following a fixed rule).
+
+Decision: Replace the inbox with the posting plan, calendar, and generator from the design file. Recommendations come from sample engagement (lib/ai-studio/sample-timing) weighted per business; drafts are templates; everything is saved in the browser. On the user's choices: Auto Publishing is a working switch that is clearly labelled as simulated, so posts stay Scheduled and nothing is published; sample posts are written for a hospitality supplier rather than the design's travel examples; Hotel Depot and Hospitality Emporium are added as two businesses with separate schedules; Campaigns stays in the sidebar although the list and design leave it out.
+
+Alternatives considered: Keeping the inbox, alone or as a second tab, was offered and not chosen. Marking posts as published when their time passes was rejected because nothing is really posted.
+
+Supersedes: the no-auto-posting decision (2026-10-14, reaffirmed 2026-10-30) for the switch itself: it can now be turned on, but it still posts nothing. Also supersedes the inbox part of "Content Creation, AI Management, and Campaigns follow the updated Figma Make" (2026-11-05).
+
