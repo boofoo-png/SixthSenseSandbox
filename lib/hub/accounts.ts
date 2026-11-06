@@ -16,6 +16,25 @@ export function accountCookieName(email: string): string {
   return `${ACCOUNT_PREFIX}${accountKey(email)}`;
 }
 
+/** Each account's Settings page answers (lib/hub/settings.ts) live in their own cookie. */
+export const SETTINGS_PREFIX = "ss_settings_";
+
+export function settingsCookieName(email: string): string {
+  return `${SETTINGS_PREFIX}${accountKey(email)}`;
+}
+
+/** Each business's Meta connection (lib/social/meta/token.ts), sealed, in its own cookie per account. */
+export const META_PREFIX = "ss_meta_";
+
+/** Ends in "." so one account's prefix never matches another's (the key has no dots). */
+export function metaCookiePrefix(email: string): string {
+  return `${META_PREFIX}${accountKey(email)}.`;
+}
+
+export function metaCookieName(email: string, businessId: string): string {
+  return `${metaCookiePrefix(email)}${businessId}`;
+}
+
 type CookieReader = { get(name: string): { value: string } | undefined };
 
 /** The account saved in this browser for `email`, including one saved the old way; null if none. */
@@ -42,7 +61,11 @@ export function accountsToEvict(cookies: readonly { name: string; value: string 
       return {
         email,
         savedAt: decodeStoredAccount(cookie.value)?.savedAt ?? 0,
-        size: sizeOf(cookie.name) + sizeOf(profileCookieName(email)),
+        size:
+          sizeOf(cookie.name) +
+          sizeOf(profileCookieName(email)) +
+          sizeOf(settingsCookieName(email)) +
+          cookies.filter((c) => c.name.startsWith(metaCookiePrefix(email))).reduce((sum, c) => sum + c.name.length + c.value.length, 0),
       };
     })
     .filter((entry) => entry.email !== keep)

@@ -8,11 +8,10 @@ describe("APP_NAME", () => {
 });
 
 describe("NAV_ITEMS", () => {
-  it("lists the dashboard, then the seven areas in dashboard tile order", () => {
+  it("lists the dashboard, then the areas (Revisit Findings was dropped on 2026-11-06)", () => {
     expect(NAV_ITEMS.map((item) => item.label)).toEqual([
       "Dashboard",
       "Insight Report",
-      "Revisit Findings",
       "Research Competitors",
       "Explore Audience and Trend",
       "AI Management",
@@ -25,7 +24,6 @@ describe("NAV_ITEMS", () => {
     expect(NAV_ITEMS.map((item) => item.href)).toEqual([
       "/",
       "/insights",
-      "/findings",
       "/competitors",
       "/explore",
       "/ai-management",

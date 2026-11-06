@@ -83,7 +83,7 @@ export function EditPostsTool() {
         <TextField label="Post caption" value={draft.post} onChange={(value) => set("post", value)} error={result.ok ? undefined : result.error} />
         <TextField label="What would you like to change?" rows={3} value={draft.change} onChange={(value) => set("change", value)} />
         <TextField label="Specific instructions (optional)" rows={3} value={draft.instructions} onChange={(value) => set("instructions", value)} />
-        <GenerateButton />
+        <GenerateButton label="Enhance with AI" />
       </DetailsPanel>
       <SuggestionsPanel label="AI Enhanced Suggestions">
         {!result.ok ? (
@@ -268,11 +268,9 @@ export function RepurposeTool() {
 const SAMPLE_DRAFT =
   "Our refillable amenity collection helps independent hotels cut single-use plastic in every room. Guests notice the difference, and housekeeping saves time on restocking because one refill lasts for weeks across a busy season. Ask us for a sample kit.";
 
-const FOCUS_ICONS: Record<FileFocus, "edit" | "repeat" | "sparkles"> = { Edit: "edit", Rewrite: "repeat", Copy: "edit", Insights: "sparkles" };
+const FOCUS_ICONS: Record<FileFocus, "edit" | "repeat" | "sparkles"> = { Edit: "edit", Repurpose: "repeat", Copy: "edit", Insights: "sparkles" };
 const ACTION_LINKS: Record<string, string> = {
   "Edit for clarity": "/content/edit-posts",
-  "Rewrite the opening": "/content/improve-copy",
-  "Try a friendlier tone": "/content/improve-copy",
   "Repurpose content": "/content/repurpose",
   "Turn into ad copy": "/content/ad-copy",
   "Write a caption": "/content/social-post",

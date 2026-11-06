@@ -74,6 +74,42 @@ const SAMPLE: Record<OverviewPeriod, Omit<Overview, "competitors" | "nextWindow"
   },
 };
 
+/** Hospitality Emporium's figures: a younger, more social business than Hotel Depot (sample data). */
+const EMPORIUM: typeof SAMPLE = {
+  "30d": {
+    competitorRows: [
+      [3.1, 14],
+      [-1.2, 22],
+      [0.9, 17],
+    ],
+    marketInterest: { score: 76.4, change: 1.8 },
+    audienceGrowth: { newMembers: 164, change: 1.4, channels: 4 },
+    engagement: { rate: 24, change: 2.1, bars: [41, 52, 48, 66, 71] },
+    channels: [
+      { channel: "Instagram", momentum: 14, change: 2.2 },
+      { channel: "Facebook", momentum: 2, change: 0.4 },
+      { channel: "Web", momentum: -3, change: -0.8 },
+      { channel: "Email", momentum: null, change: null },
+    ],
+  },
+  "7d": {
+    competitorRows: [
+      [1.1, 4],
+      [-0.4, 6],
+      [0.3, 5],
+    ],
+    marketInterest: { score: 77.9, change: 0.6 },
+    audienceGrowth: { newMembers: 41, change: 0.5, channels: 4 },
+    engagement: { rate: 22, change: 0.9, bars: [48, 55, 50, 62, 68] },
+    channels: [
+      { channel: "Instagram", momentum: 6, change: 0.9 },
+      { channel: "Facebook", momentum: 1, change: 0.2 },
+      { channel: "Web", momentum: -1, change: -0.3 },
+      { channel: "Email", momentum: null, change: null },
+    ],
+  },
+};
+
 /** "+2.5%", "-0.5%", "0%". */
 export function formatSignedPercent(value: number): string {
   if (value === 0) return "0%";
@@ -105,9 +141,9 @@ export function overviewCompetitors(signUpNames: readonly string[]): string[] {
   return names;
 }
 
-/** The overview cards for `period`, for the given three competitors, as of `today` (YYYY-MM-DD). */
-export function overviewFor(period: OverviewPeriod, competitorNames: readonly string[], today: string): Overview {
-  const { competitorRows, ...rest } = SAMPLE[period];
+/** The overview cards for `period` and business (Hotel Depot, and any own company, use the Make's figures). */
+export function overviewFor(period: OverviewPeriod, competitorNames: readonly string[], today: string, businessId = "hotel-depot"): Overview {
+  const { competitorRows, ...rest } = (businessId === "hospitality-emporium" ? EMPORIUM : SAMPLE)[period];
   return {
     ...rest,
     competitors: competitorNames.slice(0, competitorRows.length).map((name, index) => ({

@@ -131,7 +131,7 @@ export function repurpose(input: RepurposeInput): Result<Repurposed> {
   };
 }
 
-export const FILE_FOCUS = ["Edit", "Rewrite", "Copy", "Insights"] as const;
+export const FILE_FOCUS = ["Edit", "Repurpose", "Copy", "Insights"] as const;
 export type FileFocus = (typeof FILE_FOCUS)[number];
 
 /** Files read in the browser; others show their name and ask for pasted text (DECISIONS.md 2026-10-30). */
@@ -153,7 +153,7 @@ export type FileAnalysis = { preview: string; summary: string; words: number; ac
 
 const ACTIONS: Record<FileFocus, string[]> = {
   Edit: ["Edit for clarity", "Create summary", "Repurpose content"],
-  Rewrite: ["Rewrite the opening", "Try a friendlier tone", "Repurpose content"],
+  Repurpose: ["Repurpose content", "Write a caption", "Turn into ad copy"],
   Copy: ["Turn into ad copy", "Write a caption", "Pull out a headline"],
   Insights: ["List key messages", "Find missing proof points", "Compare with competitors"],
 };

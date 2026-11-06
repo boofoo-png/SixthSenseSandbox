@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { SAVED_CONTENT_KEY } from "@/lib/hub/content/saved";
+import { SCHEDULE_KEY } from "@/lib/hub/posting-plan";
+import { resetSchedulesForTests } from "../ai-management/_components/use-schedules";
+import { CalendarTargetProvider } from "./_components/calendar-target";
 import { AdCopyTool, BlogTool, SocialPostTool, VideoTool } from "./_components/create-tools";
 import { EditPostsTool, ImproveCopyTool, RepurposeTool, UploadTool } from "./_components/edit-tools";
 import { resetSavedContentForTests } from "./_components/use-saved-content";
@@ -14,6 +17,7 @@ vi.mock("next/image", () => ({
 beforeEach(() => {
   window.localStorage.clear();
   resetSavedContentForTests();
+  resetSchedulesForTests();
 });
 afterEach(cleanup);
 
@@ -113,7 +117,7 @@ describe("Ad Copy", () => {
     render(<AdCopyTool audience={audience} />);
     fireEvent.change(box("Campaign Goal"), { target: { value: "Leads" } });
     fireEvent.click(screen.getByRole("button", { name: "Generate with AI" }));
-    expect(within(suggestions("AI Ad Copy Suggestions")).getByText("Get a Quote")).toBeDefined();
+    expect(within(suggestions("AI Ad Copy Suggestions")).getByText("Get Started")).toBeDefined();
     expect(screen.getByRole("button", { name: "Save Content" })).toBeDefined();
   });
 
@@ -139,6 +143,7 @@ describe("Edit Posts", () => {
 
   it("shows an enhanced caption and three alternatives", () => {
     render(<EditPostsTool />);
+    expect(screen.getByRole("button", { name: "Enhance with AI" })).toBeDefined();
     const panel = suggestions("AI Enhanced Suggestions");
     expect(within(panel).getByText("Direct & concise")).toBeDefined();
     expect(within(panel).getByText("Warm & inviting")).toBeDefined();
@@ -199,5 +204,33 @@ describe("Upload your file", () => {
     expect(within(panel).getByRole("link", { name: /Turn into ad copy/ }).getAttribute("href")).toBe("/content/ad-copy");
     fireEvent.click(within(panel).getByRole("tab", { name: "Summary" }));
     expect(within(panel).getByRole("heading", { name: "Summary" })).toBeDefined();
+  });
+});
+
+describe("Add to calendar", () => {
+  const target = { business: { id: "hospitality-emporium", name: "Hospitality Emporium" }, today: "2026-11-05" };
+
+  it("opens the post editor filled in from the result and saves it to the chosen business's calendar", () => {
+    render(
+      <CalendarTargetProvider value={target}>
+        <VideoTool audience={audience} />
+      </CalendarTargetProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Add to calendar" }));
+    const dialog = screen.getByRole("dialog", { name: "Add to the Hospitality Emporium calendar" });
+    expect((within(dialog).getByLabelText("Channel") as HTMLSelectElement).value).toBe("Instagram"); // the video's platform
+    expect((within(dialog).getByLabelText("Title") as HTMLInputElement).value).not.toBe("");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save post" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByText(/Added to the Hospitality Emporium calendar/)).toBeDefined();
+    const saved = JSON.parse(window.localStorage.getItem(SCHEDULE_KEY) ?? "{}");
+    const posts = saved.businesses["hospitality-emporium"].posts.filter((post: { id: string }) => post.id.startsWith("content-"));
+    expect(posts).toHaveLength(1);
+    expect(posts[0]).toMatchObject({ channel: "Instagram", date: "2026-11-05" });
+  });
+
+  it("is not offered without a business to plan for", () => {
+    render(<VideoTool audience={audience} />);
+    expect(screen.queryByRole("button", { name: "Add to calendar" })).toBeNull();
   });
 });

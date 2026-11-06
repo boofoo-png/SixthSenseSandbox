@@ -17,12 +17,12 @@ import {
   newCampaigns,
   themePatterns,
 } from "@/lib/competitors/watchlist";
-import { pageDates, withQuery } from "@/lib/date-range";
+import { pageDates } from "@/lib/date-range";
 import { SESSION_COOKIE } from "@/lib/hub/constants";
 import { profileForSession } from "@/lib/hub/demo-profile";
 import { availableCompetitors, competitorsForAudience, selectedAudience, trackedCompetitors } from "@/lib/hub/tracking";
 import { DateRangeBar } from "../_components/date-range-bar";
-import { MakePageHeader, PanelHeading, StatCard, chipClass, makePageClass, panelClass, softLinkClass } from "../_components/make-ui";
+import { MakePageHeader, PanelHeading, StatCard, chipClass, makePageClass, panelClass } from "../_components/make-ui";
 import { saveTrackedCompetitors } from "./actions";
 
 export const metadata: Metadata = {
@@ -222,11 +222,7 @@ export default async function CompetitorsPage({ searchParams }: PageProps<"/comp
         <>
           <div className="grid gap-3 min-[901px]:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
             <section aria-labelledby="tracking-title" className={`${panelClass} min-[901px]:min-h-[380px]`}>
-              <PanelHeading id="tracking-title" eyebrow="Competitor tracking" title={`${selected.name} performance`}>
-                <Link href={withQuery(`/competitors/${selected.slug}`, dates.query)} className={softLinkClass}>
-                  Full profile <LineIcon name="chevron" size={14} />
-                </Link>
-              </PanelHeading>
+              <PanelHeading id="tracking-title" eyebrow="Competitor tracking" title={`${selected.name} performance`} />
               <nav aria-label="Tracked competitors" className="mt-3.5 flex flex-wrap gap-1.5">
                 {tracked.map((competitor, index) => {
                   const current = competitor.slug === selected.slug;

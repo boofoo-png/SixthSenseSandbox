@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import ReportsPage from "./page";
 
 vi.mock("next/navigation", () => ({ usePathname: () => "/insights", useRouter: () => ({ push: vi.fn() }) }));
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: (name: string) => (name === "ss_session" ? { value: "demo@sixthsense.app" } : undefined) }) }));
 
 afterEach(cleanup);
 
@@ -15,7 +16,7 @@ describe("Reports (design file: Insights / Reports, sample ad data)", () => {
   it("has the design's heading and says the ad data is a sample", async () => {
     await renderPage();
     expect(screen.getByRole("heading", { level: 1, name: "Insights / Reports" })).toBeDefined();
-    expect(screen.getByText(/no ad accounts connected/)).toBeDefined();
+    expect(screen.getByText(/Sample data for Sixth Sense: .*no ad accounts connected/)).toBeDefined();
   });
 
   it("shows the six KPI cards compared with last week, with details by platform", async () => {

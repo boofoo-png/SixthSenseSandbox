@@ -2,13 +2,16 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { todayIsoDate } from "@/lib/analytics/dates";
 import { defaultAudienceSlug, findAudience } from "@/lib/hub/audience";
 import { SESSION_COOKIE } from "@/lib/hub/constants";
 import { findTool, type ToolSlug } from "@/lib/hub/content/tools";
 import { profileForSession } from "@/lib/hub/demo-profile";
+import { workspaceFor } from "@/lib/hub/workspace";
 import { makePageClass } from "../../_components/make-ui";
 import { AdCopyTool, BlogTool, SocialPostTool, VideoTool } from "../_components/create-tools";
 import { EditPostsTool, ImproveCopyTool, RepurposeTool, UploadTool } from "../_components/edit-tools";
+import { CalendarTargetProvider } from "../_components/calendar-target";
 import { ToolHeader } from "../_components/tool-ui";
 
 export async function generateMetadata({ params }: PageProps<"/content/[tool]">): Promise<Metadata> {
@@ -37,11 +40,15 @@ export default async function ContentToolPage({ params }: PageProps<"/content/[t
   const profile = email ? profileForSession(jar, email) : null;
   const audience = findAudience(defaultAudienceSlug(profile))?.name ?? "Hospitality Procurement Teams";
   const Tool = TOOLS[tool.slug];
+  // "Add to calendar" uses the business chosen in the top bar's company menu.
+  const { business } = workspaceFor(jar);
 
   return (
     <main className={makePageClass}>
       <ToolHeader title={tool.pageTitle} description={tool.pageDescription} />
-      <Tool audience={audience} />
+      <CalendarTargetProvider value={{ business, today: todayIsoDate() }}>
+        <Tool audience={audience} />
+      </CalendarTargetProvider>
     </main>
   );
 }

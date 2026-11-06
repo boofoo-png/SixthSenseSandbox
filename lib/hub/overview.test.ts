@@ -94,9 +94,17 @@ describe("overviewFor", () => {
     expect(week.nextWindow).toBe(month.nextWindow);
   });
 
+  it("has different figures for Hospitality Emporium", () => {
+    const depot = overviewFor("30d", competitors, "2026-11-04");
+    const emporium = overviewFor("30d", competitors, "2026-11-04", "hospitality-emporium");
+    expect(emporium.marketInterest).not.toEqual(depot.marketInterest);
+    expect(emporium.audienceGrowth.newMembers).toBe(164);
+    expect(overviewFor("30d", competitors, "2026-11-04", "own")).toEqual(depot);
+  });
+
   it("keeps every bar and score in range", () => {
-    for (const { id } of OVERVIEW_PERIODS) {
-      const overview = overviewFor(id, competitors, "2026-11-04");
+    for (const [{ id }, business] of OVERVIEW_PERIODS.flatMap((period) => [[period, "hotel-depot"], [period, "hospitality-emporium"]] as const)) {
+      const overview = overviewFor(id, competitors, "2026-11-04", business);
       expect(overview.marketInterest.score).toBeGreaterThanOrEqual(0);
       expect(overview.marketInterest.score).toBeLessThanOrEqual(100);
       overview.engagement.bars.forEach((bar) => {

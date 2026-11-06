@@ -40,7 +40,8 @@ const [depot, emporium] = BUSINESSES;
 
 describe("businesses", () => {
   it("has the two businesses from the functionality list", () => {
-    expect(BUSINESSES.map((business) => business.name)).toEqual(["Hotel Depot", "Hospitality Emporium"]);
+    expect(BUSINESSES.map((business) => business.name)).toEqual(["Hotel Depot", "Hospitality Emporium", "Sixth Sense"]);
+    expect(findBusiness("sixth-sense").handle).toBe("@sixthsenseapp");
     expect(findBusiness("hospitality-emporium").name).toBe("Hospitality Emporium");
     expect(findBusiness("nope").name).toBe("Hotel Depot");
   });

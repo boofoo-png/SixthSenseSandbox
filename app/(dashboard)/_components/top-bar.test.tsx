@@ -1,7 +1,12 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Workspace } from "@/lib/hub/workspace";
+import { chooseBusiness } from "../actions";
 import { TopBar } from "./top-bar";
+
+const refresh = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
+vi.mock("../actions", () => ({ chooseBusiness: vi.fn(async () => {}) }));
 
 const workspace: Workspace = {
   name: "Jane Doe",
@@ -10,6 +15,11 @@ const workspace: Workspace = {
   company: "Doe Hospitality Supply",
   email: "jane@example.com",
   competitors: [],
+  businesses: [
+    { id: "hotel-depot", name: "Doe Hospitality Supply" },
+    { id: "hospitality-emporium", name: "Hospitality Emporium" },
+  ],
+  business: { id: "hotel-depot", name: "Doe Hospitality Supply" },
 };
 
 afterEach(cleanup);
@@ -33,10 +43,21 @@ describe("TopBar", () => {
     expect(screen.getByText("No notifications yet.")).toBeDefined();
   });
 
-  it("names the business, linking to the profile", () => {
+  it("opens a company menu to switch business or open Profile and settings", async () => {
     render(<TopBar workspace={workspace} />);
-    const pill = screen.getByRole("link", { name: /Doe Hospitality Supply/ });
-    expect(pill.getAttribute("href")).toBe("/profile");
+    const button = screen.getByRole("button", { name: /Doe Hospitality Supply/ });
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(button);
+    expect(screen.getByRole("link", { name: "Profile and settings" }).getAttribute("href")).toBe("/settings");
+    fireEvent.click(screen.getByRole("button", { name: "Hospitality Emporium" }));
+    await waitFor(() => expect(chooseBusiness).toHaveBeenCalledWith("hospitality-emporium"));
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+  });
+
+  it("shows no switcher when there is only one business", () => {
+    render(<TopBar workspace={{ ...workspace, businesses: [workspace.business] }} />);
+    fireEvent.click(screen.getByRole("button", { name: /Doe Hospitality Supply/ }));
+    expect(screen.queryByText("Switch business")).toBeNull();
   });
 
   it("is hidden when printing", () => {

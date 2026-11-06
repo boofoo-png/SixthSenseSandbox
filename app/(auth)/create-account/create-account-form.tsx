@@ -55,7 +55,7 @@ function sampleAccount(): Record<string, string> {
     firstName: "Sample",
     lastName: "Tester",
     role: "Marketing manager",
-    company: "Harbourline Supply Co.",
+    company: "Sixth Sense",
     address1: "123 Example Road",
     city: "Richmond",
     province: "BC",

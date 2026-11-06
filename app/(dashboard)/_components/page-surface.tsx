@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 /** Pages redesigned from the Figma Make (and every /content tool): they sit straight on the shell's gradient. */
-export const MAKE_PAGES = ["/", "/explore", "/competitors", "/content", "/ai-management", "/campaigns", "/insights"] as const;
+export const MAKE_PAGES = ["/", "/explore", "/competitors", "/content", "/ai-management", "/campaigns", "/insights", "/settings"] as const;
 
 // Pages not redesigned yet keep their light background and Roboto type on a rounded panel so
 // their text stays readable.

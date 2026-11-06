@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { LineIcon, type LineIconName } from "@/components/line-icons";
-import { formatShortDate, todayIsoDate } from "@/lib/analytics/dates";
-import { NEW_ACCOUNT_COOKIE } from "@/lib/hub/constants";
+import { todayIsoDate } from "@/lib/analytics/dates";
+import { NEW_ACCOUNT_COOKIE, SESSION_COOKIE } from "@/lib/hub/constants";
 import {
   OVERVIEW_PERIODS,
   formatSignedPercent,
@@ -14,7 +14,10 @@ import {
   type ChannelMomentum,
 } from "@/lib/hub/overview";
 import { workspaceFor } from "@/lib/hub/workspace";
+import { connectionFor, liveSnapshot } from "@/lib/social/meta/access";
+import { liveOverview } from "@/lib/social/meta/stats";
 import { OverviewTour } from "./_components/overview-tour";
+import { PlanningContent } from "./_components/planning-card";
 
 export const metadata: Metadata = {
   title: "Marketing Overview",
@@ -22,7 +25,8 @@ export const metadata: Metadata = {
 };
 
 // The dashboard: the Marketing Overview from the team's Figma Make "Marketing Intelligence Hub"
-// (2026-11-04). Right after sign-up it opens with a welcome and a short tour. Figures are samples.
+// (2026-11-04). Right after sign-up it opens with a welcome and a short tour. Figures are samples,
+// except where the business has connected Instagram (Settings), which are marked live.
 
 const CHANNEL_ICONS: Record<ChannelMomentum["channel"], LineIconName> = {
   Instagram: "instagram",
@@ -52,6 +56,15 @@ function ChangePill({ value }: { value: number | null }) {
   );
 }
 
+function LiveTag({ username }: { username: string }) {
+  return (
+    <span className="mt-1 inline-flex w-fit items-center gap-1 rounded-[10px] bg-brand-teal px-2 py-0.5 text-[10px] font-bold text-brand-cream">
+      <span aria-hidden="true" className="size-1.5 rounded-full bg-brand-lime-bright" />
+      Live from @{username}
+    </span>
+  );
+}
+
 function CardHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-3.5">
@@ -71,7 +84,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
   const jar = await cookies();
   const isNewAccount = Boolean(jar.get(NEW_ACCOUNT_COOKIE)?.value);
   const workspace = workspaceFor(jar);
-  const overview = overviewFor(period, overviewCompetitors(workspace.competitors), todayIsoDate());
+  const today = todayIsoDate();
+  const sample = overviewFor(period, overviewCompetitors(workspace.competitors), today, workspace.business.id);
+  // Live Instagram numbers when this business is connected (Settings); otherwise all sample.
+  const connection = connectionFor(jar, jar.get(SESSION_COOKIE)?.value ?? "", workspace.business.id);
+  const live = await liveSnapshot(connection, period === "7d" ? 7 : 30);
+  const { overview, audience, engagementLive, instagramLive, facebookLive } = liveOverview(sample, live.status === "live" ? live.snapshot : null);
+  const username = live.status === "live" ? live.snapshot.username || connection?.igUsername || "instagram" : "";
   const { marketInterest, audienceGrowth, engagement } = overview;
 
   return (
@@ -165,6 +184,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
           <p className={bodyClass}>
             {marketInterest.change < 0 ? "Slight decrease" : marketInterest.change > 0 ? "Slight increase" : "No change"}
           </p>
+          <Link href="/explore" className={`${cardLinkClass} mt-2`}>
+            See your audience <LineIcon name="chevron" size={14} />
+          </Link>
           <div
             role="img"
             aria-label={`Market interest ${marketInterest.score} percent`}
@@ -179,16 +201,25 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
         </article>
 
         <article data-tour="audience" className={`${cardClass} col-span-12 min-[621px]:col-span-6 min-[1221px]:col-span-3`}>
-          <CardHeading eyebrow={`Across ${audienceGrowth.channels} channels`} title="Audience Growth">
-            <ChangePill value={audienceGrowth.change} />
+          <CardHeading eyebrow={audience ? "Instagram" : `Across ${audienceGrowth.channels} channels`} title="Audience Growth">
+            {audience?.kind === "total" ? null : <ChangePill value={audience?.kind === "new" ? audience.change : audienceGrowth.change} />}
           </CardHeading>
-          <div className="mt-[50px] mb-6 flex items-center gap-3.5">
+          {audience && <LiveTag username={username} />}
+          <div className={`${audience ? "mt-[26px]" : "mt-[50px]"} mb-6 flex items-center gap-3.5`}>
             <span className="text-brand-blue">
               <LineIcon name="audience" size={32} />
             </span>
-            <strong className="text-[36px] font-semibold text-brand-navy">+{audienceGrowth.newMembers}</strong>
+            <strong className="text-[36px] font-semibold text-brand-navy">
+              {audience?.kind === "total" ? audience.value.toLocaleString("en-CA") : `+${(audience?.value ?? audienceGrowth.newMembers).toLocaleString("en-CA")}`}
+            </strong>
           </div>
-          <p className={bodyClass}>New audience members in the last {periodLabel}</p>
+          <p className={bodyClass}>
+            {audience?.kind === "total"
+              ? "Instagram followers now (Meta shows new followers once an account has 100)"
+              : audience
+                ? `New Instagram followers in the last ${periodLabel}`
+                : `New audience members in the last ${periodLabel}`}
+          </p>
           <Link href="/explore" className={`${cardLinkClass} mt-5`}>
             Explore audience <LineIcon name="chevron" size={14} />
           </Link>
@@ -198,8 +229,11 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
           <CardHeading eyebrow="Content response" title="Engagement">
             <ChangePill value={engagement.change} />
           </CardHeading>
-          <strong className={`${bigNumberClass} mt-6 block`}>{engagement.rate}%</strong>
-          <p className={bodyClass}>Engagement rate over the selected period</p>
+          {engagementLive && <LiveTag username={username} />}
+          <strong className={`${bigNumberClass} ${engagementLive ? "mt-3" : "mt-6"} block`}>{engagement.rate}%</strong>
+          <p className={bodyClass}>
+            {engagementLive ? "Interactions per account reached; bars are your latest posts" : "Engagement rate over the selected period"}
+          </p>
           <div aria-hidden="true" className="mt-6 flex h-[92px] items-end gap-[9px]">
             {engagement.bars.map((height, index) => (
               <i key={index} className="block min-h-3 w-6 rounded-t-[5px] rounded-b-[2px] bg-brand-blue" style={{ height: `${height}%` }} />
@@ -209,18 +243,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
 
         <article data-tour="opportunity" className={`${cardClass} col-span-12 min-[621px]:col-span-6 min-[1221px]:col-span-3`}>
           <CardHeading eyebrow="Your next move" title="Planning" />
-          <div className="mt-12 flex items-center gap-3.5">
-            <span className="text-brand-blue">
-              <LineIcon name="calendar" size={29} />
-            </span>
-            <strong className="text-[31px] font-normal text-brand-navy">
-              <time dateTime={overview.nextWindow}>{formatShortDate(overview.nextWindow)}</time>
-            </strong>
-          </div>
-          <p className={bodyClass}>Next recommended publishing window</p>
-          <Link href="/content" className={`${cardLinkClass} mt-5`}>
-            Create content <LineIcon name="chevron" size={14} />
-          </Link>
+          <PlanningContent today={today} linkClass={cardLinkClass} bodyClass={bodyClass} businessId={workspace.business.id} businessName={workspace.business.name} />
         </article>
 
         <article className={`${cardClass} col-span-12 min-[1221px]:col-span-6`}>
@@ -240,14 +263,32 @@ export default async function DashboardPage({ searchParams }: PageProps<"/">) {
                 <span className="grid size-[54px] place-items-center rounded-full bg-brand-teal text-brand-cream">
                   <LineIcon name={CHANNEL_ICONS[row.channel]} size={20} />
                 </span>
-                <small className="text-[11px] font-bold text-brand-teal">{row.channel}</small>
+                <small className="text-[11px] font-bold text-brand-teal">
+                  {row.channel}
+                  {row.channel === "Instagram" && instagramLive && <span className="block font-normal text-brand-slate">live reach</span>}
+                  {row.channel === "Facebook" && facebookLive && <span className="block font-normal text-brand-slate">live viewers</span>}
+                </small>
               </li>
             ))}
           </ul>
         </article>
       </div>
 
-      <p className="mt-6 text-[11px] text-brand-cream/85">Sample figures for a fictional hospitality supplier.</p>
+      {live.status === "failed" && (
+        <p role="status" className="mt-6 rounded-[12px] bg-brand-cream/94 px-4 py-3 text-[12px] text-brand-navy">
+          {live.error === "expired" || live.error === "permission"
+            ? "Instagram access for this business has expired or was removed, so sample figures are shown. "
+            : "Instagram couldn't be reached just now, so sample figures are shown. "}
+          <Link href="/settings?section=workspace" className="font-bold text-brand-teal underline">
+            {live.error === "expired" || live.error === "permission" ? "Reconnect in Settings" : "Check the connection in Settings"}
+          </Link>
+        </p>
+      )}
+      <p className="mt-6 text-[11px] text-brand-cream/85">
+        {live.status === "live"
+          ? `Cards and rows marked live use @${username} on Instagram${facebookLive ? " and its Facebook Page" : ""}; everything else is sample figures for ${workspace.business.name}.`
+          : `Sample figures for ${workspace.business.name}.`}
+      </p>
 
       <OverviewTour showWelcome={isNewAccount} workspace={workspace} />
     </main>

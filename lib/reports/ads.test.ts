@@ -36,6 +36,15 @@ describe("sample ad data", () => {
   });
 });
 
+describe("businesses", () => {
+  it("gives Hospitality Emporium its own, smaller ad numbers", () => {
+    const depot = totals(adRowsBetween(week.current));
+    const emporium = totals(adRowsBetween(week.current, "hospitality-emporium"));
+    expect(emporium.spend).toBeLessThan(depot.spend);
+    expect(adRowsBetween(week.current, "own")).toEqual(adRowsBetween(week.current));
+  });
+});
+
 describe("periods and KPIs", () => {
   it("compares the last 7 or 30 days with the days before", () => {
     expect(week).toEqual({ days: 7, current: { start: "2026-10-30", end: today }, previous: { start: "2026-10-23", end: "2026-10-29" } });

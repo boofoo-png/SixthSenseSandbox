@@ -8,7 +8,6 @@ import { encodeProfile, profileCookieName } from "@/lib/hub/profile";
 import { availableCompetitors, trackedCompetitors } from "@/lib/hub/tracking";
 import { dataRange, resolveDateRange, type SearchParams } from "@/lib/date-range";
 import CompetitorsPage from "./page";
-import CompetitorPage from "./[slug]/page";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/competitors",
@@ -34,11 +33,6 @@ afterEach(() => {
 async function renderPage(params: SearchParams = {}) {
   cookieJar.set(SESSION_COOKIE, DEMO_ACCOUNT.email);
   return render(await CompetitorsPage({ params: Promise.resolve({}), searchParams: Promise.resolve(params) }));
-}
-
-async function renderCompetitor(slug: string) {
-  cookieJar.set(SESSION_COOKIE, DEMO_ACCOUNT.email);
-  return render(await CompetitorPage({ params: Promise.resolve({ slug }), searchParams: Promise.resolve({}) }));
 }
 
 const region = (name: string) => screen.getByRole("region", { name });
@@ -110,7 +104,6 @@ describe("Research Competitors (Figma Make)", () => {
     expect(within(panel).getByText("Active ads")).toBeDefined();
     expect(within(panel).getByText("Best-performing post")).toBeDefined();
     expect(within(panel).getByText("Most-used hashtags")).toBeDefined();
-    expect(within(panel).getByRole("link", { name: /Full profile/ }).getAttribute("href")).toBe("/competitors/pacific-room-supply");
   });
 
   it("switches the competitor with the picker, keeping it in the address", async () => {
@@ -149,21 +142,3 @@ describe("Research Competitors (Figma Make)", () => {
   });
 });
 
-describe("one competitor's page", () => {
-  it("shows a sign-up competitor's best and worst posts, hashtags, and ads, clearly as sample data", async () => {
-    await renderCompetitor("pacific-room-supply");
-    expect(screen.getByRole("heading", { level: 1, name: "Pacific Room Supply" })).toBeDefined();
-    expect(screen.getByText(/not real figures for Pacific Room Supply/)).toBeDefined();
-    expect(screen.getByRole("heading", { name: /Top posts/ })).toBeDefined();
-  });
-
-  it("works for the fictional sample suppliers too", async () => {
-    await renderCompetitor("coastline-linen-co");
-    expect(screen.getByRole("heading", { level: 1, name: "Coastline Linen Co." })).toBeDefined();
-    expect(screen.getByText(/fictional business/)).toBeDefined();
-  });
-
-  it("is not found for a competitor you cannot track", async () => {
-    await expect(renderCompetitor("someone-else")).rejects.toThrow("NEXT_NOT_FOUND");
-  });
-});

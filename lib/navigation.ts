@@ -21,17 +21,6 @@ export type NavItem = { href: string; label: string } & (
 export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/", label: "Dashboard", status: "ready" },
   { href: "/insights", label: "Insight Report", status: "ready" },
-  {
-    href: "/findings",
-    label: "Revisit Findings",
-    status: "coming-soon",
-    summary: "Come back to the research you saved.",
-    planned: [
-      "Saved trends, audiences, and competitor insights in one place",
-      "Filter by trends, audiences, or competitors",
-      "Turn any finding into a campaign",
-    ],
-  },
   { href: "/competitors", label: "Research Competitors", status: "ready" },
   { href: "/explore", label: "Explore Audience and Trend", status: "ready" },
   { href: "/ai-management", label: "AI Management", status: "ready" },
@@ -41,24 +30,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 /** Pages behind the profile and settings buttons in the top bar. */
 export const ACCOUNT_ITEMS: readonly NavItem[] = [
-  {
-    href: "/profile",
-    label: "Profile",
-    status: "coming-soon",
-    summary: "Your account details.",
-    planned: ["Your name, role, and contact details", "Sign out"],
-  },
-  {
-    href: "/settings",
-    label: "Settings",
-    status: "coming-soon",
-    summary: "Tailor Sixth Sense to your business.",
-    planned: [
-      "Your industry, target regions, and audience",
-      "Your marketing goals",
-      "Connected accounts and the competitors you follow",
-    ],
-  },
+  { href: "/profile", label: "Profile", status: "ready" },
+  { href: "/settings", label: "Settings", status: "ready" },
 ];
 
 /**

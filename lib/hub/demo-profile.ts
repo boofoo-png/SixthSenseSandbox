@@ -2,10 +2,11 @@ import { DEMO_ACCOUNT } from "./constants";
 import type { BusinessProfile } from "./onboarding";
 import { decodeProfile, profileValueFor } from "./profile";
 
-// The demo account has no sign-up answers, so it gets a fictional sample business.
+// The demo account has no sign-up answers, so it gets a sample profile for Sixth Sense, the team's
+// own business (2026-11-06; the clients' Hotel Depot and Hospitality Emporium are set aside for now).
 
-/** The demo business's name (fictional, like its website). */
-export const DEMO_COMPANY = "Harbourline Supply Co.";
+/** The demo account's business (see lib/hub/businesses.ts). */
+export const DEMO_COMPANY = "Sixth Sense";
 
 export const DEMO_PROFILE: BusinessProfile = {
   email: DEMO_ACCOUNT.email,
@@ -14,8 +15,8 @@ export const DEMO_PROFILE: BusinessProfile = {
   regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
   audiences: ["Commercial", "Institutional"],
   goals: ["competitors", "trends", "awareness"],
-  website: "https://harbourline.example",
-  socials: [{ platform: "Instagram", handle: "@harbourline.supply", verified: true }],
+  website: "https://sixthsense.example",
+  socials: [{ platform: "Instagram", handle: "@sixthsenseapp", verified: true }],
   competitors: [
     { name: "Pacific Room Supply", website: "https://pacificroom.example" },
     { name: "Island Linens", website: "https://islandlinens.example" },

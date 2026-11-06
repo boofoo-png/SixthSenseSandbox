@@ -24,8 +24,8 @@ import { useSchedule } from "./use-schedules";
 
 const MIX_DOTS = ["bg-brand-teal", "bg-brand-navy", "bg-brand-lime-bright", "bg-[#5a9c88]"];
 
-export function PostingPlan({ businessId, today, rec }: { businessId: BusinessId; today: string; rec: Recommendations }) {
-  const business = findBusiness(businessId);
+export function PostingPlan({ businessId, businessName, today, rec }: { businessId: BusinessId; businessName: string; today: string; rec: Recommendations }) {
+  const business = findBusiness(businessId, businessName);
   const { schedule, update } = useSchedule(business, today);
   const [month, setMonth] = useState(today.slice(0, 7));
   const [channel, setChannel] = useState<Channel | "All">("All");
@@ -62,23 +62,14 @@ export function PostingPlan({ businessId, today, rec }: { businessId: BusinessId
           <h1 className="text-[clamp(27px,3vw,38px)] font-medium tracking-[-0.035em]">AI Posting Plan</h1>
           <p className="mt-1 text-[14px] text-brand-cream/90">Get AI-powered recommendations for posting frequency, dates and times based on your audience.</p>
         </div>
-        <Link href={`/ai-management/plan?business=${business.id}`} className={`${primaryButtonClass} shrink-0`}>
+        <Link href="/ai-management/plan" className={`${primaryButtonClass} shrink-0`}>
           Generate New Plan
         </Link>
       </div>
 
-      <nav aria-label="Business" className="mb-4 flex w-fit flex-wrap gap-1 rounded-[22px] border border-brand-cream/32 bg-brand-cream/16 p-1 backdrop-blur-[16px]">
-        {(["hotel-depot", "hospitality-emporium"] as const).map((id) => (
-          <Link
-            key={id}
-            href={`/ai-management?business=${id}`}
-            aria-current={id === business.id ? "page" : undefined}
-            className={`rounded-[18px] px-4 py-2 text-[12px] font-bold ${id === business.id ? "bg-brand-teal text-brand-cream" : "text-brand-cream/85 hover:text-brand-cream"}`}
-          >
-            {findBusiness(id).name}
-          </Link>
-        ))}
-      </nav>
+      <p className="mb-4 text-[13px] text-brand-cream">
+        Plan for <strong>{business.name}</strong>. Switch business from the company menu in the top bar.
+      </p>
 
       <ul aria-label="Recommendations" className="mb-4 grid grid-cols-[minmax(0,1fr)] gap-3.5 min-[621px]:grid-cols-2 min-[1201px]:grid-cols-4">
         <li className={cardClass}>

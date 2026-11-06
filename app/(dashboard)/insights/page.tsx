@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { todayIsoDate } from "@/lib/analytics/dates";
 import {
   adCsv,
@@ -16,8 +17,13 @@ import {
   topCampaigns,
   totals,
 } from "@/lib/reports/ads";
+import { SESSION_COOKIE } from "@/lib/hub/constants";
+import { workspaceFor } from "@/lib/hub/workspace";
+import { connectionFor, liveSnapshot, summaryFor } from "@/lib/social/meta/access";
+import { socialReport } from "@/lib/social/meta/stats";
 import { makePageClass } from "../_components/make-ui";
 import { ReportsDashboard } from "./_components/reports-dashboard";
+import { SocialSection, type SocialSectionState } from "./_components/social-section";
 
 export const metadata: Metadata = {
   title: "Reports",
@@ -32,7 +38,19 @@ export default async function ReportsPage({ searchParams }: PageProps<"/insights
   const days = raw === "last-30-days" ? 30 : 7;
   const today = todayIsoDate();
   const period = reportPeriod(days, today);
-  const rows = adRowsBetween({ start: period.previous.start, end: today });
+  const jar = await cookies();
+  const { business } = workspaceFor(jar);
+  // Live Instagram and Facebook numbers when this business is connected (Settings).
+  const email = jar.get(SESSION_COOKIE)?.value ?? "";
+  const summary = summaryFor(jar, email, business.id);
+  const live = await liveSnapshot(connectionFor(jar, email, business.id), days);
+  const social: SocialSectionState =
+    summary.status !== "connected"
+      ? summary
+      : live.status === "live"
+        ? { status: "live", report: socialReport(live.snapshot) }
+        : { status: "failed", error: live.status === "failed" ? live.error : "other" };
+  const rows = adRowsBetween({ start: period.previous.start, end: today }, business.id);
   const now = totals(rows.filter((row) => row.date >= period.current.start));
   const before = totals(rows.filter((row) => row.date <= period.previous.end));
   const daily = dailyRevenue(rows, period.current);
@@ -64,9 +82,11 @@ export default async function ReportsPage({ searchParams }: PageProps<"/insights
           earned: now.revenue,
           earnedChange: change(now.revenue, before.revenue),
           csv: adCsv(rows, period.current),
-          fileName: `sixth-sense-ads-${period.current.start}-to-${period.current.end}.csv`,
+          fileName: `sixth-sense-ads-${business.id}-${period.current.start}-to-${period.current.end}.csv`,
+          business: business.name,
         }}
       />
+      <SocialSection state={social} business={business.name} period={days === 7 ? "7 days" : "30 days"} />
     </main>
   );
 }

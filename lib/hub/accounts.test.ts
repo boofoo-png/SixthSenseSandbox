@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { encodeStored, encodeStoredAccount, type Account } from "./account";
-import { MAX_ACCOUNTS, accountCookieName, accountsToEvict, findAccount } from "./accounts";
+import { MAX_ACCOUNTS, accountCookieName, accountsToEvict, findAccount, metaCookieName, metaCookiePrefix } from "./accounts";
 import { ACCOUNT_COOKIE } from "./constants";
 import { PROFILE_COOKIE, profileCookieName, profileValueFor } from "./profile";
 
@@ -86,6 +86,25 @@ describe("accountsToEvict", () => {
       { name: "ss_more", value: big },
     ];
     expect(accountsToEvict(cookies, "new@example.com")).toEqual(["old@example.com"]);
+  });
+
+  it("counts an account's Meta connections toward its size", () => {
+    const big = "x".repeat(4000);
+    const cookies = [
+      saved("old@example.com", 1),
+      saved("new@example.com", 2),
+      { name: metaCookieName("old@example.com", "hotel-depot"), value: big },
+      { name: metaCookieName("old@example.com", "own"), value: big },
+      { name: "ss_other", value: big },
+      { name: "ss_more", value: big },
+    ];
+    expect(accountsToEvict(cookies, "new@example.com")).toEqual(["old@example.com"]);
+    expect(accountsToEvict(cookies.slice(0, 3), "new@example.com")).toEqual([]);
+  });
+
+  it("names Meta cookies so one account's never match another's", () => {
+    expect(metaCookieName("a@b.co", "own").startsWith(metaCookiePrefix("a@b.c"))).toBe(false);
+    expect(metaCookieName("a@b.c", "own").startsWith(metaCookiePrefix("a@b.c"))).toBe(true);
   });
 
   it("drops nothing when there is room", () => {

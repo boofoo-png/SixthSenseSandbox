@@ -22,7 +22,7 @@ import {
   type BusinessProfile,
   type OnboardingErrors,
 } from "@/lib/hub/onboarding";
-import { accountCookieName, accountsToEvict, findAccount } from "@/lib/hub/accounts";
+import { accountCookieName, accountsToEvict, findAccount, metaCookiePrefix, settingsCookieName } from "@/lib/hub/accounts";
 import { hashPassword } from "@/lib/hub/password";
 import { PROFILE_COOKIE, decodeProfile, encodeProfile, profileCookieName } from "@/lib/hub/profile";
 import { RESET_COOKIE, RESET_LIFETIME_MS, checkResetToken, createReset, decodeReset, encodeReset } from "@/lib/hub/reset";
@@ -56,9 +56,12 @@ function saveProfile(store: CookieStore, profile: BusinessProfile) {
 
 /** Keep the browser's cookies within limits by dropping the oldest saved accounts (see lib/hub/accounts.ts). */
 function dropOldAccounts(store: CookieStore, keepEmail: string) {
-  for (const email of accountsToEvict(store.getAll(), keepEmail)) {
+  const all = store.getAll();
+  for (const email of accountsToEvict(all, keepEmail)) {
     store.delete(accountCookieName(email));
     store.delete(profileCookieName(email));
+    store.delete(settingsCookieName(email));
+    for (const cookie of all) if (cookie.name.startsWith(metaCookiePrefix(email))) store.delete(cookie.name);
   }
 }
 

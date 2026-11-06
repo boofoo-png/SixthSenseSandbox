@@ -32,7 +32,7 @@ export const GOALS = ["Increase engagement", "Grow followers", "Drive website vi
 export type PlanGoal = (typeof GOALS)[number];
 
 export type Business = {
-  id: "hotel-depot" | "hospitality-emporium";
+  id: string;
   name: string;
   handle: string;
   /** How much each sample platform's audience counts when picking days and times. */
@@ -41,7 +41,7 @@ export type Business = {
   mix: Record<MixCategory, number>;
 };
 
-/** The two businesses on the functionality list, each with its own schedule. */
+/** The two businesses on the functionality list, each with its own schedule, and Sixth Sense (the team's own). */
 export const BUSINESSES: readonly Business[] = [
   {
     id: "hotel-depot",
@@ -59,12 +59,27 @@ export const BUSINESSES: readonly Business[] = [
     postsPerWeek: [5, 6],
     mix: { Educational: 30, Inspirational: 30, Promotional: 25, "Behind the scenes": 15 },
   },
+  {
+    id: "sixth-sense",
+    name: "Sixth Sense",
+    handle: "@sixthsenseapp",
+    weights: { linkedin: 1.2, instagram: 1, tiktok: 0.5 },
+    postsPerWeek: [4, 5],
+    mix: { Educational: 40, Inspirational: 25, Promotional: 20, "Behind the scenes": 15 },
+  },
 ];
 
 export type BusinessId = Business["id"];
 
-export function findBusiness(id: string | undefined): Business {
-  return BUSINESSES.find((business) => business.id === id) ?? BUSINESSES[0];
+/**
+ * The posting-plan settings for a workspace business: one of the two sample businesses, or an
+ * account's own company (which gets Hotel Depot's audience patterns under its own name).
+ */
+export function findBusiness(id: string | undefined, name?: string): Business {
+  const known = BUSINESSES.find((business) => business.id === id);
+  if (known) return name ? { ...known, name } : known;
+  const base = BUSINESSES[0];
+  return { ...base, id: id ?? base.id, name: name ?? base.name, handle: name ? `@${name.toLowerCase().replace(/[^a-z0-9]+/g, "")}` : base.handle };
 }
 
 export const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
@@ -423,7 +438,7 @@ export const SCHEDULE_KEY = "sixthsense.posting-plan";
 const VERSION = 1;
 
 export type BusinessSchedule = { posts: ScheduledPost[]; autoPublish: boolean };
-export type SavedSchedules = Partial<Record<BusinessId, BusinessSchedule>>;
+export type SavedSchedules = Record<string, BusinessSchedule>;
 
 function isPost(value: unknown): value is ScheduledPost {
   if (typeof value !== "object" || value === null) return false;
@@ -449,10 +464,10 @@ export function loadSchedules(storage: Storage | undefined): SavedSchedules {
     const saved = JSON.parse(raw) as { version?: unknown; businesses?: Record<string, unknown> };
     if (saved.version !== VERSION || typeof saved.businesses !== "object" || saved.businesses === null) return {};
     const result: SavedSchedules = {};
-    for (const business of BUSINESSES) {
-      const entry = saved.businesses[business.id] as { posts?: unknown; autoPublish?: unknown } | undefined;
-      if (entry && Array.isArray(entry.posts) && typeof entry.autoPublish === "boolean") {
-        result[business.id] = { posts: entry.posts.filter(isPost), autoPublish: entry.autoPublish };
+    for (const [id, value] of Object.entries(saved.businesses)) {
+      const entry = value as { posts?: unknown; autoPublish?: unknown } | undefined;
+      if (/^[a-z0-9-]{1,40}$/.test(id) && entry && Array.isArray(entry.posts) && typeof entry.autoPublish === "boolean") {
+        result[id] = { posts: entry.posts.filter(isPost), autoPublish: entry.autoPublish };
       }
     }
     return result;

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { BUSINESSES, sampleSchedule, upcomingPosts } from "@/lib/hub/posting-plan";
 import { DEMO_ACCOUNT, NEW_ACCOUNT_COOKIE, SESSION_COOKIE } from "@/lib/hub/constants";
 import DashboardPage from "./page";
 
@@ -75,11 +76,14 @@ describe("Dashboard: Marketing Overview (Figma Make)", () => {
     expect(within(rows[2]).getAllByRole("cell").map((cell) => cell.textContent)).toEqual(["10", "30", "23"]);
   });
 
-  it("shows the next Tuesday as the next publishing window", async () => {
+  it("shows the next post planned on the AI Management calendar, with Ask More", async () => {
     await renderDashboard(); // the test clock is Friday, Oct 9, 2026
-    const time = card("Planning").querySelector("time");
-    expect(time?.getAttribute("dateTime")).toBe("2026-10-13");
-    expect(time?.textContent).toBe("Oct 13");
+    const next = upcomingPosts(sampleSchedule(BUSINESSES[0], "2026-10-09"), "2026-10-09", 1)[0];
+    const planning = card("Planning");
+    expect(planning.querySelector("time")?.getAttribute("dateTime")).toBe(next.date);
+    expect(within(planning).getByText(next.title)).toBeDefined();
+    fireEvent.click(within(planning).getByRole("button", { name: "Ask More" }));
+    expect(screen.getByRole("dialog", { name: "Sense AI" })).toBeDefined();
   });
 
   it("shows Email as stable with no reach figure", async () => {
@@ -93,7 +97,8 @@ describe("Dashboard: Marketing Overview (Figma Make)", () => {
     await renderDashboard();
     expect(within(card("Competitor Activities")).getByRole("link", { name: "View details" }).getAttribute("href")).toBe("/competitors");
     expect(within(card("Audience Growth")).getByRole("link", { name: "Explore audience" }).getAttribute("href")).toBe("/explore");
-    expect(within(card("Planning")).getByRole("link", { name: "Create content" }).getAttribute("href")).toBe("/content");
+    expect(within(card("Market Interest")).getByRole("link", { name: "See your audience" }).getAttribute("href")).toBe("/explore");
+    expect(within(card("Planning")).getByRole("link", { name: "Open calendar" }).getAttribute("href")).toBe("/ai-management");
     expect(within(card("Cross-Channel Momentum")).getByRole("link", { name: "Open report" }).getAttribute("href")).toBe("/insights");
   });
 

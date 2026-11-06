@@ -63,8 +63,8 @@ function Stepper({ step }: { step: number }) {
   );
 }
 
-export function PlanWizard({ businessId, today }: { businessId: BusinessId; today: string }) {
-  const business = findBusiness(businessId);
+export function PlanWizard({ businessId, businessName, today }: { businessId: BusinessId; businessName: string; today: string }) {
+  const business = findBusiness(businessId, businessName);
   const rec = recommendationsFor(business);
   const { schedule, update } = useSchedule(business, today);
   const { items: savedContent } = useSavedContent();
@@ -207,7 +207,7 @@ export function PlanWizard({ businessId, today }: { businessId: BusinessId; toda
             >
               Create another plan
             </button>
-            <Link href={`/ai-management?business=${business.id}`} className={primaryButtonClass}>
+            <Link href="/ai-management" className={primaryButtonClass}>
               Go to Content Calendar →
             </Link>
           </div>
@@ -457,7 +457,7 @@ export function PlanWizard({ businessId, today }: { businessId: BusinessId; toda
   const errorCount = Object.values(errors).filter(Boolean).length;
   return (
     <>
-      <Link href={`/ai-management?business=${business.id}`} className="mb-2 inline-block text-[13px] text-brand-cream hover:underline">
+      <Link href="/ai-management" className="mb-2 inline-block text-[13px] text-brand-cream hover:underline">
         ← Content Calendar
       </Link>
       <h1 className="text-[clamp(27px,3vw,38px)] font-medium text-brand-cream">Generate a new plan</h1>
@@ -721,7 +721,7 @@ export function PlanWizard({ businessId, today }: { businessId: BusinessId; toda
             <small className="text-brand-cream/80">Next: review your AI-generated suggestions.</small>
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href={`/ai-management?business=${business.id}`} className={secondaryButtonClass}>
+            <Link href="/ai-management" className={secondaryButtonClass}>
               Cancel
             </Link>
             <button type="submit" className={primaryButtonClass}>

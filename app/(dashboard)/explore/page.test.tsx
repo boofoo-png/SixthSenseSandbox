@@ -88,7 +88,7 @@ describe("Audience page (Figma Make)", () => {
   it("starts from the audience chosen at sign-up and says so", async () => {
     await renderPage(); // the demo business sells to Commercial first
     expect(screen.getByText("Starting from your onboarding audience")).toBeDefined();
-    expect(screen.getByText(/Hospitality Procurement Teams as the default audience for Harbourline Supply Co\./)).toBeDefined();
+    expect(screen.getByText(/Hospitality Procurement Teams as the default audience for Sixth Sense\./)).toBeDefined();
     expect(within(activePanel()).getByRole("heading", { name: "Hospitality Procurement Teams" })).toBeDefined();
     expect(within(activePanel()).getByRole("status").textContent).toContain("Your default audience");
   });

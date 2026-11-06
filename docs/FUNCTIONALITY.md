@@ -1,6 +1,6 @@
 # Functionality List
 
-_Last updated: 2026-11-05_
+_Last updated: 2026-11-06_
 
 The team's functionality list for Sixth Sense (updated 2026-11-05). It is the reference for what each area must do; the team's Figma Make "Marketing Intelligence Hub" shows how most screens look (see docs/IMPLEMENTATION_PLAN.md and docs/DECISIONS.md). Where this list and the Make disagree, the status below says so.
 
@@ -45,19 +45,19 @@ The team's functionality list for Sixth Sense (updated 2026-11-05). It is the re
 | Campaigns: Create Campaign | Generate Campaign / Cancel | AI creates an editable draft: strategy, content and post ideas, channel schedule, and measurement plan. Nothing is published or spent |
 | Campaigns: Create Campaign | Edit generated campaign | Edit strategy, content, channels, and budget before launching |
 | Campaigns: Create Campaign | Review before publishing notice | Reminds the user the draft can be edited before launching ads or spending money |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
-| Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
-| Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
-| Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
-| Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
-| Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
+| Insights and Weekly Reports | day/week toggle | Switch the report period |
+| Insights and Weekly Reports | KPI cards | Total Spend, Revenue, ROAS, Impressions, Conversions, and Clicks, each with change vs. last week and an arrow to open details |
+| Insights and Weekly Reports | AI Insights Summary | Revenue chart by day (Google vs. Meta) with a peak revenue tooltip, plus AI-written insights, top performer, underperformer, and a budget suggestion |
+| Insights and Weekly Reports | Refresh and View Full Insight | Regenerate the AI summary; open the full insight |
+| Insights and Weekly Reports | Weekly insights | What went well, comparison to last week, and a revenue summary |
+| Insights and Weekly Reports | Performance by Country | Map of top countries with metric and country filters, top performing revenue, revenue growth, and period; covers Hotel Depot and Hospitality Emporium |
+| Insights and Weekly Reports | Top Campaigns | Bar chart and table of spend, revenue, conversions, and ROAS, plus a performance score and weekly earnings vs. last week |
+| Insights and Weekly Reports | Export Report | Option for user to export the report as a spreadsheet or pdf |
+| Competitors: Competitor Performance | Filter by findings | Filter by most viewed post, most liked post, most popular item, most popular trends, common reused layouts, and most used by users |
+| Competitors: Competitor Performance | Competitor campaign cards | Cards with brand, date, title, description, and tags (e.g., Paid social, Organic) to explore a competitor's campaign |
+| Competitors: Competitor Performance | Competitor comparison | Compare your content to competitors' (e.g., Reels count and average engagement), the engagement gap, and the period |
+| Competitors: Competitor Performance | Evidence note | Explains the calculation (engagements ÷ reach × 100, unweighted averages) and that results are a test opportunity, not a guarantee |
+| Competitors: Competitor Performance | Your next move | AI turns the benchmark into three steps: spot the opportunity, when to post, and review after 7 days against a target |
 | Content Creation: Hub | Create new AI-guided content | Cards to start a Social Post, Video, Blog, or Ad Copy |
 | Content Creation: Hub | Edit and enhance existing content | Cards to start Edit Posts, Improve Copy, Repurpose Content, or Upload Your File |
 | Content Creation: Hub | My Content button | Open the content library from any content page |
@@ -128,22 +128,22 @@ The team's functionality list for Sixth Sense (updated 2026-11-05). It is the re
 | AI Content Manager: Generate a Plan (Step 3, Add to Calendar) | Scheduled posts | List approved posts with thumbnail, channel, format, and date/time; counts of scheduled and published |
 | AI Content Manager: Generate a Plan (Step 3, Add to Calendar) | Create another plan / Go to Content Calendar | Start a new plan, or open the full calendar |
 
-## Status (2026-11-05)
+## Status (2026-11-06)
 
-Compared with the app on `feat/sixth-sense` (commit 6f9522f), which follows the Figma Make as it was on 2026-11-05.
+Compared with the app on `feat/sixth-sense` (after commit 03e497b, with the work since), which follows the Figma Make as it was on 2026-11-05. The demo account owns two sample businesses, Hotel Depot and Hospitality Emporium; the company name menu in the top bar switches between them, and every page shows the chosen one.
 
 | Area | Status |
 |---|---|
 | Account (all but drop-downs) | Built, as before. Forgot Password shows the reset link on screen; social linking and document uploads are simulated and labelled so |
 | Account: General audience set up | Partly: industry, region, and audience are chosen with chips, not drop-down lists (the team's Dropdown component is still being built) |
 | Account: On boarding tutorial | Built: welcome and seven-step tour after sign-up |
-| Global Navigation | Built: Ask anything, sidebar, company name, Settings and Help. Differences: the sidebar also lists Campaigns (the Make has it; this list does not), and the notifications bell only says there are none yet |
-| Marketing Overview | Built: tour, 7 / 30 day toggle, all six cards. Differences: Market Interest has no link to Audience, and Planning links to Content Creation instead of showing the next calendar activity with Ask More |
+| Global Navigation | Built: Ask anything, sidebar, company name menu (switch business, and Profile and settings), Settings, and Help (opens Sense AI). Differences: the sidebar also lists Campaigns (user's choice), the notifications bell only says there are none yet, and Ask anything still only repeats the question |
+| Marketing Overview | Built: tour, 7 / 30 day toggle, and all six cards. Market Interest links to Audience; Planning shows the next post on the chosen business's AI Management calendar with Open calendar and Ask More (opens Sense AI) |
 | Campaigns: Create Campaign | Built: all eight parts, Draft / Published, Generate / Cancel, the editable draft, and the review notice. The draft has no measurement plan yet |
-| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Covers the signed-in business, not Hotel Depot and Hospitality Emporium separately |
+| Insights and Weekly Reports | Built on Reports from the design file, on sample Google and Meta ad data (labelled as sample): day/week (7 / 30 day) toggle, all six KPI cards with details, AI Insights Summary with Refresh and View Full Insight (weekly insights), Top Campaigns, and Export Report (PDF or spreadsheet). Performance by Country is a ranked list with flags instead of a map (user's choice). Follows the business chosen in the top bar (Hotel Depot or Hospitality Emporium) |
 | Competitors: Competitor Performance | Not adding (user's decision, 2026-11-05): the page stays as built from the Figma Make; the list's findings filter, campaign cards, comparison with your content, evidence note, and Your next move are left out |
-| Content Creation: Hub and the eight tools | Built. Small differences: the Edit Posts button says Generate with AI (list: Enhance with AI); Upload's focus has Rewrite (list: Repurpose); Ad Copy's CTAs differ from the list's six |
+| Content Creation: Hub and the eight tools | Built, with the list's wording: Enhance with AI on Edit Posts, Upload focus Edit / Repurpose / Copy / Insights, and Ad Copy calls to action from the list's six (three recommended per goal). Save keeps a result in the browser, and Add to calendar opens the calendar's post editor filled in from it, then puts the post on the chosen business's AI Management calendar |
 | Content Creation: My Content | Not built: no library page yet (saved items live in the browser and appear in Repurpose) |
 | AI Content Manager (posting plan, calendar, 3-step plan creator) | Built on AI Management (/ai-management and /ai-management/plan) from the team's design file: recommendations, content calendar, upcoming posts, per-platform post types, and the three-step plan generator. Auto Publishing is a simulated switch: nothing is posted and posts stay Scheduled (user's choice, 2026-11-05) |
 | Target Audience | Built on Audience (/explore). This list no longer describes the Audience page beyond the sidebar link |
-| Business schedules (Hotel Depot and Hospitality Emporium) | Built on AI Management: a switcher with a separate schedule for each, saved in the browser |
+| Business schedules (Hotel Depot and Hospitality Emporium) | Built: chosen from the company name menu in the top bar (for the demo account), with a separate schedule for each saved in the browser |

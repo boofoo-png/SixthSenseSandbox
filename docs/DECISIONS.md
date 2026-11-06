@@ -328,3 +328,68 @@ Alternatives considered: Keeping Reports on the social analytics, and copying th
 
 Supersedes: "Reports follows the Figma Make with the app's own numbers" (2026-11-05), and the plan's out-of-scope line about ad-platform data for Reports (sample ad data is now shown).
 
+## 2026-11-06 - Settings follows the Figma Make and saves for real
+
+Context: The Make has one "Profile and settings" page (Profile, Workspace, Notifications, Security) that its company-name button opens; the app had "Coming soon" pages for Settings and Profile. The functionality list asks for the company name to open the account and company profile, and the Settings icon to open account settings.
+
+Decision: Build the Make's page and make it work: answers are saved per account in their own cookie (kept within the cookie budget and removed with old accounts), and the saved name and company replace the sign-up ones across the app. Email is shown but not editable, because it is the login and changing it would mean moving every per-account cookie. Change password works for accounts created in this browser (checking the current password); the demo account's password stays fixed so the shared login keeps working. Sessions shows only this browser, since sign-in is kept in the browser. Two notification types are renamed to features that exist (scheduled post reminders instead of the removed community inbox, report reminders instead of the removed report schedule). /profile redirects to Settings.
+
+Alternatives considered: A separate Profile page, as the old plan had, was dropped because the Make combines them. Letting people change their email was rejected for the prototype.
+
+## 2026-11-06 - Revisit Findings is dropped
+
+Context: Revisit Findings came from the original mid-fi. It is in neither the Figma Make nor the updated functionality list, and its "Coming soon" page had no links left.
+
+Decision: Remove /findings, its navigation entry, and the shared "Coming soon" page (no unbuilt pages are left). Features that appear in neither the Make nor the functionality list are treated as potentially scrapped (user, 2026-11-06).
+
+## 2026-11-06 - One sample business everywhere, chosen from the company menu
+
+Context: The sample data did not agree from page to page: the sign-up business showed on most pages, AI Management had its own switcher for Hotel Depot and Hospitality Emporium, and Reports ignored both. The functionality list asks for separate schedules for Hotel Depot and Hospitality Emporium and for Performance by Country to cover both.
+
+Decision: The demo account owns both businesses (Hotel Depot is its company). The company name button in the top bar becomes a menu that switches business (saved in a cookie, checked on the server) and links to Profile and settings. The dashboard, Reports, AI Management, and Content Creation use the chosen business, each with its own sample figures. Accounts created in the browser have one business, their own, so the switch does not show for them. AI Management's own switcher is removed.
+
+Alternatives considered: Renaming the demo business to one name and dropping the second business was not chosen (user's choice).
+
+Supersedes: the switcher part of "AI Management becomes the posting plan" (2026-11-05): the switch moved to the top bar.
+
+## 2026-11-06 - Old pages are removed, not kept behind links
+
+Context: The old AI Studio, Analytics, Reports, competitor detail, and Findings pages were no longer linked but still built and tested, and AI Studio kept a second calendar next to AI Management's.
+
+Decision: Delete them with their code and tests, and redirect their addresses (temporary redirects, so they can change later): /ai-studio to /ai-management, /analytics and /reports to /insights, /competitors/<name> to /competitors, /findings to the dashboard. AI Management's calendar is the only calendar. Content Creation reaches it through Add to calendar, which reuses the calendar's post editor so a post made either way is the same.
+
+Alternatives considered: Keeping the competitor detail pages was offered and not chosen (user's decision).
+
+## 2026-11-06 - Connect Instagram and Facebook first, read-only, through Meta in development mode
+
+Context: The team wants a real social media connection. Of the app's channels, YouTube was the quickest to set up and Meta the most useful for a hospitality supplier; Bluesky was even easier but is not one of the app's channels or in the Figma Make.
+
+Decision: Connect Instagram professional accounts and Facebook Pages through Facebook Login for Business on Graph API v26.0, with the Meta app kept in development mode so teammates added as testers can connect without app review. Read only: followers, reach, views, engagement and top posts. Each business chosen in the top bar has its own connection. Live numbers replace the sample ones on Overview and in a new Reports section, labelled as live, and everything falls back to labelled sample data when there is no connection or Meta fails.
+
+Alternatives considered: YouTube first (easier, less relevant) and Bluesky (easiest, but new to the app) were offered and not chosen. Posting was left out to avoid test posts going to real accounts. One connection per sign-in was not chosen because the business switcher would stop meaning anything for these numbers.
+
+Supersedes: the plan's "Real social account connections" out-of-scope line, for Instagram and Facebook read access only. Onboarding's social step stays simulated.
+
+## 2026-11-06 - Meta tokens are kept in an encrypted httpOnly cookie
+
+Context: A connection needs Meta's long-lived access token (about 60 days) on the server, and the app has no database; accounts and settings already live in cookies.
+
+Decision: Seal the token with AES-256-GCM (node:crypto, no new dependency) using SOCIAL_TOKEN_SECRET from .env.local, bound to the account email and business id, and store it in an httpOnly, SameSite=Lax cookie (Secure in production) per account and business. Browser JavaScript never sees it, and it is never sent to client components or put in URLs. Meta is called only from the server, with results cached in memory for 15 minutes.
+
+Alternatives considered: A Postgres database (Supabase or Neon) was offered and not chosen for the prototype; it would allow background sync and refresh but adds a service and setup for the team. A JWT library such as jose (suggested by the Next.js guide) was not needed for one encrypted value.
+
+## 2026-11-06 - Sixth Sense joins the demo account's businesses
+
+Context: Hotel Depot and Hospitality Emporium are businesses owned by the team's clients. The team's own Instagram (@sixthsenseapp) was connected under Hotel Depot to test the Meta connection, which made a client's slot show the team's numbers.
+
+Decision: Add "Sixth Sense" (id sixth-sense) as a third business in the demo account's company menu, for the team's own accounts. Hotel Depot stays first and is still the default; Sixth Sense uses the same sample patterns as Hotel Depot until its Instagram is connected.
+
+Alternatives considered: Renaming Hotel Depot, or dropping Hospitality Emporium, was not chosen because both belong to real clients.
+
+## 2026-11-06 - The demo account works on Sixth Sense only, for now
+
+Context: The team is testing with its own accounts (@sixthsenseapp on Instagram and the Sixth Sense Facebook Page) and does not want the clients' Hotel Depot and Hospitality Emporium in the way while it does.
+
+Decision: The demo account's only business is Sixth Sense (id sixth-sense, handle @sixthsenseapp, website sixthsense.example), so the company menu has no switch and every page shows Sixth Sense. Its sample figures are the ones Hotel Depot had. The clients' businesses and their sample data stay in the code (lib/hub/businesses.ts, posting-plan.ts, overview.ts, reports/ads.ts) and come back by adding them to the demo list in lib/hub/workspace.ts.
+
+Supersedes: "Sixth Sense joins the demo account's businesses" (2026-11-06) and the demo-account part of "One sample business everywhere, chosen from the company menu" (2026-11-06). The switcher itself still works whenever an account has more than one business.

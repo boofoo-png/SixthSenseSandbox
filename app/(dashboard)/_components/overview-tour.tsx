@@ -47,7 +47,7 @@ export const TOUR_STEPS = [
     target: "opportunity",
     eyebrow: "Step 6 · Plan",
     title: "Know your next move",
-    description: "Review the next recommended publishing window and move directly into your content calendar.",
+    description: "See the next post on your content calendar, or ask Sense AI what to plan next.",
   },
   {
     target: "community",

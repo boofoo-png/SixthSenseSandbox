@@ -156,11 +156,13 @@ export function blogPlan(input: BlogInput): Result<BlogPlan> {
 
 export const AD_GOALS = ["Awareness", "Traffic", "Leads", "Sales"] as const;
 export const AD_FORMATS = ["Image Ad", "Video Ad", "Carousel", "Story"] as const;
+/** The functionality list's six calls to action; each goal recommends three of them. */
+export const CTA_OPTIONS = ["Learn More", "Book Now", "Shop Now", "Get Started", "Sign Up", "Discover More"] as const;
 const CTAS: Record<(typeof AD_GOALS)[number], string[]> = {
-  Awareness: ["Learn More", "Watch More", "Follow Us"],
-  Traffic: ["Learn More", "Visit Site", "See Collection"],
-  Leads: ["Get a Quote", "Contact Us", "Book a Call"],
-  Sales: ["Shop Now", "Order Now", "Get Offer"],
+  Awareness: ["Learn More", "Discover More", "Sign Up"],
+  Traffic: ["Learn More", "Discover More", "Shop Now"],
+  Leads: ["Sign Up", "Get Started", "Book Now"],
+  Sales: ["Shop Now", "Book Now", "Get Started"],
 };
 
 export type AdInput = { product: string; goal: (typeof AD_GOALS)[number]; format: (typeof AD_FORMATS)[number]; audience: string; variant: number };

@@ -22,7 +22,7 @@ const today = "2026-11-05";
 const depot = findBusiness("hotel-depot");
 
 function renderPlan(id: "hotel-depot" | "hospitality-emporium" = "hotel-depot") {
-  render(<PostingPlan businessId={id} today={today} rec={recommendationsFor(findBusiness(id))} />);
+  render(<PostingPlan businessId={id} businessName={findBusiness(id).name} today={today} rec={recommendationsFor(findBusiness(id))} />);
 }
 const saved = () => JSON.parse(window.localStorage.getItem(SCHEDULE_KEY) ?? "{}");
 
@@ -34,14 +34,12 @@ describe("AI Posting Plan", () => {
     expect(screen.getByText("Best days to post")).toBeDefined();
     expect(screen.getByText("Best time to post (PST)")).toBeDefined();
     expect(screen.getByText("Recommended content mix")).toBeDefined();
-    expect(screen.getByRole("link", { name: "Generate New Plan" }).getAttribute("href")).toBe("/ai-management/plan?business=hotel-depot");
+    expect(screen.getByRole("link", { name: "Generate New Plan" }).getAttribute("href")).toBe("/ai-management/plan");
   });
 
-  it("switches between the two businesses' schedules", () => {
+  it("plans for the business chosen in the top bar", () => {
     renderPlan("hospitality-emporium");
-    const businesses = screen.getByRole("navigation", { name: "Business" });
-    expect(within(businesses).getByRole("link", { name: "Hospitality Emporium" }).getAttribute("aria-current")).toBe("page");
-    expect(within(businesses).getByRole("link", { name: "Hotel Depot" }).getAttribute("href")).toBe("/ai-management?business=hotel-depot");
+    expect(screen.getByText("Hospitality Emporium", { selector: "strong" })).toBeDefined();
     expect(screen.getByText(/5–6 posts per week/)).toBeDefined();
   });
 
@@ -94,7 +92,7 @@ describe("AI Posting Plan", () => {
 });
 
 describe("Generate a new plan", () => {
-  const renderWizard = () => render(<PlanWizard businessId="hotel-depot" today={today} />);
+  const renderWizard = () => render(<PlanWizard businessId="hotel-depot" businessName="Hotel Depot" today={today} />);
 
   it("starts on step 1 with a live plan preview", () => {
     renderWizard();
@@ -131,7 +129,7 @@ describe("Generate a new plan", () => {
     expect(screen.getByText(`${total - 1} scheduled · 0 published`)).toBeDefined();
     const plan = saved().businesses["hotel-depot"].posts.filter((post: { id: string }) => post.id.startsWith("plan-"));
     expect(plan).toHaveLength(total - 1);
-    expect(screen.getByRole("link", { name: "Go to Content Calendar →" }).getAttribute("href")).toBe("/ai-management?business=hotel-depot");
+    expect(screen.getByRole("link", { name: "Go to Content Calendar →" }).getAttribute("href")).toBe("/ai-management");
   });
 
   it("filters drafts by format, regenerates them, and edits one", () => {

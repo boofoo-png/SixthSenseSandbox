@@ -1,10 +1,6 @@
-import type { Metadata } from "next";
-import { ComingSoon, comingSoonItem } from "../_components/coming-soon";
+import { redirect } from "next/navigation";
 
-const item = comingSoonItem("/profile");
-
-export const metadata: Metadata = { title: item.label, description: item.summary };
-
+// The Figma Make has no separate profile page: the company name opens Settings, starting on Profile.
 export default function ProfilePage() {
-  return <ComingSoon item={item} />;
+  redirect("/settings?section=profile");
 }

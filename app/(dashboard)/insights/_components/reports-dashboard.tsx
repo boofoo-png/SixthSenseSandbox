@@ -25,6 +25,7 @@ export type ReportsData = {
   earnedChange: number | null;
   csv: string;
   fileName: string;
+  business: string;
 };
 
 const card =
@@ -383,7 +384,7 @@ export function ReportsDashboard({ data }: { data: ReportsData }) {
           </div>
         </section>
       </div>
-      <p className="mt-4 text-[12px] text-brand-cream print:text-brand-navy">Sample data: the prototype has no ad accounts connected, so spend, revenue, and campaigns are made up for illustration.</p>
+      <p className="mt-4 text-[12px] text-brand-cream print:text-brand-navy">Sample data for {data.business}: the prototype has no ad accounts connected, so spend, revenue, and campaigns are made up for illustration.</p>
     </>
   );
 }

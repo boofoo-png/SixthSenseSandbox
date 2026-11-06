@@ -4,7 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 import { LineIcon } from "@/components/line-icons";
+import { postFromContent } from "@/lib/hub/content/calendar";
 import type { ToolSlug } from "@/lib/hub/content/tools";
+import { findBusiness, type ScheduledPost } from "@/lib/hub/posting-plan";
+import { PostEditor } from "../../ai-management/_components/plan-ui";
+import { useSchedule } from "../../ai-management/_components/use-schedules";
+import { useCalendarTarget, type CalendarTarget } from "./calendar-target";
 import { useSavedContent } from "./use-saved-content";
 
 // Building blocks of the Figma Make's content tool screens: the details panel on the left, the
@@ -324,9 +329,41 @@ export function EmptyState({ children }: { children: ReactNode }) {
   );
 }
 
-/** Regenerate and Save, as in the Make. Save keeps the text in this browser. */
-export function ResultActions({ tool, title, text, saveLabel = "Save", onRegenerate }: { tool: ToolSlug; title: string; text: string; saveLabel?: string; onRegenerate: () => void }) {
+/** Opens the calendar's post editor filled in from the result; saving puts it on the chosen business's calendar. */
+function AddToCalendar({ target, tool, title, text, platform, onAdded }: { target: CalendarTarget; tool: ToolSlug; title: string; text: string; platform?: string; onAdded: (message: string) => void }) {
+  const business = findBusiness(target.business.id, target.business.name);
+  const { update } = useSchedule(business, target.today);
+  const [post, setPost] = useState<ScheduledPost | null>(null);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setPost(postFromContent(tool, title, text, target.today, `content-${Date.now()}`, platform))}
+        className="min-h-[35px] min-w-[90px] flex-1 rounded-[18px] border border-brand-teal/40 bg-white/70 px-4 text-[12px] font-bold text-brand-teal hover:bg-white min-[621px]:flex-none"
+      >
+        Add to calendar
+      </button>
+      {post && (
+        <PostEditor
+          post={post}
+          today={target.today}
+          title={`Add to the ${business.name} calendar`}
+          onClose={() => setPost(null)}
+          onSave={(saved) => {
+            const ok = update((current) => ({ ...current, posts: [...current.posts, saved] }));
+            setPost(null);
+            onAdded(ok ? `Added to the ${business.name} calendar in AI Management.` : "Added for now, but this browser blocks storage, so it will be gone after a reload.");
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+/** Regenerate and Save, as in the Make, plus Add to calendar. Save keeps the text in this browser. */
+export function ResultActions({ tool, title, text, platform, saveLabel = "Save", onRegenerate }: { tool: ToolSlug; title: string; text: string; platform?: string; saveLabel?: string; onRegenerate: () => void }) {
   const { save } = useSavedContent();
+  const target = useCalendarTarget();
   const [savedText, setSavedText] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const saved = savedText === text;
@@ -356,6 +393,11 @@ export function ResultActions({ tool, title, text, saveLabel = "Save", onRegener
           {saved ? "Saved" : saveLabel}
         </button>
       </div>
+      {target && (
+        <div className="mt-[9px] flex justify-stretch min-[621px]:justify-end">
+          <AddToCalendar target={target} tool={tool} title={title} text={text} platform={platform} onAdded={setNotice} />
+        </div>
+      )}
       <p role="status" className="mt-2 min-h-[18px] text-right text-[11px] text-brand-teal">
         {notice}
       </p>

@@ -1,6 +1,53 @@
+# Implementation Plan: Instagram and Facebook connection (Meta, read-only)
+
+_Last updated: 2026-11-06_
+
+## Goal
+For the business chosen in the top bar, a tester can connect its Instagram professional account and Facebook Page from Settings. Overview and a new Reports section then show the real followers, reach, views, engagement and top posts, labelled as live. Anything not connected, expired or failing falls back to the labelled sample data. Nothing is ever posted.
+
+## Out of scope
+- Posting or Auto Publishing, comments, messages, and replies
+- Ad spend, revenue, ROAS and conversions (Marketing API); Reports' ad numbers stay sample
+- Competitor data from Meta
+- App review, Live mode, and accounts that are not testers on the team's Meta app
+- A database, background sync jobs, and token refresh while the app is closed
+- Other platforms (YouTube, TikTok, LinkedIn, X)
+
+## Phase 1 - Meta data layer (test-first, no network in tests)
+- [x] 1.1 Config: read META_APP_ID, META_APP_SECRET, SOCIAL_TOKEN_SECRET (32+ random bytes) and META_GRAPH_VERSION (default v26.0) on the server only; `metaConfigured()` is false when any is missing, so the app still runs without them. Add a committed .env.example with blank values (and `!.env.example` in .gitignore) (lib/social/meta/config.ts, config.test.ts)
+- [x] 1.2 Sealed tokens: AES-256-GCM with node:crypto (no new dependency) over {token, expiresAt, igUserId, igUsername, pageId, pageName, connectedAt}, bound to the account email and business id so a cookie cannot be moved to another account or business; tampered, expired or wrong-owner values read as "not connected" (lib/social/meta/token.ts, token.test.ts)
+- [x] 1.3 OAuth helpers: build the Facebook Login dialog URL (scopes instagram_basic, instagram_manage_insights, pages_show_list, pages_read_engagement; redirect /api/meta/callback); random state tied to the account and business, checked with a constant-time compare and valid for 10 minutes (lib/social/meta/oauth.ts, oauth.test.ts)
+- [x] 1.4 Graph client with an injectable fetch, token sent in the Authorization header (never in URLs or logs): exchange the code, swap for a long-lived token, list Pages with their instagram_business_account, read the Instagram profile (username, followers_count, media_count), account insights (reach, views, accounts_engaged, follower change) for 7 or 30 days, recent media with likes, comments, views and reach, and the Page's followers. Meta errors map to typed results: expired or revoked (code 190), missing permission, rate limited, and other. Fixtures are recorded response shapes (lib/social/meta/graph.ts, graph.test.ts, fixtures/)
+- [x] 1.5 Map live results onto the app's shapes: Overview's audienceGrowth, engagement and the Instagram and Facebook momentum rows, and a new Reports "Instagram and Facebook" model (followers, reach, views, engagement rate, top three posts). Each field falls back to the sample value when Meta did not return it, and records whether it is live (lib/social/meta/stats.ts, stats.test.ts)
+
+## Phase 2 - Server
+- [x] 2.1 Data access layer (server only): `metaConnectionFor(jar, email, businessId)` and `liveSocialStats(connection, period)`, returning {status: "live" | "sample" | "expired" | "error", data}; results are kept in memory per business and period for 15 minutes so page loads do not hit Meta's rate limits (lib/social/meta/access.ts, access.test.ts)
+- [x] 2.2 GET /api/meta/connect: signed-in users only; checks config and the chosen business, sets the state cookie (httpOnly, SameSite=Lax, 10 minutes) and redirects to Facebook (app/api/meta/connect/route.ts, per the Next.js 16 route handler guide)
+- [x] 2.3 GET /api/meta/callback: checks the state, exchanges the code, gets the long-lived token, finds the first Page with an Instagram professional account, seals it into `ss_meta_<account>_<business>` (httpOnly, Secure in production, about 60 days), and redirects to Settings with a plain result code (connected, cancelled, no-instagram, error). Add the cookie prefix to the account cookie eviction (app/api/meta/callback/route.ts, lib/hub/accounts.ts)
+- [x] 2.4 Disconnect server action: removes the cookie and asks Meta to remove the app's permissions (DELETE /me/permissions); succeeds locally even if Meta cannot be reached (app/(dashboard)/settings/actions.ts)
+
+## Phase 3 - UI
+- [x] 3.1 Settings, Workspace: an "Instagram and Facebook" card for the chosen business. It explains when the app is not set up, offers Connect, shows the connected @username, Page name, connection date and expiry with Disconnect, and gives a plain message for each result code (app/(dashboard)/settings/_components/settings-view.tsx)
+- [x] 3.2 Overview: Audience Growth, Engagement and the Instagram and Facebook momentum rows use live numbers when connected, with a small "Live from Instagram" or "Sample" label on each card (app/(dashboard)/page.tsx, overview components)
+- [x] 3.3 Reports: a new "Instagram and Facebook" section under the ad sections, following the 7 / 30 day switch: followers, reach, views, engagement rate, and the top three posts linking to Instagram. Shows a Connect prompt when the business is not connected; it is left out of the CSV and PDF export for now (app/(dashboard)/insights/)
+- [x] 3.4 Expired or revoked connection: Overview, Reports and Settings say so and offer Reconnect, and the pages fall back to sample data
+- [x] 3.5 More from the Facebook Page (2026-11-06): with the Page's own token, views (page_media_view), viewers (page_total_media_view_unique) and post engagement (page_post_engagements) for the period and the one before, plus recent Page posts with reactions, comments and shares. Overview's Facebook momentum row turns live; Reports splits into Instagram and Facebook parts. Each metric is read separately because Meta renamed Page metrics in June 2026 (lib/social/meta/graph.ts, stats.ts, insights/_components/social-section.tsx)
+
+## Phase 4 - Setup, checks and polish
+- [ ] 4.1 Setup guide for the team: create the Meta app (Business type), add Facebook Login for Business with redirect URI http://localhost:3000/api/meta/callback, add teammates as testers, link each Instagram professional account to a Facebook Page, and fill in .env.local (docs/META_SETUP.md)
+- [ ] 4.2 Connect a real tester account in Chrome: connect, see live numbers on Overview and Reports for one business and sample for the other, switch business, disconnect, and try an expired token
+- [ ] 4.3 Security review of the OAuth flow and token handling (OWASP: state/CSRF, open redirects, token exposure in logs, HTML or client props, cookie flags) using the security review
+- [ ] 4.4 Keyboard, screen reader and phone-width check of the Settings card and the new Reports section
+
+## Open questions
+- The team has to create the Meta app and add testers; until then the build is tested with fixtures only. Who owns the Meta app?
+- Meta deprecated several Page reach and impression metrics in 2026 in favour of Media Views and Viewers; confirm the exact Page and Instagram metric names against the v26.0 reference when building 1.4
+- If a tester manages several Pages with Instagram accounts, the first one is used; add a picker only if the team needs it
+- Facebook Login requires HTTPS redirect URIs except for localhost; a deployed demo will need an HTTPS address added to the app
+
 # Implementation Plan: Sixth Sense (Mid-fi Build)
 
-_Last updated: 2026-11-05_
+_Last updated: 2026-11-06_
 
 What each area must do comes from docs/FUNCTIONALITY.md (the team's functionality list, updated 2026-10-30). Replaces the "Marketing Hub Pivot" plan written earlier on 2026-10-22 (none of its steps were started). Screens follow the team's mid-fi in the SIXTH SENSE Figma file (page MID-FI/HIGH-FI, node 9656-4371); flows and screens the mid-fi does not cover yet follow the Sixth Sense Master Site Map (FigJam). Both are frameworks and may change.
 
@@ -22,7 +69,9 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [x] 1.2 Navigation config for the seven areas in dashboard tile order, with routes: /insights, /findings, /competitors, /explore, /ai-management, /content, /campaigns, plus /settings and /profile; unbuilt areas marked "Coming soon" (lib/navigation.ts, navigation.test.ts)
 - [x] 1.3 Replace the sidebar with the mid-fi top bar: menu button opening a navigation drawer (all areas, current one marked), logo linking to the dashboard, profile and settings icon buttons; works on phones and desktop; hidden when printing (app/(dashboard)/_components/app-bar.tsx, nav-drawer.tsx, layout.tsx; remove sidebar.tsx)
 - [x] 1.4 Bring back a `ComingSoon` page listing each unbuilt area's planned features from the mid-fi, and placeholder routes for every area (app/(dashboard)/_components/coming-soon.tsx, app/(dashboard)/<area>/page.tsx)
-- [ ] 1.5 Keep old addresses working: /analytics and /reports redirect to /insights and /insights/report, /ai-studio to /content (next.config.ts redirects, per the Next.js 16 redirecting guide)
+- [x] 1.5 Keep old addresses working (2026-11-06): the old AI Studio, Analytics, Reports, competitor detail, and Findings pages are removed with their code and tests; /ai-studio redirects to /ai-management, /analytics and /reports to /insights, /competitors/<name> to /competitors, and /findings to the dashboard (next.config.ts redirects, temporary)
+- [x] 1.7 One sample business everywhere (2026-11-06): the demo account owned Hotel Depot and Hospitality Emporium (clients' businesses); since 2026-11-06 it has only Sixth Sense, the team's own, for testing, with the clients' businesses kept in code to bring back; the company name menu in the top bar switches between them (saved in a cookie) and opens Profile and settings; the dashboard, Reports, AI Management, and Content Creation all use the chosen business, each with its own sample figures (lib/hub/businesses.ts, workspace.ts, app/(dashboard)/actions.ts chooseBusiness, top-bar.tsx)
+- [x] 1.8 Content Creation results can go on the calendar (2026-11-06; functionality list: an idea "can be edited or added to the calendar"): Add to calendar under Save opens the calendar's post editor filled in from the result (suggested channel, or the platform chosen in the tool; post type; hashtags pulled out of the text; today at 9:00 AM), and saving adds it to the chosen business's AI Management calendar (lib/hub/content/calendar.ts, content/_components/calendar-target.tsx, tool-ui.tsx)
 - [ ] 1.6 Sample business profile: a fictional hospitality supplier in Richmond, BC (products and services, regions, audiences such as small hotels, senior living, care homes) and the `BusinessProfile` type with validation (lib/hub/business.ts, business.test.ts)
 
 ## Phase 2 - Account: Login, Create an Account, Onboarding (prototype sign-in, test-first)
@@ -35,7 +84,7 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [x] 2.7 /login screen: logo, email, password, Remember Me, Sign In (kit Button), Forgot your password? and Create an account links; /forgot-password explains reset is not available in the prototype (app/(auth)/login/, forgot-password/)
 - [x] 2.8 /create-account screen: Create an Account, Company Information, and Password sections with inline errors, Continue and Back (app/(auth)/create-account/)
 - [x] 2.9 /onboarding screen, "Tell us about your industry": the sections from 2.3 in the mid-fi order; Connect, Upload, and Invite only record the entry and say so; Continue goes to the dashboard; Create an Account and the route rule then send new users to /onboarding before the dashboard (app/(auth)/onboarding/, lib/hub/routing.ts)
-- [ ] 2.10 /settings edits the onboarding answers and /profile shows the account details, each with Save Changes and a confirmation; Sign out in the profile page and the drawer (app/(dashboard)/settings/, profile/)
+- [x] 2.10 Settings follows the team's Figma Make (2026-11-06): one "Profile and settings" page with Profile (name, role, phone; email shown but fixed because it is the login), Workspace (company, website, default industry, time zone, connected channels from sign-up), Notifications (four switches), and Security (change password for accounts made in this browser; the demo password is fixed; this browser's session with Sign out), one Save changes button, and Sign out. Saved per account in its own cookie (cleared with old accounts); the saved name and company show in the sidebar, top bar, and welcome. The company name opens Settings, and /profile redirects to its Profile section (lib/hub/settings.ts, app/(dashboard)/settings/)
 - [x] 2.11 Back on step 2: the account is created only when step 2 is finished (step 1 is held in a sign-up cookie); Back keeps the step 2 answers and returns to step 1 filled in, where blank passwords keep the one already chosen; Back also shows for accounts signed in before finishing step 2 (app/(auth)/actions.ts, create-account/, onboarding/, lib/hub/routing.ts, proxy.ts)
 - [x] 2.12 Forgot Password (FUNCTIONALITY.md): enter the email, get a reset link (shown on screen in the prototype, since nothing is emailed), and choose a new password for the account saved in this browser; the link expires (app/(auth)/forgot-password/, reset-password/, lib/hub/reset.ts)
 - [x] 2.13 Link social media with verify: each account row has Connect, which marks the handle verified; verification is simulated and labelled so, since real connections need each platform's approval (app/(auth)/onboarding/, lib/hub/onboarding.ts)
@@ -70,7 +119,7 @@ The app becomes "Sixth Sense": a signed-in business lands on a dashboard ("What 
 - [x] 6.5 Default audience: save a target audience as the default, pre-filled from sign-up, so searches and reports start from it (lib/hub/audience.ts, explore page, Settings)
 - [x] 6.6 Suggest a target audience: template-based suggestion from direct competitors' data and the business profile, labelled "Suggestions"; the same suggestion feeds the Campaigns audience builder (9.4) (lib/hub/audience-suggest.ts, explore page)
 - [ ] 6.2 /ask: answer template that asks which audience to focus on when unclear, otherwise "Here's what I found" with supporting sources, Save Findings, and Create Campaign (lib/hub/ask.ts, app/(dashboard)/ask/)
-- [ ] 6.3 /findings (Revisit Findings): saved items filtered by All / Trends / Audiences / Competitors, with View, Create Campaign, Remove, and an empty state (app/(dashboard)/findings/)
+- [ ] 6.3 (Dropped 2026-11-06: Revisit Findings is in neither the Figma Make nor the functionality list; the page and its menu entry were removed) /findings (Revisit Findings): saved items filtered by All / Trends / Audiences / Competitors, with View, Create Campaign, Remove, and an empty state (app/(dashboard)/findings/)
 
 ## Phase 7 - Content Creation (test-first)
 - [x] 7.1 /content hub: "Create AI-powered content" (Social Post, Video, Blog, Ad Copy) and "Edit and enhance content" (Edit Posts, Improve Copy, Repurpose content, Upload your file) cards; a card shows "Coming soon" until its tool below is built (app/(dashboard)/content/)

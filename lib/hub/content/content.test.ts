@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { adCopy, blogPlan, sceneTimes, socialPost, videoPlan } from "./create";
+import { CTA_OPTIONS, adCopy, blogPlan, sceneTimes, socialPost, videoPlan } from "./create";
 import { analyseText, checkFile, editPost, improveCopy, repurpose } from "./edit";
+import { postFromContent } from "./calendar";
 import { SAVED_CONTENT_KEY, loadSavedContent, saveContent } from "./saved";
 import { pick, sentencesOf, shorten, tagOf, themeOf, tidy } from "./themes";
 import { CONTENT_TOOLS, findTool } from "./tools";
@@ -113,7 +114,8 @@ describe("adCopy", () => {
     if (!ad.ok) throw new Error(ad.error);
     expect(ad.headlines).toHaveLength(3);
     for (const headline of ad.headlines) expect(headline.length).toBeLessThanOrEqual(40);
-    expect(ad.ctas).toEqual(["Get a Quote", "Contact Us", "Book a Call"]);
+    expect(ad.ctas).toEqual(["Sign Up", "Get Started", "Book Now"]);
+    for (const cta of ad.ctas) expect(CTA_OPTIONS).toContain(cta);
     expect(ad.guidelines[0]).toMatch(/3 to 5 cards/);
     expect(ad.copy[0]).toContain("refillable hotel amenity collection");
   });
@@ -205,5 +207,23 @@ describe("saved content", () => {
     storage.setItem(SAVED_CONTENT_KEY, JSON.stringify({ version: 2, items: [{ id: "x", tool: "fax" }] }));
     expect(loadSavedContent(storage)).toEqual([]);
     expect(saveContent(undefined, { id: "a", tool: "blog", title: "t", text: "x", savedAt: 1 })).toBe(false);
+  });
+});
+
+describe("postFromContent", () => {
+  it("turns a result into a calendar post with its hashtags pulled out", () => {
+    const post = postFromContent("video", "Watch how one room gets ready", "Hook line.\n\nMain content. #HotelTok #GuestExperience", "2026-11-06", "p1");
+    expect(post).toMatchObject({ id: "p1", date: "2026-11-06", time: "09:00", channel: "TikTok", format: "Video", title: "Watch how one room gets ready" });
+    expect(post.hashtags).toEqual(["#HotelTok", "#GuestExperience"]);
+    expect(post.caption).toBe("Hook line.\n\nMain content.");
+  });
+
+  it("uses the platform chosen in the tool when the calendar has it", () => {
+    expect(postFromContent("video", "T", "x", "2026-11-06", "p3", "YouTube").channel).toBe("YouTube");
+    expect(postFromContent("video", "T", "x", "2026-11-06", "p4", "Pinterest").channel).toBe("TikTok");
+  });
+
+  it("shares a blog as a link on LinkedIn", () => {
+    expect(postFromContent("blog", "A guide", "Outline", "2026-11-06", "p2")).toMatchObject({ channel: "LinkedIn", format: "Link", category: "Educational" });
   });
 });

@@ -168,6 +168,7 @@ export function VideoTool({ audience }: { audience: string }) {
             </ResultSection>
             <ResultActions
               tool="video"
+              platform={draft.platform}
               title={result.script[0]}
               text={`${result.script.join("\n")}\n\n${result.scenes.map((scene) => `${scene.time} ${scene.label}: ${scene.direction}`).join("\n")}`}
               onRegenerate={regenerate}

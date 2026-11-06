@@ -1,8 +1,11 @@
 import { findAccount } from "./accounts";
 import { DEMO_ACCOUNT, SESSION_COOKIE } from "./constants";
+import { BUSINESS_COOKIE, OWN_BUSINESS_ID, SIXTH_SENSE, pickBusiness, type WorkspaceBusiness } from "./businesses";
 import { DEMO_COMPANY, profileForSession } from "./demo-profile";
+import { hasSavedSettings, settingsFor } from "./settings";
 
-// Who is signed in, for the sidebar profile, the company button, and the welcome message.
+// Who is signed in and which business they are working on, for the top bar's company menu,
+// the welcome message, and pages whose data depends on the business.
 
 type CookieReader = { get(name: string): { value: string } | undefined };
 
@@ -10,8 +13,13 @@ export type Workspace = {
   name: string;
   firstName: string;
   initials: string;
+  /** The chosen business's name (shown in the top bar). */
   company: string;
   email: string;
+  /** Businesses this workspace manages: two for the demo account, one otherwise. */
+  businesses: WorkspaceBusiness[];
+  /** The business chosen in the top bar's company menu. */
+  business: WorkspaceBusiness;
   /** Competitors added at sign-up, by name. */
   competitors: string[];
 };
@@ -44,5 +52,18 @@ export function workspaceFor(jar: CookieReader): Workspace {
     if (!name) name = email ? email.split("@")[0] : "Guest";
   }
 
-  return { name, firstName: name.split(/\s+/)[0], initials: initialsOf(name), company, email, competitors };
+  // Names and company saved on the Settings page win over the sign-up answers.
+  if (email && hasSavedSettings(jar, email)) {
+    const saved = settingsFor(jar, email);
+    name = `${saved.firstName} ${saved.lastName}`.trim() || name;
+    company = saved.company || company;
+  }
+
+  const businesses: WorkspaceBusiness[] =
+    email === DEMO_ACCOUNT.email
+      ? [{ id: SIXTH_SENSE.id, name: company }]
+      : [{ id: OWN_BUSINESS_ID, name: company }];
+  const business = pickBusiness(businesses, jar.get(BUSINESS_COOKIE)?.value);
+
+  return { name, firstName: name.split(/\s+/)[0], initials: initialsOf(name), company: business.name, email, competitors, businesses, business };
 }

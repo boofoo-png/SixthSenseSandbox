@@ -4,7 +4,8 @@ import { usePathname } from "next/navigation";
 import { DEMO_ACCOUNT, SESSION_COOKIE } from "@/lib/hub/constants";
 import DashboardLayout from "./layout";
 
-vi.mock("next/navigation", () => ({ usePathname: vi.fn(() => "/reports"), useSearchParams: () => new URLSearchParams() }));
+vi.mock("next/navigation", () => ({ usePathname: vi.fn(() => "/insights/x"), useSearchParams: () => new URLSearchParams(), useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("./actions", () => ({ chooseBusiness: vi.fn() }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({
     get: (name: string) => (name === SESSION_COOKIE ? { name, value: DEMO_ACCOUNT.email } : undefined),
@@ -33,7 +34,7 @@ describe("Dashboard layout", () => {
 
   it("shows the signed-in business in the top bar", async () => {
     await renderLayout();
-    expect(screen.getByRole("link", { name: /Harbourline Supply Co\./ }).getAttribute("href")).toBe("/profile");
+    expect(screen.getByRole("button", { name: /Sixth Sense/ })).toBeDefined();
   });
 
   it("puts pages other than the dashboard on a light panel that prints plain white", async () => {

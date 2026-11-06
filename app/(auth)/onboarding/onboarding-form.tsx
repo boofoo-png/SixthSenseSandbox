@@ -197,7 +197,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
     if (!form) return;
     flushSync(() => {
       setRegions((current) => [{ ...current[0], country: "CA" }, ...current.slice(1)]);
-      setSocials((current) => [{ ...current[0], platform: "Instagram", handle: "@harbourline.supply", verified: true }, ...current.slice(1)]);
+      setSocials((current) => [{ ...current[0], platform: "Instagram", handle: "@sixthsenseapp", verified: true }, ...current.slice(1)]);
       setWantsConversions(true);
       setConversionTarget(10);
     });
@@ -216,9 +216,9 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
     set("regionArea", "Lower Mainland");
     tick("audience", ["Commercial", "Institutional"]);
     tick("goal", ["traffic", "awareness", "conversions"]);
-    set("website", "harbourlinesupply.example");
+    set("website", "sixthsense.example");
     set("socialPlatform", "Instagram");
-    set("socialHandle", "@harbourline.supply");
+    set("socialHandle", "@sixthsenseapp");
     const consent = first("analyticsConsent");
     if (consent instanceof HTMLInputElement) consent.checked = true;
     set("competitorName", "Coastal Linen Co.");

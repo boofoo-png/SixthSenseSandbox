@@ -18,6 +18,8 @@ const workspace: Workspace = {
   company: "Doe Hospitality Supply",
   email: "jane@example.com",
   competitors: [],
+  businesses: [{ id: "own", name: "Doe Hospitality Supply" }],
+  business: { id: "own", name: "Doe Hospitality Supply" },
 };
 
 function renderWithTargets(showWelcome = true) {

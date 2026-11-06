@@ -45,8 +45,14 @@ function noise(key: string): number {
   return (seedOf(key) % 1000) / 1000;
 }
 
-/** Sample ad results for every campaign on every day of `range`. */
-export function adRowsBetween({ start, end }: DateRange): AdRow[] {
+/** How each business's ad budget compares with Hotel Depot's (Hospitality Emporium spends less). */
+const BUDGET_SCALE: Record<string, number> = { "hospitality-emporium": 0.62 };
+
+/** Sample ad results for every campaign on every day of `range`, for a business. */
+export function adRowsBetween({ start, end }: DateRange, businessId = "hotel-depot"): AdRow[] {
+  const scale = BUDGET_SCALE[businessId] ?? 1;
+  // Hotel Depot, Sixth Sense, and an account's own company keep the original numbers; others get their own.
+  const salt = businessId === "hotel-depot" || businessId === "sixth-sense" || businessId === "own" ? "" : `${businessId}|`;
   const rows: AdRow[] = [];
   for (let date = start; date <= end; date = shiftDate(date, 1)) {
     const weekday = new Date(`${date}T12:00:00Z`).getUTCDay();
@@ -55,9 +61,9 @@ export function adRowsBetween({ start, end }: DateRange): AdRow[] {
     // A slow climb over the year so periods differ.
     const trend = 1 + (Date.parse(`${date}T00:00:00Z`) / 86_400_000 - 20_400) / 4000;
     for (const campaign of CAMPAIGNS) {
-      const n = noise(`${campaign.id}|${date}`);
-      const spend = Math.round(campaign.dailyBudget * (0.85 + n * 0.3) * 100) / 100;
-      const roas = campaign.baseRoas * dayLift * trend * (0.8 + noise(`${date}|${campaign.id}|r`) * 0.4);
+      const n = noise(`${salt}${campaign.id}|${date}`);
+      const spend = Math.round(campaign.dailyBudget * scale * (0.85 + n * 0.3) * 100) / 100;
+      const roas = campaign.baseRoas * dayLift * trend * (0.8 + noise(`${salt}${date}|${campaign.id}|r`) * 0.4);
       const revenue = Math.round(spend * roas * 100) / 100;
       const conversions = Math.max(0, Math.round(revenue / (campaign.platform === "Meta" ? 14 : 18)));
       const impressions = Math.round(spend * (campaign.platform === "Meta" ? 210 : 95) * (0.9 + n * 0.2));
