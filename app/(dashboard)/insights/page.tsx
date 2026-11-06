@@ -1,129 +1,72 @@
 import type { Metadata } from "next";
-import { formatChange } from "@/lib/analytics/change";
-import { shiftDate, todayIsoDate } from "@/lib/analytics/dates";
-import { comparePeriods } from "@/lib/analytics/kpis";
-import { sampleDataBetween } from "@/lib/analytics/sample-data";
-import { buildSummary, formatPercent } from "@/lib/analytics/summary";
-import { pageDates, withQuery } from "@/lib/date-range";
-import { clickBars, reportCsv, reportFileName } from "@/lib/reports/insights";
-import { LineIcon } from "@/components/line-icons";
-import { DateRangeBar } from "../_components/date-range-bar";
-import { MakePageHeader, PanelHeading, StatCard, makePageClass, panelClass } from "../_components/make-ui";
-import { ExportPanel } from "./_components/export-panel";
+import { todayIsoDate } from "@/lib/analytics/dates";
+import {
+  adCsv,
+  adInsights,
+  adRowsBetween,
+  byCountry,
+  byPlatform,
+  change,
+  dailyRevenue,
+  kpis,
+  money,
+  peakDay,
+  performanceScore,
+  reportPeriod,
+  topCampaigns,
+  totals,
+} from "@/lib/reports/ads";
+import { makePageClass } from "../_components/make-ui";
+import { ReportsDashboard } from "./_components/reports-dashboard";
 
 export const metadata: Metadata = {
   title: "Reports",
-  description: "Bring clicks, impressions, followers, and engagement together, then export or schedule recurring reports.",
+  description: "Ad spend, revenue, ROAS, impressions, conversions, and clicks, with insights, countries, and top campaigns.",
 };
 
-// Reports from the team's updated Figma Make (2026-11-05), filled with the app's sample analytics.
-// The Make's website traffic and conversions are not in the sample data, so impressions and
-// followers take their place (docs/DECISIONS.md 2026-11-05).
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-function compact(value: number): string {
-  return value >= 1000 ? `${Number((value / 1000).toFixed(1))}K` : String(value);
-}
-
-function fromLast(change: number | null): string {
-  return change === null ? "No earlier data to compare" : `${formatChange(change)} from last period`;
-}
-
+// Reports ("Insights / Reports") from the team's design file and functionality list (2026-11-05),
+// on sample Google and Meta ad data (user's choice). The period is 7 or 30 days, stored as the
+// date bar's `period` like the Overview's switch.
 export default async function ReportsPage({ searchParams }: PageProps<"/insights">) {
+  const { period: raw } = await searchParams;
+  const days = raw === "last-30-days" ? 30 : 7;
   const today = todayIsoDate();
-  const dates = pageDates(await searchParams, today);
-  // Sample data until real social accounts are connected (see docs/DISCOVERY.md).
-  const rows = sampleDataBetween(dates.dataRange);
-  const { current, change } = comparePeriods(rows, dates.ranges);
-  const bars = clickBars(rows, dates.ranges.current);
-  const summary = buildSummary(rows, {
-    ranges: dates.ranges,
-    currentPhrase: `during ${dates.currentLabel}`,
-    comparisonPhrase: dates.comparisonLabel,
-  });
-
-  // Last calendar month, for the monthly export.
-  const lastMonthEnd = shiftDate(`${today.slice(0, 7)}-01`, -1);
-  const lastMonth = { start: `${lastMonthEnd.slice(0, 7)}-01`, end: lastMonthEnd };
-  const lastMonthRows = sampleDataBetween(lastMonth);
+  const period = reportPeriod(days, today);
+  const rows = adRowsBetween({ start: period.previous.start, end: today });
+  const now = totals(rows.filter((row) => row.date >= period.current.start));
+  const before = totals(rows.filter((row) => row.date <= period.previous.end));
+  const daily = dailyRevenue(rows, period.current);
+  const campaigns = topCampaigns(rows, period);
+  const best = campaigns.filter((item) => item.revenueChange !== null).toSorted((a, b) => (b.revenueChange ?? 0) - (a.revenueChange ?? 0))[0];
+  const countries = byCountry(rows, period.current);
+  const pct = (value: number | null) => (value === null ? "no change" : `${value >= 0 ? "+" : ""}${(value * 100).toFixed(1)}%`);
+  const word = days === 7 ? "week" : "30 days";
 
   return (
     <main className={makePageClass}>
-      <MakePageHeader
-        eyebrow="Performance and reporting"
-        title="Make every result easy to understand"
-        description="Bring clicks, impressions, followers, and engagement together, then export or schedule recurring reports."
-        question="What drove our results this month?"
+      <ReportsDashboard
+        data={{
+          days,
+          kpis: kpis(rows, period),
+          platforms: byPlatform(rows, period.current),
+          daily,
+          peak: peakDay(daily, before.revenue / days),
+          insights: { ...adInsights(rows, period), lines: [adInsights(rows, period, 0).lines, adInsights(rows, period, 1).lines] },
+          full: {
+            wentWell: best ? `${best.name} on ${best.platform} grew revenue ${pct(best.revenueChange)} at a ${best.roas.toFixed(1)}× ROAS.` : "No campaign data yet.",
+            compared: `Revenue ${pct(change(now.revenue, before.revenue))}, conversions ${pct(change(now.conversions, before.conversions))}, and spend ${pct(change(now.spend, before.spend))} compared with the previous ${word}.`,
+            revenue: `${money(now.revenue)} in revenue from ${money(now.spend)} in spend; ${countries[0]?.name ?? "Canada"} brought in the most.`,
+          },
+          countries,
+          countryGrowth: change(now.revenue, before.revenue),
+          campaigns,
+          score: performanceScore(campaigns),
+          earned: now.revenue,
+          earnedChange: change(now.revenue, before.revenue),
+          csv: adCsv(rows, period.current),
+          fileName: `sixth-sense-ads-${period.current.start}-to-${period.current.end}.csv`,
+        }}
       />
-
-      <div className={`${panelClass} mb-3 grid gap-3`}>
-        <p className="text-[12px] text-[#4f5d5f]">
-          <strong className="text-brand-navy">Sample data:</strong> these numbers show how reporting will work once your accounts are connected.
-        </p>
-        <DateRangeBar key={dates.query} resolved={dates.resolved} today={today} />
-      </div>
-
-      <div className="mb-3 grid gap-3 min-[621px]:grid-cols-2 min-[1101px]:grid-cols-4">
-        <StatCard icon="activity" label="Total clicks" value={compact(current.clicks)} detail={fromLast(change.clicks)} />
-        <StatCard icon="audience" label="Impressions" value={compact(current.impressions)} detail={fromLast(change.impressions)} warm />
-        <StatCard icon="target" label="Followers" value={compact(current.followers)} detail={fromLast(change.followers)} warm />
-        <StatCard icon="message" label="Engagement" value={formatPercent(current.engagementRate, 1)} detail={fromLast(change.engagementRate)} />
-      </div>
-
-      <div className="grid gap-3 min-[901px]:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.75fr)]">
-        <section aria-labelledby="overview-title" className={`${panelClass} min-[901px]:min-h-[420px]`}>
-          <PanelHeading id="overview-title" eyebrow="Executive overview" title={`Marketing performance, ${dates.currentLabel}`}>
-            <span className="text-[11px] text-[#6f7377]">Compared with {dates.comparisonLabel}</span>
-          </PanelHeading>
-          <figure className="mt-5">
-            <figcaption className="sr-only">Clicks for each {bars.length > 0 && bars[0].label.startsWith("W") ? "week" : "day"} of the chosen dates</figcaption>
-            <ol className="flex h-[190px] items-end gap-2 border-b border-brand-teal/15 pb-1">
-              {bars.map((bar) => (
-                <li key={bar.label} className="flex h-full min-w-0 flex-1 flex-col items-center justify-end gap-1">
-                  <span className="text-[10px] font-semibold text-brand-teal">{bar.value}</span>
-                  <i aria-hidden="true" className="block w-full max-w-[34px] rounded-t-[6px] rounded-b-[2px] bg-linear-to-t from-brand-teal to-[#5a9c88]" style={{ height: `${bar.height}%` }} />
-                  <span className="sr-only">
-                    {bar.label}: {bar.value} clicks
-                  </span>
-                </li>
-              ))}
-            </ol>
-            <div aria-hidden="true" className="mt-1 flex gap-2">
-              {bars.map((bar, index) => (
-                <span key={bar.label} className="min-w-0 flex-1 truncate text-center text-[10px] text-[#6f7377]">
-                  {bars.length > 10 && index % 2 === 1 ? "" : bar.label}
-                </span>
-              ))}
-            </div>
-          </figure>
-          <div className="mt-5 flex items-start gap-3 rounded-[10px] border border-[rgba(116,195,101,0.52)] bg-brand-lime/35 p-3.5">
-            <span className="grid size-[30px] shrink-0 place-items-center rounded-[8px] bg-brand-lime-bright text-brand-navy">
-              <LineIcon name="sparkles" size={16} />
-            </span>
-            <div className="grid gap-1 text-[12px] leading-[1.55] text-[#3f4b4d]">
-              <strong className="text-[13px] text-brand-navy">Sense AI summary</strong>
-              {summary.slice(0, 3).map((line) => (
-                <p key={line}>{line}</p>
-              ))}
-              <small className="text-[11px] text-[#5f6b6d]">Written from your numbers with templates, not live AI.</small>
-            </div>
-          </div>
-        </section>
-
-        <ExportPanel
-          pdfHref={withQuery("/reports", dates.query)}
-          today={today}
-          current={{ csv: reportCsv(rows, dates.ranges.current), fileName: reportFileName(dates.ranges.current) }}
-          lastMonth={{
-            csv: reportCsv(lastMonthRows, lastMonth),
-            fileName: reportFileName(lastMonth),
-            label: `${MONTHS[Number(lastMonth.start.slice(5, 7)) - 1]} ${lastMonth.start.slice(0, 4)}`,
-            start: lastMonth.start,
-          }}
-        />
-      </div>
     </main>
   );
 }
-

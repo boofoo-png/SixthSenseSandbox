@@ -318,3 +318,13 @@ Alternatives considered: Keeping the inbox, alone or as a second tab, was offere
 
 Supersedes: the no-auto-posting decision (2026-10-14, reaffirmed 2026-10-30) for the switch itself: it can now be turned on, but it still posts nothing. Also supersedes the inbox part of "Content Creation, AI Management, and Campaigns follow the updated Figma Make" (2026-11-05).
 
+## 2026-11-05 - Reports follows the design file with sample ad data; Competitors keeps its current layout
+
+Context: The updated functionality list and the team's design file ("INSIGHTS / Reports") describe Reports around ad spend, revenue, ROAS, and conversions from Google and Meta, with performance by country and top campaigns. The prototype has no ad accounts. The list also adds findings filters, campaign cards, a comparison with your own content, an evidence note, and "Your next move" to Competitors.
+
+Decision: Rebuild Reports from the design file on generated sample ad data for six Google and Meta campaigns (lib/reports/ads.ts), labelled as sample on the page. Every number follows the 7 / 30 day switch; insights are templates written from the numbers. Performance by Country is a ranked list with flags rather than a map, so no map library is added. Export Report offers PDF (the browser's print) and CSV; the monthly export schedule is removed. The performance score is the share of spend in campaigns at a ROAS of 7x or more. Competitors is left as it is: the list's additions are not built (user's decision).
+
+Alternatives considered: Keeping Reports on the social analytics, and copying the design's fixed numbers, were offered and not chosen. A world map was offered and not chosen.
+
+Supersedes: "Reports follows the Figma Make with the app's own numbers" (2026-11-05), and the plan's out-of-scope line about ad-platform data for Reports (sample ad data is now shown).
+
