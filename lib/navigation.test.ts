@@ -70,7 +70,7 @@ describe("SIDEBAR_ITEMS", () => {
   it("has the Figma Make's menu, in its order", () => {
     expect(SIDEBAR_ITEMS.map((item) => item.label)).toEqual([
       "Overview",
-      "Audience",
+      "Audience Trends",
       "Competitors",
       "Content Creation",
       "Campaigns",

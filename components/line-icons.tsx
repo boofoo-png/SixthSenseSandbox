@@ -29,6 +29,7 @@ export type LineIconName =
   | "settings"
   | "sparkles"
   | "target"
+  | "trend"
   | "upload"
   | "video";
 
@@ -154,6 +155,7 @@ const paths: Record<LineIconName, ReactNode> = {
       <circle cx="12" cy="12" r="1" />
     </>
   ),
+  trend: <path d="m3 17 6-6 4 4 8-9M15 6h6v6" />,
   upload: (
     <>
       <path d="M12 16V4m0 0L7 9m5-5 5 5" />

@@ -40,7 +40,7 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
  */
 export const SIDEBAR_ITEMS = [
   { label: "Overview", href: "/", icon: "overview" },
-  { label: "Audience", href: "/explore", icon: "audience" },
+  { label: "Audience Trends", href: "/explore", icon: "audience" },
   { label: "Competitors", href: "/competitors", icon: "building" },
   { label: "Content Creation", href: "/content", icon: "download" },
   { label: "Campaigns", href: "/campaigns", icon: "campaign" },

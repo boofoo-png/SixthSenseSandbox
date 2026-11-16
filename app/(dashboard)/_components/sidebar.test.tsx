@@ -19,7 +19,7 @@ describe("Sidebar", () => {
     const links = within(nav()).getAllByRole("link");
     expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
       ["Overview", "/"],
-      ["Audience", "/explore"],
+      ["Audience Trends", "/explore"],
       ["Competitors", "/competitors"],
       ["Content Creation", "/content"],
       ["Campaigns", "/campaigns"],

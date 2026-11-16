@@ -393,3 +393,11 @@ Context: The team is testing with its own accounts (@sixthsenseapp on Instagram 
 Decision: The demo account's only business is Sixth Sense (id sixth-sense, handle @sixthsenseapp, website sixthsense.example), so the company menu has no switch and every page shows Sixth Sense. Its sample figures are the ones Hotel Depot had. The clients' businesses and their sample data stay in the code (lib/hub/businesses.ts, posting-plan.ts, overview.ts, reports/ads.ts) and come back by adding them to the demo list in lib/hub/workspace.ts.
 
 Supersedes: "Sixth Sense joins the demo account's businesses" (2026-11-06) and the demo-account part of "One sample business everywhere, chosen from the company menu" (2026-11-06). The switcher itself still works whenever an account has more than one business.
+
+## 2026-11-16 - Audience becomes the Make's Audience Trends tracker
+
+Context: The team's Figma Make replaced the Audience page with a "Live audience trend tracker": audiences saved to the profile (broad or niche), audience depth and source filters, a momentum-versus-fit radar, a watchlist, a ranked trend list, and campaign direction for the chosen trend. docs/FUNCTIONALITY.md no longer describes this page, so the Make is the source.
+
+Decision: /explore follows the Make and the sidebar says "Audience Trends". Trends and suggested audiences are the Make's sample data (lib/hub/audience-trends.ts). Saved audiences, which ones are selected, and the watchlist are kept in this browser under "sixthsense.audience-trends" (version 1); a first visit starts with the Make's Hospitality buyers and Conscious travellers selected and Direct booking value watched. The old filters (industry, age, region, interest), Set as default audience, and competitor-based suggestions are gone from the page. Content Creation and Campaigns still read a saved default audience (lib/hub/audience.ts), which now falls back to the sign-up audience because the page can no longer set one.
+
+Alternatives considered: Saving the audiences in the business profile cookie was not chosen: that cookie is capped at about 3.8 KB and already holds the sign-up answers, so descriptions of up to 240 characters would not fit. A real profile store comes with the real backend.
