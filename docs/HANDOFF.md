@@ -139,3 +139,19 @@
 - Sample competitor numbers come from a hash of the slug (`seedOf`, unsigned 32-bit). Use `>>>`, not `>>`, when taking bits from it: a signed shift goes negative for large seeds and broke 8 tests before commit 657e25d.
 - Sign-up competitors get a slug from their name; a clash with a sample supplier gets `-2`, `-3`, and so on, so a competitor's address can change if a sample supplier is renamed.
 - The session cookie is still unsigned (review finding 6, in the plan's open questions).
+
+## 2026-11-16 - feat/sixth-sense (catch up with the updated Figma Make)
+
+**Done:** Every area compared with the team's re-fetched Figma Make and brought in line (plan "Catch up with the team's updated Figma Make", 1.1-1.8): Audience Trends tracker; My Content library and Campaign card, with Campaigns removed from the sidebar; Competitor performance; the Reports world map with metric and country filters; onboarding's industry, four-level region, and single audience lists plus Forgot Password wording; the glass style on the account pages; removal of code left by the rebuilds. AI Management, Settings, Overview, Campaigns, and Login already matched. Commits afda417, 5c189bf, 6180ed9, 51dd95a, e9dbaf2, 32f80be, 7e22f00.
+
+**Validation:** `npm run lint` passed; `npx tsc --noEmit` passed; `npm test` 597/597 passed across 67 files (lower than mid-session because tests for removed code went with it); `npm run build` passed. Each changed page was fetched from the dev server as the demo account. Not yet checked by eye in a browser (plan 2.1). Not pushed; no PR opened.
+
+**Next:** Plan 2.1 and 2.2 (look at the changed pages in a browser, keyboard and screen reader pass), then push the branch and open a PR.
+
+**Notes / risks:**
+- Run this project with `npm run dev -- -p 3001`: port 3000 is used by a separate project on this machine. The Meta Connect flow builds its return address from the current host, so the Meta app must also list http://localhost:3001/api/meta/callback (docs/IMPLEMENTATION_PLAN.md Meta plan 4.1 only mentions 3000).
+- The Make's main file moved to src/app/(frontend)/SixthSenseApp.tsx (about 220 KB); the MCP read saves it to a file, so work from a local copy.
+- Deliberate differences from the Make are in docs/DECISIONS.md (2026-11-16 entries): Sixth Sense instead of Dolly Worldwide Trades, fictional competitor names, computed gaps and targets, Export Report menu, on-screen reset link, saved content shown in My Content.
+- Saved audiences, the watchlist, and saved content live in localStorage; old regions in saved profiles (country code, province, area) are dropped when read.
+- Turbopack's dev server logged internal hot-reload panics after files were deleted while it ran; restarting `npm run dev` clears them.
+- The session cookie is still unsigned (open since the 2026-10-23 review).

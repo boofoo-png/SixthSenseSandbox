@@ -1,3 +1,35 @@
+# Implementation Plan: Catch up with the team's updated Figma Make
+
+_Last updated: 2026-11-16_
+
+## Goal
+Every page matches the team's latest Figma Make "Marketing Intelligence Hub" (src/app/(frontend)/SixthSenseApp.tsx), one area at a time, keeping the deliberate differences recorded in docs/DECISIONS.md (Sixth Sense as the demo business, fictional competitor names, Export Report, on-screen reset link, browser storage).
+
+## Out of scope
+- The Make's sample business and person (Dolly Worldwide Trades, John Doe): the demo stays Sixth Sense
+- Live trend, competitor, or ad data; everything new is labelled sample data
+- Storing saved audiences, the watchlist, or the content library on an account (they stay in the browser)
+
+## Phase 1 - Areas (test-first)
+- [x] 1.1 Audience Trends tracker: saved audiences, depth and source filters, trend radar, watchlist, ranked trends, campaign direction; sidebar label "Audience Trends" (lib/hub/audience-trends.ts, app/(dashboard)/explore/)
+- [x] 1.2 Content Creation: Campaign card and My Content button on the hub and every tool; My Content library with Reuse into Repurpose; Campaigns leaves the sidebar (lib/hub/content/library.ts, app/(dashboard)/content/my-content/, lib/navigation.ts)
+- [x] 1.3 Competitors: Competitor performance (findings filter, campaign cards, comparison, evidence note, Your next move); tracking removed (lib/hub/competitor-performance.ts, app/(dashboard)/competitors/)
+- [x] 1.4 Reports: Performance by Country on the Make's world map with metric and country filters; revenue chart in the Make's style (app/(dashboard)/insights/_components/reports-dashboard.tsx, public/reports/world-map.png)
+- [x] 1.5 AI Management, Settings, Overview, Campaigns, Login: compared, already matching (no change)
+- [x] 1.6 Onboarding: one industry (23) with its sub-industries, target regions in four levels (17 countries), one audience, Pinterest; Forgot Password wording (lib/hub/target-regions.ts, lib/hub/onboarding.ts)
+- [x] 1.7 Account pages in the Make's glass style via re-pointed tokens in `.auth-glass` (app/globals.css, app/(auth)/layout.tsx)
+- [x] 1.8 Remove code left behind by 1.1 and 1.3 (old audience filters and suggestions, competitor tracking modules, NAV_ITEMS)
+
+## Phase 2 - Checks
+- [ ] 2.1 Click through every changed page in a browser at desktop and phone widths (labels on the glass pages, map pins on Reports, radar and table on Audience Trends)
+- [ ] 2.2 Keyboard and screen reader pass on the new interactive parts (radar dots, watchlist stars, findings filter, campaign cards, My Content filters)
+
+## Open questions
+- The Make keeps changing; re-fetch SixthSenseApp.tsx before the next round and compare area by area
+- Should the competitor cards use the Make's real company names (GuestSupply, Out of Eden, Hotel Buyer) instead of the fictional suppliers?
+
+---
+
 # Implementation Plan: Instagram and Facebook connection (Meta, read-only)
 
 _Last updated: 2026-11-06_
