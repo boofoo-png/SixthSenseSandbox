@@ -1,30 +1,46 @@
 import { decodeCookieJson, encodeCookieJson, isRecord } from "./cookie-json";
-import { REGIONS, isCountryCode, regionLabel, type CountryCode } from "./regions";
+import { areaLabel, areasFor, regionsFor, subdivisionsFor, type TargetRegion } from "./target-regions";
 import { EMAIL_PATTERN, MAX_LINK, MAX_TEXT } from "./text";
 
-// Second Create an Account page from the mid-fi ("Tell us about your industry", "ACCOUNT POP UP X3").
+// Second Create an Account page ("Tell us about your industry"), from the mid-fi and, since
+// 2026-11-16, the team's Figma Make: one industry with its sub-industry, target regions in four
+// levels (lib/hub/target-regions.ts), and one general audience, all as drop-down lists.
 // In the prototype, social accounts, documents, and team invites are only recorded:
 // nothing is connected, uploaded, or sent (see docs/DECISIONS.md).
 
-export const INDUSTRIES = [
-  "Food and Beverage",
-  "Hospitality",
-  "Retail",
-  "Wholesale",
-  "Manufacturing",
-  "Technology",
-  "Healthcare",
-  "Professional Services",
-] as const;
+/** The Make's industries, each with its sub-industries. */
+export const SUB_INDUSTRIES_BY_INDUSTRY: Record<string, readonly string[]> = {
+  "Agriculture and Forestry": ["Crop production", "Livestock and dairy", "Forestry and logging", "Agricultural technology", "Farm supplies and equipment"],
+  "Arts, Entertainment and Media": ["Film and television", "Music and audio", "Publishing", "Performing arts", "Digital media and creators"],
+  Automotive: ["Vehicle manufacturing", "Dealerships and sales", "Parts and accessories", "Repair and maintenance", "Mobility and electric vehicles"],
+  "Beauty and Personal Care": ["Cosmetics", "Skincare", "Haircare and salons", "Spa and wellness", "Personal care products"],
+  "Business and Professional Services": ["Consulting", "Accounting and bookkeeping", "Human resources and recruitment", "Marketing and advertising", "Facilities and office services"],
+  Construction: ["Residential construction", "Commercial construction", "Civil infrastructure", "Specialty contractors", "Building materials"],
+  Education: ["Early childhood education", "Primary and secondary education", "Higher education", "Professional training", "Education technology"],
+  "Energy and Utilities": ["Renewable energy", "Oil and gas", "Electric utilities", "Water and waste services", "Energy efficiency"],
+  "Finance and Insurance": ["Banking", "Insurance", "Investments and wealth management", "Financial technology", "Accounting and tax services"],
+  "Food and Beverage": ["Restaurants and caf\u00e9s", "Food manufacturing", "Beverage production", "Catering and food service", "Specialty and packaged foods"],
+  "Government and Public Sector": ["Municipal government", "Provincial or state government", "Federal government", "Public safety", "Public administration"],
+  Healthcare: ["Hospitals and clinics", "Senior living and care", "Dental services", "Mental health services", "Medical devices and supplies", "Pharmaceuticals"],
+  "Hospitality and Tourism": ["Hotels and accommodation", "Travel agencies and tour operators", "Events and venues", "Attractions and recreation", "Hospitality supplies"],
+  Legal: ["Corporate law", "Family law", "Real estate law", "Litigation", "Legal technology and services"],
+  Manufacturing: ["Consumer goods", "Industrial equipment", "Electronics", "Textiles and apparel", "Chemicals and materials"],
+  "Nonprofit and Charities": ["Community services", "Health charities", "Education and research", "Environmental organizations", "Arts and culture organizations"],
+  "Real Estate": ["Residential real estate", "Commercial real estate", "Property management", "Real estate development", "Real estate technology"],
+  Retail: ["Brick-and-mortar retail", "E-commerce", "Fashion and apparel", "Home and garden", "Specialty retail"],
+  "Sports and Fitness": ["Gyms and fitness studios", "Sports clubs and teams", "Sporting goods", "Outdoor recreation", "Health and performance coaching"],
+  Technology: ["Software as a service", "Artificial intelligence", "Cybersecurity", "Cloud and infrastructure", "Hardware and electronics", "IT services and consulting"],
+  Telecommunications: ["Wireless services", "Internet service providers", "Network infrastructure", "Unified communications", "Telecommunications equipment"],
+  "Transportation and Logistics": ["Freight and shipping", "Warehousing and distribution", "Courier and delivery", "Public transportation", "Logistics technology"],
+  Wholesale: ["Durable goods", "Non-durable goods", "Food and beverage distribution", "Hospitality and restaurant supplies", "Industrial and commercial supplies"],
+};
 
-export const SUB_INDUSTRIES = [
-  "Durable goods",
-  "Non-durable goods",
-  "Online shops",
-  "Hotel and accommodation supplies",
-  "Restaurant and food service supplies",
-  "Other",
-] as const;
+export const INDUSTRIES: readonly string[] = Object.keys(SUB_INDUSTRIES_BY_INDUSTRY);
+
+/** The sub-industries of an industry (none for one not on the list). */
+export function subIndustriesFor(industry: string): readonly string[] {
+  return SUB_INDUSTRIES_BY_INDUSTRY[industry] ?? [];
+}
 
 export const AUDIENCES = ["Residential", "Commercial", "Industrial", "Institutional"] as const;
 
@@ -45,7 +61,7 @@ export const GOALS = [
 
 export type GoalId = (typeof GOALS)[number]["id"];
 
-export const PLATFORMS = ["Instagram", "TikTok", "Facebook", "X (Twitter)", "LinkedIn", "YouTube"] as const;
+export const PLATFORMS = ["Instagram", "TikTok", "Facebook", "X (Twitter)", "LinkedIn", "YouTube", "Pinterest"] as const;
 
 export const DOCUMENT_TYPES = ["pdf", "png", "jpg", "jpeg", "docx", "xlsx"] as const;
 export const MAX_DOCUMENT_BYTES = 3 * 1024 * 1024;
@@ -56,11 +72,11 @@ const MAX_DOCUMENTS = 10;
 
 /** The form as typed: every value is a string (or list) so it can be shown again. */
 export type OnboardingDraft = {
-  industries: string[];
+  industry: string;
   subIndustry: string;
-  regions: { country: string; province: string; area: string }[];
-  /** General audiences (several can be chosen). */
-  audiences: string[];
+  regions: TargetRegion[];
+  /** One general audience (the Make's "Choose a category"). */
+  audience: string;
   goals: string[];
   conversionTarget: string;
   website: string;
@@ -81,7 +97,8 @@ export type BusinessProfile = {
   email: string;
   industries: string[];
   subIndustry?: string;
-  regions: { country: CountryCode; province: string; area: string }[];
+  regions: TargetRegion[];
+  /** One general audience since 2026-11-16 (older profiles may have several). */
   audiences: string[];
   goals: GoalId[];
   conversionTarget?: number;
@@ -104,10 +121,10 @@ export type OnboardingResult = { ok: true; profile: BusinessProfile } | { ok: fa
 
 export function emptyOnboardingDraft(): OnboardingDraft {
   return {
-    industries: [],
+    industry: "",
     subIndustry: "",
-    regions: [{ country: "CA", province: "", area: "" }],
-    audiences: [],
+    regions: [{ country: "Canada", area: "", region: "", subdivision: "" }],
+    audience: "",
     goals: [],
     conversionTarget: "10",
     website: "",
@@ -133,10 +150,15 @@ export function readOnboardingForm(form: FormData): OnboardingDraft {
   };
 
   return {
-    industries: all("industry"),
+    industry: one("industry"),
     subIndustry: one("subIndustry"),
-    regions: zip(["regionCountry", "regionProvince", "regionArea"], ([country, province, area]) => ({ country, province, area })),
-    audiences: all("audience"),
+    regions: zip(["regionCountry", "regionArea", "regionRegion", "regionSubdivision"], ([country, area, region, subdivision]) => ({
+      country,
+      area,
+      region,
+      subdivision,
+    })),
+    audience: one("audience"),
     goals: all("goal"),
     conversionTarget: one("conversionTarget"),
     website: one("website"),
@@ -167,10 +189,10 @@ function isOnboardingDraft(value: unknown): value is OnboardingDraft {
   if (!isRecord(value)) return false;
   const d = value as Partial<OnboardingDraft>;
   return (
-    isStringList(d.industries) &&
+    typeof d.industry === "string" &&
     typeof d.subIndustry === "string" &&
-    isRowList(d.regions, ["country", "province", "area"]) &&
-    isStringList(d.audiences) &&
+    isRowList(d.regions, ["country", "area", "region", "subdivision"]) &&
+    typeof d.audience === "string" &&
     isStringList(d.goals) &&
     typeof d.conversionTarget === "string" &&
     typeof d.website === "string" &&
@@ -216,29 +238,25 @@ export function normalizeWebsite(value: string): string | null {
 export function validateOnboarding(draft: OnboardingDraft, email: string): OnboardingResult {
   const errors: OnboardingErrors = {};
 
-  const industries = [...new Set(draft.industries)].filter((value) => (INDUSTRIES as readonly string[]).includes(value));
-  if (industries.length === 0) errors.industries = "Choose at least one industry";
-  const subIndustry = (SUB_INDUSTRIES as readonly string[]).includes(draft.subIndustry) ? draft.subIndustry : undefined;
+  const industry = INDUSTRIES.includes(draft.industry) ? draft.industry : null;
+  if (!industry) errors.industry = "Choose an industry";
+  const subIndustry = industry && subIndustriesFor(industry).includes(draft.subIndustry) ? draft.subIndustry : null;
+  if (industry && !subIndustry) errors.subIndustry = "Choose a sub-industry";
 
-  const regions: BusinessProfile["regions"] = [];
+  const regions: TargetRegion[] = [];
   if (draft.regions.length > MAX_ROWS) errors.regions = `Add up to ${MAX_ROWS} regions`;
   draft.regions.slice(0, MAX_ROWS).forEach((row, index) => {
-    const area = clip(row.area);
-    if (index > 0 && !row.province && !area) return;
-    if (!isCountryCode(row.country)) {
-      errors[`regions.${index}.country`] = "Choose a country";
-      return;
-    }
-    const label = regionLabel(row.country).toLowerCase();
-    if (!REGIONS[row.country].some((region) => region.code === row.province)) {
-      errors[`regions.${index}.province`] = `Choose a ${label}`;
-      return;
-    }
-    regions.push({ country: row.country, province: row.province, area });
+    if (index > 0 && !row.area) return;
+    const field = (name: string) => `regions.${index}.${name}`;
+    if (areasFor(row.country).length === 0) errors[field("country")] = "Choose a country";
+    else if (!areasFor(row.country).includes(row.area)) errors[field("area")] = areaLabel(row.country);
+    else if (!regionsFor(row.country, row.area).includes(row.region)) errors[field("region")] = "Choose a region";
+    else if (!subdivisionsFor(row.area, row.region).includes(row.subdivision)) errors[field("subdivision")] = "Choose a subdivision";
+    else regions.push({ country: row.country, area: row.area, region: row.region, subdivision: row.subdivision });
   });
 
-  const audiences = AUDIENCES.filter((value) => draft.audiences.includes(value));
-  if (audiences.length === 0) errors.audiences = "Choose at least one audience";
+  const audience = (AUDIENCES as readonly string[]).includes(draft.audience) ? draft.audience : null;
+  if (!audience) errors.audience = "Choose an audience";
 
   const goals = GOALS.map((goal) => goal.id).filter((id) => draft.goals.includes(id));
   if (goals.length === 0) errors.goals = "Choose at least one goal";
@@ -318,7 +336,7 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
   if (badInvite) errors.invites = `Check this email address: ${badInvite}`;
   else if (invites.length > MAX_INVITES) errors.invites = `Invite up to ${MAX_INVITES} people`;
 
-  if (Object.keys(errors).length > 0 || !website) {
+  if (Object.keys(errors).length > 0 || !website || !industry || !subIndustry || !audience) {
     return { ok: false, errors };
   }
 
@@ -327,10 +345,10 @@ export function validateOnboarding(draft: OnboardingDraft, email: string): Onboa
 
   const profile: BusinessProfile = {
     email,
-    industries,
-    ...(subIndustry ? { subIndustry } : {}),
+    industries: [industry],
+    subIndustry,
     regions,
-    audiences,
+    audiences: [audience],
     goals,
     ...(conversionTarget !== undefined ? { conversionTarget } : {}),
     website,

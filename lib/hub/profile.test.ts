@@ -7,9 +7,10 @@ function profile(email = "jordan@example.com") {
   const result = validateOnboarding(
     {
       ...emptyOnboardingDraft(),
-      industries: ["Wholesale"],
-      regions: [{ country: "CA", province: "BC", area: "" }],
-      audiences: ["Commercial"],
+      industry: "Wholesale",
+      subIndustry: "Durable goods",
+      regions: [{ country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Any area in Lower Mainland" }],
+      audience: "Commercial",
       goals: ["traffic"],
       website: "example.com",
     },
@@ -40,7 +41,7 @@ describe("profile cookie", () => {
   it("refuses to write a profile too big for a cookie (validation stops these first)", () => {
     const big = {
       ...profile(),
-      regions: Array.from({ length: 5 }, () => ({ country: "CA" as const, province: "BC", area: "x".repeat(100) })),
+      regions: Array.from({ length: 5 }, () => ({ country: "Canada", area: "x".repeat(100), region: "y".repeat(40), subdivision: "z".repeat(40) })),
       competitors: Array.from({ length: 5 }, () => ({ name: "x".repeat(100), website: "https://example.com" })),
       documents: Array.from({ length: 10 }, () => "x".repeat(100)),
       invites: Array.from({ length: 10 }, (_, i) => `person${i}@example.com`),

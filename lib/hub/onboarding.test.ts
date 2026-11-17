@@ -3,10 +3,12 @@ import {
   AUDIENCES,
   GOALS,
   INDUSTRIES,
+  PLATFORMS,
   decodeOnboardingDraft,
   emptyOnboardingDraft,
   encodeOnboardingDraft,
   readOnboardingForm,
+  subIndustriesFor,
   validateOnboarding,
   type OnboardingDraft,
 } from "./onboarding";
@@ -14,10 +16,10 @@ import {
 function draft(overrides: Partial<OnboardingDraft> = {}): OnboardingDraft {
   return {
     ...emptyOnboardingDraft(),
-    industries: ["Wholesale", "Hospitality"],
-    subIndustry: "Hotel and accommodation supplies",
-    regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
-    audiences: ["Commercial", "Institutional"],
+    industry: "Wholesale",
+    subIndustry: "Hospitality and restaurant supplies",
+    regions: [{ country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" }],
+    audience: "Commercial",
     goals: ["traffic", "conversions"],
     conversionTarget: "10",
     website: "HarbourlineSupply.ca",
@@ -33,7 +35,7 @@ function errorsOf(value: OnboardingDraft) {
   return result.errors;
 }
 
-describe("the mid-fi choices", () => {
+describe("the Figma Make choices", () => {
   it("offers the four general audiences", () => {
     expect([...AUDIENCES]).toEqual(["Residential", "Commercial", "Industrial", "Institutional"]);
   });
@@ -43,8 +45,16 @@ describe("the mid-fi choices", () => {
     expect(GOALS.find((goal) => goal.id === "conversions")?.label).toBe("Increase conversions by X%");
   });
 
-  it("includes wholesale, retail, and hospitality industries", () => {
-    expect(INDUSTRIES).toEqual(expect.arrayContaining(["Wholesale", "Retail", "Hospitality", "Food and Beverage"]));
+  it("has the Make's 23 industries, each with its own sub-industries", () => {
+    expect(INDUSTRIES).toHaveLength(23);
+    expect(INDUSTRIES).toEqual(expect.arrayContaining(["Wholesale", "Retail", "Hospitality and Tourism", "Food and Beverage"]));
+    expect(subIndustriesFor("Hospitality and Tourism")).toContain("Hospitality supplies");
+    expect(subIndustriesFor("Wholesale")).toContain("Hospitality and restaurant supplies");
+    expect(subIndustriesFor("Space Mining")).toEqual([]);
+  });
+
+  it("offers Pinterest among the platforms", () => {
+    expect(PLATFORMS).toContain("Pinterest");
   });
 });
 
@@ -63,9 +73,10 @@ describe("validateOnboarding", () => {
     if (!result.ok) return;
     expect(result.profile).toMatchObject({
       email: "jordan@example.com",
-      industries: ["Wholesale", "Hospitality"],
-      regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
-      audiences: ["Commercial", "Institutional"],
+      industries: ["Wholesale"],
+      subIndustry: "Hospitality and restaurant supplies",
+      regions: [{ country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" }],
+      audiences: ["Commercial"],
       goals: ["traffic", "conversions"],
       conversionTarget: 10,
       website: "https://harbourlinesupply.ca",
@@ -80,9 +91,9 @@ describe("validateOnboarding", () => {
   it("requires an industry, a region, an audience, a goal, and the website", () => {
     const errors = errorsOf({ ...emptyOnboardingDraft() });
     expect(errors).toMatchObject({
-      industries: "Choose at least one industry",
-      "regions.0.province": "Choose a province",
-      audiences: "Choose at least one audience",
+      industry: "Choose an industry",
+      "regions.0.area": "Choose a province or territory",
+      audience: "Choose an audience",
       goals: "Choose at least one goal",
       website: "Enter your website",
     });
@@ -93,24 +104,30 @@ describe("validateOnboarding", () => {
     expect(errorsOf(draft({ conversionTarget: "50" })).conversionTarget).toBe("Choose a target between 1% and 35%");
   });
 
-  it("checks provinces and states against the chosen country, row by row", () => {
+  it("needs a sub-industry from the chosen industry", () => {
+    expect(errorsOf(draft({ subIndustry: "" })).subIndustry).toBe("Choose a sub-industry");
+    expect(errorsOf(draft({ subIndustry: "Hospitality supplies" })).subIndustry).toBe("Choose a sub-industry");
+  });
+
+  it("checks each level of a region against the one above it, row by row", () => {
+    const bc = { country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" };
     const errors = errorsOf(
       draft({
-        regions: [
-          { country: "CA", province: "BC", area: "" },
-          { country: "US", province: "BC", area: "" },
-        ],
+        regions: [bc, { country: "United States", area: "British Columbia", region: "", subdivision: "" }, { ...bc, region: "Fraser Valley" }],
       }),
     );
-    expect(errors["regions.1.province"]).toBe("Choose a state");
+    expect(errors["regions.1.area"]).toBe("Choose a state");
+    expect(errors["regions.2.subdivision"]).toBe("Choose a subdivision");
+    expect(errorsOf(draft({ regions: [{ ...bc, country: "Atlantis" }] }))["regions.0.country"]).toBe("Choose a country");
+    expect(errorsOf(draft({ regions: [{ ...bc, region: "Nowhere" }] }))["regions.0.region"]).toBe("Choose a region");
   });
 
   it("skips empty extra rows", () => {
     const result = validateOnboarding(
       draft({
         regions: [
-          { country: "CA", province: "BC", area: "" },
-          { country: "CA", province: "", area: "" },
+          { country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Any area in Lower Mainland" },
+          { country: "Canada", area: "", region: "", subdivision: "" },
         ],
         socials: [{ platform: "Instagram", handle: "" }],
         analyticsConsent: false,
@@ -175,9 +192,9 @@ describe("validateOnboarding", () => {
     expect(errors.form).toBe("These answers are too long to save. Shorten some links or remove a few rows.");
   });
 
-  it("keeps several general audiences in list order, once each", () => {
-    const result = validateOnboarding(draft({ audiences: ["Institutional", "Residential", "Institutional"] }), "a@b.co");
-    expect(result.ok && result.profile.audiences).toEqual(["Residential", "Institutional"]);
+  it("keeps the one general audience chosen", () => {
+    const result = validateOnboarding(draft({ audience: "Institutional" }), "a@b.co");
+    expect(result.ok && result.profile.audiences).toEqual(["Institutional"]);
   });
 
   it("keeps whether each social account was verified with Connect", () => {
@@ -202,10 +219,10 @@ describe("validateOnboarding", () => {
   });
 
   it("rejects choices that are not on the lists", () => {
-    const errors = errorsOf(draft({ industries: ["Space Mining"], audiences: ["Everyone"], goals: ["world-peace"] }));
+    const errors = errorsOf(draft({ industry: "Space Mining", audience: "Everyone", goals: ["world-peace"] }));
     expect(errors).toMatchObject({
-      industries: "Choose at least one industry",
-      audiences: "Choose at least one audience",
+      industry: "Choose an industry",
+      audience: "Choose an audience",
       goals: "Choose at least one goal",
     });
   });
@@ -220,7 +237,7 @@ describe("draft cookie", () => {
   it("ignores missing or corrupted values", () => {
     expect(decodeOnboardingDraft(undefined)).toBeNull();
     expect(decodeOnboardingDraft("garbage")).toBeNull();
-    expect(decodeOnboardingDraft(Buffer.from(JSON.stringify({ industries: "x" })).toString("base64url"))).toBeNull();
+    expect(decodeOnboardingDraft(Buffer.from(JSON.stringify({ industry: 5 })).toString("base64url"))).toBeNull();
   });
 
   it("gives up rather than writing a cookie that is too big", () => {
@@ -231,17 +248,18 @@ describe("draft cookie", () => {
 describe("readOnboardingForm", () => {
   it("reads repeated rows in order", () => {
     const form = new FormData();
-    form.append("industry", "Wholesale");
-    form.append("industry", "Retail");
-    form.set("subIndustry", "Online shops");
-    form.append("regionCountry", "CA");
-    form.append("regionProvince", "BC");
-    form.append("regionArea", "Lower Mainland");
-    form.append("regionCountry", "CA");
-    form.append("regionProvince", "ON");
-    form.append("regionArea", "");
-    form.append("audience", "Commercial");
-    form.append("audience", "Industrial");
+    form.set("industry", "Retail");
+    form.set("subIndustry", "E-commerce");
+    for (const [country, area, region, subdivision] of [
+      ["Canada", "British Columbia", "Lower Mainland", "Richmond"],
+      ["Japan", "Kanto", "All of Kanto", "Any area in All of Kanto"],
+    ]) {
+      form.append("regionCountry", country);
+      form.append("regionArea", area);
+      form.append("regionRegion", region);
+      form.append("regionSubdivision", subdivision);
+    }
+    form.set("audience", "Industrial");
     form.append("goal", "traffic");
     form.set("conversionTarget", "10");
     form.set("website", "example.com");
@@ -256,13 +274,13 @@ describe("readOnboardingForm", () => {
     form.set("invites", "a@b.co");
 
     expect(readOnboardingForm(form)).toEqual({
-      industries: ["Wholesale", "Retail"],
-      subIndustry: "Online shops",
+      industry: "Retail",
+      subIndustry: "E-commerce",
       regions: [
-        { country: "CA", province: "BC", area: "Lower Mainland" },
-        { country: "CA", province: "ON", area: "" },
+        { country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" },
+        { country: "Japan", area: "Kanto", region: "All of Kanto", subdivision: "Any area in All of Kanto" },
       ],
-      audiences: ["Commercial", "Industrial"],
+      audience: "Industrial",
       goals: ["traffic"],
       conversionTarget: "10",
       website: "example.com",

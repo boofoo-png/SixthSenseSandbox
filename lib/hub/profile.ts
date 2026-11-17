@@ -1,6 +1,7 @@
 import { accountKey } from "./account-key";
 import { DEMO_ACCOUNT } from "./constants";
 import { decodeCookieJson, encodeCookieJson, isRecord } from "./cookie-json";
+import { isTargetRegion } from "./target-regions";
 import type { BusinessProfile } from "./onboarding";
 
 // The business profile from the second Create an Account page, kept in the `ss_profile` cookie.
@@ -55,8 +56,9 @@ function isSavedProfile(value: unknown): value is SavedProfile {
 export function decodeProfile(value: string | undefined): BusinessProfile | null {
   const saved = decodeCookieJson(value, isSavedProfile);
   if (!saved) return null;
-  const { audience, audiences, ...rest } = saved;
-  return { ...rest, audiences: audiences ?? (audience ? [audience] : []) };
+  const { audience, audiences, regions, ...rest } = saved;
+  // Regions saved before 2026-11-16 (country code, province, area) are dropped, not converted.
+  return { ...rest, regions: regions.filter(isTargetRegion), audiences: audiences ?? (audience ? [audience] : []) };
 }
 
 /** True when the signed-in person has finished onboarding. The demo account always has. */

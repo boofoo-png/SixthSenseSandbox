@@ -29,7 +29,7 @@ export function ForgotPasswordForm() {
       ) : (
         <form action={formAction} noValidate className="mt-4 flex flex-col gap-4">
           <p className="text-[16px] leading-[1.5] tracking-[0.15px] text-ink">
-            Enter the email you use to log in and we&apos;ll give you a link to choose a new password.
+            Enter the email address connected to your account and we&apos;ll give you a secure reset link.
           </p>
           <TextField label="Email address" name="email" type="email" autoComplete="email" defaultValue={state.email} />
           <Button type="submit" variant="contained" size="large" loading={pending} className="w-full">

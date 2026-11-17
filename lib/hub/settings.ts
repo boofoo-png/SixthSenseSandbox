@@ -46,7 +46,7 @@ export function defaultSettings(jar: CookieReader, email: string): AccountSettin
   const base = {
     email,
     website: profile?.website ?? "",
-    industry: profile?.industries[0] ?? "Hospitality",
+    industry: profile?.industries[0] ?? "Wholesale",
     timeZone: "Pacific Time (PT)" as TimeZone,
     notifications: { ...DEFAULT_NOTIFICATIONS },
   };
@@ -128,7 +128,7 @@ export function readSettingsForm(formData: FormData, email: string): { ok: true;
       errors.website = "Enter a website address, like sixthsense.example.";
     }
   }
-  if (!(INDUSTRIES as readonly string[]).includes(values.industry)) errors.industry = "Choose an industry.";
+  if (!INDUSTRIES.includes(values.industry)) errors.industry = "Choose an industry.";
   if (!(TIME_ZONES as readonly string[]).includes(values.timeZone)) errors.timeZone = "Choose a time zone.";
   return Object.keys(errors).length > 0 ? { ok: false, errors, values } : { ok: true, settings: values };
 }

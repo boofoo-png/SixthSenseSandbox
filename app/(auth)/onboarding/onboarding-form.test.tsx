@@ -31,35 +31,40 @@ describe("OnboardingForm", () => {
     }
   });
 
-  it("lets you pick several industries as chips", () => {
+  it("picks one industry, and the sub-industries follow it (Figma Make)", () => {
     render(<OnboardingForm />);
-    const wholesale = within(section("Industries")).getByRole("checkbox", { name: "Wholesale" }) as HTMLInputElement;
-    const retail = within(section("Industries")).getByRole("checkbox", { name: "Retail" }) as HTMLInputElement;
-    fireEvent.click(wholesale);
-    fireEvent.click(retail);
-    expect(wholesale.checked && retail.checked).toBe(true);
+    const industry = screen.getByRole("combobox", { name: "Industry" }) as HTMLSelectElement;
+    const sub = () => screen.getByRole("combobox", { name: "Sub-industry" }) as HTMLSelectElement;
+    expect(industry.options).toHaveLength(24); // the placeholder and 23 industries
+    fireEvent.change(industry, { target: { value: "Hospitality and Tourism" } });
+    expect(sub().value).toBe("Hotels and accommodation");
+    expect(Array.from(sub().options).map((option) => option.text)).toContain("Hospitality supplies");
+    fireEvent.change(industry, { target: { value: "Wholesale" } });
+    expect(sub().value).toBe("Durable goods");
   });
 
-  it("adds and removes target regions, switching provinces to states by country", () => {
+  it("chooses a target region level by level, and adds and removes rows", () => {
     render(<OnboardingForm />);
-    const regions = () => screen.getAllByRole("combobox", { name: /^(Province|State)$/ });
-    expect(regions()).toHaveLength(1);
+    const value = (name: string | RegExp, index = 0) => (screen.getAllByRole("combobox", { name })[index] as HTMLSelectElement).value;
+    expect(value("Choose a country")).toBe("Canada");
+    fireEvent.change(screen.getByRole("combobox", { name: "Choose a province or territory" }), { target: { value: "British Columbia" } });
+    expect(value("Choose a region")).toBe("Lower Mainland");
+    expect(value("Choose a subdivision")).toBe("Any area in Lower Mainland");
+    fireEvent.change(screen.getByRole("combobox", { name: "Choose a subdivision" }), { target: { value: "Richmond" } });
+    expect(value("Choose a subdivision")).toBe("Richmond");
+
     fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
-    expect(regions()).toHaveLength(2);
-    fireEvent.change(screen.getAllByRole("combobox", { name: "Country" })[1], { target: { value: "US" } });
-    expect(screen.getByRole("combobox", { name: "State" })).toBeDefined();
+    fireEvent.change(screen.getAllByRole("combobox", { name: "Choose a country" })[1], { target: { value: "United States" } });
+    expect(value("Choose a state")).toBe("Alabama");
+    expect(value("Choose a region", 1)).toBe("Statewide \u2014 Alabama");
     fireEvent.click(screen.getByRole("button", { name: "Remove region 2" }));
-    expect(regions()).toHaveLength(1);
+    expect(screen.getAllByRole("combobox", { name: "Choose a country" })).toHaveLength(1);
   });
 
-  it("lets you choose several of the four general audiences", () => {
+  it("picks one of the four general audiences from a list", () => {
     render(<OnboardingForm />);
-    const group = within(section("Which general audience do you want to reach?"));
-    const boxes = group.getAllByRole("checkbox") as HTMLInputElement[];
-    expect(boxes.map((box) => box.value)).toEqual(["Residential", "Commercial", "Industrial", "Institutional"]);
-    fireEvent.click(group.getByRole("checkbox", { name: "Commercial" }));
-    fireEvent.click(group.getByRole("checkbox", { name: "Institutional" }));
-    expect(boxes.filter((box) => box.checked).map((box) => box.value)).toEqual(["Commercial", "Institutional"]);
+    const select = screen.getByRole("combobox", { name: "Choose a category" }) as HTMLSelectElement;
+    expect(Array.from(select.options).map((option) => option.value)).toEqual(["", "Residential", "Commercial", "Industrial", "Institutional"]);
   });
 
   it("shows the conversion slider only when that goal is ticked", () => {
@@ -100,13 +105,10 @@ describe("OnboardingForm", () => {
     cleanup();
     render(<OnboardingForm showDevTools />);
     fireEvent.click(screen.getByRole("button", { name: /Fill with sample data/ }));
-    const industries = within(section("Industries"));
-    expect((industries.getByRole("checkbox", { name: "Wholesale" }) as HTMLInputElement).checked).toBe(true);
-    expect((screen.getByRole("combobox", { name: "Province" }) as HTMLSelectElement).value).toBe("BC");
-    expect(
-      (within(section("Which general audience do you want to reach?")).getByRole("checkbox", { name: "Commercial" }) as HTMLInputElement)
-        .checked,
-    ).toBe(true);
+    expect((screen.getByRole("combobox", { name: "Industry" }) as HTMLSelectElement).value).toBe("Wholesale");
+    expect((screen.getByRole("combobox", { name: "Sub-industry" }) as HTMLSelectElement).value).toBe("Hospitality and restaurant supplies");
+    expect((screen.getByRole("combobox", { name: "Choose a subdivision" }) as HTMLSelectElement).value).toBe("Richmond");
+    expect((screen.getByRole("combobox", { name: "Choose a category" }) as HTMLSelectElement).value).toBe("Commercial");
     expect((within(section("Goals")).getByRole("checkbox", { name: "Increase conversions by X%" }) as HTMLInputElement).checked).toBe(true);
     expect(screen.getByRole("slider")).toBeDefined();
     expect((screen.getByRole("textbox", { name: "Website" }) as HTMLInputElement).value).not.toBe("");
@@ -115,13 +117,13 @@ describe("OnboardingForm", () => {
 
   it("does not refill new rows with old answers after an error", async () => {
     vi.mocked(saveOnboarding).mockResolvedValue({
-      errors: { "regions.2.province": "Choose a province" },
+      errors: { "regions.2.region": "Choose a region" },
       values: {
         ...emptyOnboardingDraft(),
         regions: [
-          { country: "CA", province: "BC", area: "Area one" },
-          { country: "CA", province: "ON", area: "Area two" },
-          { country: "CA", province: "", area: "Area three" },
+          { country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" },
+          { country: "Canada", area: "Ontario", region: "Eastern Ontario", subdivision: "Any area in Eastern Ontario" },
+          { country: "Canada", area: "Alberta", region: "", subdivision: "" },
         ],
       },
     });
@@ -129,13 +131,11 @@ describe("OnboardingForm", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
     fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await waitFor(() => expect(screen.getByText("Choose a province", { selector: "p" })).toBeDefined());
+    await waitFor(() => expect(screen.getByText("Choose a region", { selector: "p" })).toBeDefined());
     fireEvent.click(screen.getByRole("button", { name: "Remove region 2" }));
     fireEvent.click(screen.getByRole("button", { name: "Add another region" }));
-    const areas = screen.getAllByRole("textbox", { name: "Region or city (optional)" }).map((input) => (input as HTMLInputElement).value);
-    expect(areas).toEqual(["Area one", "Area three", ""]);
-    const provinces = screen.getAllByRole("combobox", { name: "Province" }).map((select) => (select as HTMLSelectElement).value);
-    expect(provinces).toEqual(["BC", "", ""]);
+    const areas = screen.getAllByRole("combobox", { name: "Choose a province or territory" }).map((select) => (select as HTMLSelectElement).value);
+    expect(areas).toEqual(["British Columbia", "Alberta", ""]);
   });
 
   it("shows a message for the whole form when the answers are too big to save", async () => {
@@ -207,20 +207,20 @@ describe("OnboardingForm", () => {
   it("shows the problems from the server next to their fields", async () => {
     vi.mocked(saveOnboarding).mockResolvedValue({
       errors: {
-        industries: "Choose at least one industry",
-        audiences: "Choose at least one audience",
+        industry: "Choose an industry",
+        audience: "Choose an audience",
         website: "Enter your website",
-        "regions.0.province": "Choose a province",
+        "regions.0.area": "Choose a province or territory",
       },
       values: emptyOnboardingDraft(),
     });
     render(<OnboardingForm />);
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-    await waitFor(() => expect(screen.getByText("Choose at least one industry")).toBeDefined());
-    expect(screen.getByText("Choose at least one audience")).toBeDefined();
+    await waitFor(() => expect(screen.getByText("Choose an industry", { selector: "p" })).toBeDefined());
+    expect(screen.getByText("Choose an audience", { selector: "p" })).toBeDefined();
     expect(screen.getByRole("alert").textContent).toContain("Check the highlighted answers");
     expect(screen.getByRole("textbox", { name: "Website" }).getAttribute("aria-invalid")).toBe("true");
-    expect(screen.getByRole("combobox", { name: "Province" }).getAttribute("aria-invalid")).toBe("true");
+    expect(screen.getByRole("combobox", { name: "Choose a province or territory" }).getAttribute("aria-invalid")).toBe("true");
   });
 
   it("always has Continue and a Back button that keeps the answers while returning to step 1", () => {
@@ -238,7 +238,8 @@ describe("OnboardingForm", () => {
       <OnboardingForm
         initialDraft={{
           ...emptyOnboardingDraft(),
-          industries: ["Wholesale"],
+          industry: "Wholesale",
+          subIndustry: "Non-durable goods",
           website: "example.com",
           goals: ["conversions"],
           conversionTarget: "20",
@@ -246,7 +247,8 @@ describe("OnboardingForm", () => {
         }}
       />,
     );
-    expect((within(section("Industries")).getByRole("checkbox", { name: "Wholesale" }) as HTMLInputElement).checked).toBe(true);
+    expect((screen.getByRole("combobox", { name: "Industry" }) as HTMLSelectElement).value).toBe("Wholesale");
+    expect((screen.getByRole("combobox", { name: "Sub-industry" }) as HTMLSelectElement).value).toBe("Non-durable goods");
     expect((screen.getByRole("textbox", { name: "Website" }) as HTMLInputElement).value).toBe("example.com");
     expect((screen.getByRole("slider") as HTMLInputElement).value).toBe("20");
     expect((container.querySelector('input[name="documentName"]') as HTMLInputElement).value).toBe("plan.pdf");

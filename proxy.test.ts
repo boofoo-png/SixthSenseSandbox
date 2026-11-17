@@ -10,9 +10,10 @@ function profileFor(email: string) {
   const result = validateOnboarding(
     {
       ...emptyOnboardingDraft(),
-      industries: ["Wholesale"],
-      regions: [{ country: "CA", province: "BC", area: "" }],
-      audiences: ["Commercial"],
+      industry: "Wholesale",
+      subIndustry: "Durable goods",
+      regions: [{ country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Any area in Lower Mainland" }],
+      audience: "Commercial",
       goals: ["traffic"],
       website: "example.com",
     },

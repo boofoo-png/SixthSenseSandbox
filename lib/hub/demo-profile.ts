@@ -10,10 +10,10 @@ export const DEMO_COMPANY = "Sixth Sense";
 
 export const DEMO_PROFILE: BusinessProfile = {
   email: DEMO_ACCOUNT.email,
-  industries: ["Wholesale", "Hospitality"],
-  subIndustry: "Hotel and accommodation supplies",
-  regions: [{ country: "CA", province: "BC", area: "Lower Mainland" }],
-  audiences: ["Commercial", "Institutional"],
+  industries: ["Wholesale"],
+  subIndustry: "Hospitality and restaurant supplies",
+  regions: [{ country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" }],
+  audiences: ["Commercial"],
   goals: ["competitors", "trends", "awareness"],
   website: "https://sixthsense.example",
   socials: [{ platform: "Instagram", handle: "@sixthsenseapp", verified: true }],

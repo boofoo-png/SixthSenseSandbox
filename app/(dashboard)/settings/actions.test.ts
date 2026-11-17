@@ -45,7 +45,7 @@ function form(values: Record<string, string>) {
 const reader = { get: (name: string) => (jar.has(name) ? { value: jar.get(name) as string } : undefined) };
 
 describe("saveSettings", () => {
-  const fields = { firstName: "Dana", lastName: "Lee", role: "Owner", phone: "", company: "Lee Linens", website: "", industry: "Hospitality", timeZone: "Eastern Time (ET)", "notify-trends": "on" };
+  const fields = { firstName: "Dana", lastName: "Lee", role: "Owner", phone: "", company: "Lee Linens", website: "", industry: "Hospitality and Tourism", timeZone: "Eastern Time (ET)", "notify-trends": "on" };
 
   it("saves the settings for the signed-in account", async () => {
     jar.set(SESSION_COOKIE, DEMO_ACCOUNT.email);

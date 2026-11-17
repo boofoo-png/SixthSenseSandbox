@@ -184,7 +184,7 @@ describe("createAccount", () => {
 
 function onboardingForm(overrides: Record<string, string> = {}) {
   const data = form({
-    subIndustry: "Online shops",
+    subIndustry: "Durable goods",
     audience: "Commercial",
     website: "example.com",
     conversionTarget: "10",
@@ -192,9 +192,10 @@ function onboardingForm(overrides: Record<string, string> = {}) {
     ...overrides,
   });
   data.append("industry", "Wholesale");
-  data.append("regionCountry", "CA");
-  data.append("regionProvince", "BC");
-  data.append("regionArea", "");
+  data.append("regionCountry", "Canada");
+  data.append("regionArea", "British Columbia");
+  data.append("regionRegion", "Lower Mainland");
+  data.append("regionSubdivision", "Any area in Lower Mainland");
   data.append("goal", "traffic");
   return data;
 }
@@ -215,7 +216,7 @@ describe("saveOnboarding", () => {
     await redirectedTo(() => createAccount({ errors: {}, values: {} }, form(NEW_ACCOUNT)));
     const state = await saveOnboarding({ errors: {}, values: null }, onboardingForm({ website: "" }));
     expect(state.errors.website).toBe("Enter your website");
-    expect(state.values?.industries).toEqual(["Wholesale"]);
+    expect(state.values?.industry).toBe("Wholesale");
     expect(jar.has(accountCookieName("jordan@example.com"))).toBe(false);
     expect(jar.has(profileCookieName("jordan@example.com"))).toBe(false);
   });
@@ -266,7 +267,7 @@ describe("goBackToStepOne", () => {
     const data = onboardingForm({ invites: "sam@example.com" });
     expect(await redirectedTo(() => goBackToStepOne(data))).toBe("/create-account");
     const draft = decodeOnboardingDraft(jar.get(ONBOARDING_DRAFT_COOKIE)?.value);
-    expect(draft?.industries).toEqual(["Wholesale"]);
+    expect(draft?.industry).toBe("Wholesale");
     expect(draft?.invites).toBe("sam@example.com");
     expect(jar.get(ONBOARDING_DRAFT_COOKIE)?.options).toMatchObject({ httpOnly: true });
   });

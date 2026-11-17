@@ -14,16 +14,17 @@ import {
   MAX_DOCUMENT_BYTES,
   MAX_ROWS,
   PLATFORMS,
-  SUB_INDUSTRIES,
   emptyOnboardingDraft,
   isValidHandle,
+  subIndustriesFor,
   type OnboardingDraft,
 } from "@/lib/hub/onboarding";
-import { COUNTRIES, REGIONS, isCountryCode, type CountryCode } from "@/lib/hub/regions";
+import { TARGET_COUNTRIES, areaLabel, areasFor, firstTargetRegion, regionsFor, subdivisionsFor, type TargetRegion } from "@/lib/hub/target-regions";
 import { inviteLinkFor } from "@/lib/hub/invite";
 import { goBackToStepOne, saveOnboarding, type OnboardingState } from "../actions";
 
-// Second Create an Account page from the mid-fi ("Tell us about your industry").
+// Second Create an Account page ("Tell us about your industry"), from the mid-fi and the team's Figma
+// Make: industry and sub-industry, target regions in four levels, and one general audience as drop-downs.
 
 const INITIAL: OnboardingState = { errors: {}, values: null };
 const h2Class = "text-[24px] leading-[1.334] font-normal text-ink";
@@ -42,18 +43,6 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <h2 className={h2Class}>{title}</h2>
       {children}
     </section>
-  );
-}
-
-/** A checkbox drawn as an MUI filter Chip. */
-function ChipCheckbox({ name, value, label, defaultChecked }: { name: string; value: string; label: string; defaultChecked: boolean }) {
-  return (
-    <label className="cursor-pointer">
-      <input type="checkbox" name={name} value={value} defaultChecked={defaultChecked} className="peer sr-only" />
-      <span className="inline-flex h-8 items-center rounded-full bg-selected px-3 text-[13px] leading-[18px] tracking-[0.16px] text-ink transition-colors peer-checked:bg-primary peer-checked:text-primary-contrast peer-focus-visible:ring-4 peer-focus-visible:ring-primary/30 hover:brightness-95">
-        {label}
-      </span>
-    </label>
   );
 }
 
@@ -144,6 +133,21 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
   const uploadHelpId = useId();
 
   const [regions, setRegions] = useState(() => withIds(submitted.regions));
+  const [industry, setIndustry] = useState(submitted.industry);
+  const [subIndustry, setSubIndustry] = useState(submitted.subIndustry);
+
+  /** Change one level of a region row; the levels under it start again at their first choice. */
+  function changeRegion(id: number, level: keyof TargetRegion, value: string) {
+    setRegions((current) =>
+      current.map((row) => {
+        if (row.id !== id) return row;
+        if (level === "country") return { ...row, ...firstTargetRegion(value) };
+        if (level === "area") return { ...row, ...firstTargetRegion(row.country, value) };
+        if (level === "region") return { ...row, region: value, subdivision: subdivisionsFor(row.area, value)[0] ?? "" };
+        return { ...row, subdivision: value };
+      }),
+    );
+  }
   const [socials, setSocials] = useState(() => withIds(submitted.socials));
   const [connectErrors, setConnectErrors] = useState<Record<number, string>>({});
   const [inviteLink, setInviteLink] = useState(submitted.inviteLink ?? "");
@@ -181,6 +185,8 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
     setSeenValues(state.values);
     if (state.values) {
       setRegions(withIds(state.values.regions));
+      setIndustry(state.values.industry);
+      setSubIndustry(state.values.subIndustry);
       setSocials(withIds(state.values.socials));
       setCompetitors(withIds(state.values.competitors));
       setReportLinks(withIds(state.values.reportLinks.map((link) => ({ link }))));
@@ -196,7 +202,9 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
     const form = formRef.current;
     if (!form) return;
     flushSync(() => {
-      setRegions((current) => [{ ...current[0], country: "CA" }, ...current.slice(1)]);
+      setRegions((current) => [{ ...current[0], country: "Canada", area: "British Columbia", region: "Lower Mainland", subdivision: "Richmond" }, ...current.slice(1)]);
+      setIndustry("Wholesale");
+      setSubIndustry("Hospitality and restaurant supplies");
       setSocials((current) => [{ ...current[0], platform: "Instagram", handle: "@sixthsenseapp", verified: true }, ...current.slice(1)]);
       setWantsConversions(true);
       setConversionTarget(10);
@@ -210,11 +218,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
       form.querySelectorAll<HTMLInputElement>(`input[name="${name}"]`).forEach((box) => {
         box.checked = values.includes(box.value);
       });
-    tick("industry", ["Wholesale", "Hospitality"]);
-    set("subIndustry", "Hotel and accommodation supplies");
-    set("regionProvince", "BC");
-    set("regionArea", "Lower Mainland");
-    tick("audience", ["Commercial", "Institutional"]);
+    set("audience", "Commercial");
     tick("goal", ["traffic", "awareness", "conversions"]);
     set("website", "sixthsense.example");
     set("socialPlatform", "Instagram");
@@ -272,68 +276,72 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
 
       <form ref={formRef} action={formAction} noValidate className="mt-8 flex flex-col gap-10">
         <Section title="Industry">
-          <fieldset aria-describedby={errors.industries ? "industries-error" : undefined}>
-            <legend className={groupLabelClass}>Industries</legend>
-            <p className={`mb-2 ${groupLabelClass}`}>Choose all that apply</p>
-            <div className="flex flex-wrap gap-2" role="presentation">
-              {INDUSTRIES.map((industry) => (
-                <ChipCheckbox
-                  key={`${industry}-${submitted.industries.includes(industry)}`}
-                  name="industry"
-                  value={industry}
-                  label={industry}
-                  defaultChecked={submitted.industries.includes(industry)}
-                />
-              ))}
-            </div>
-            {errors.industries && (
-              <p id="industries-error" className={`mt-2 ${errorTextClass}`}>
-                {errors.industries}
-              </p>
-            )}
-          </fieldset>
-          <SelectField
-            className="sm:max-w-[420px]"
-            label="Sub-industry"
-            name="subIndustry"
-            placeholder="Choose a sub-industry (optional)"
-            options={SUB_INDUSTRIES.map((value) => ({ value, label: value }))}
-            defaultValue={submitted.subIndustry}
-          />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Industry"
+              name="industry"
+              placeholder="Choose an industry"
+              options={INDUSTRIES.map((value) => ({ value, label: value }))}
+              value={industry}
+              onChange={(event) => {
+                setIndustry(event.target.value);
+                setSubIndustry(subIndustriesFor(event.target.value)[0] ?? "");
+              }}
+              error={errors.industry}
+            />
+            <SelectField
+              label="Sub-industry"
+              name="subIndustry"
+              placeholder={industry ? "Choose a sub-industry" : "Choose an industry first"}
+              options={subIndustriesFor(industry).map((value) => ({ value, label: value }))}
+              value={subIndustry}
+              onChange={(event) => setSubIndustry(event.target.value)}
+              error={errors.subIndustry}
+            />
+          </div>
         </Section>
 
         <Section title="Who are you trying to reach?">
           <h3 className={h3Class}>Target Region</h3>
           {regions.map((row, index) => {
-            const country: CountryCode = isCountryCode(row.country) ? row.country : "CA";
-            const regionLabel = COUNTRIES.find((entry) => entry.code === country)?.regionLabel ?? "Province";
+            const error = (level: string) => errors[`regions.${index}.${level}`];
+            const choices = (values: readonly string[]) => values.map((value) => ({ value, label: value }));
             return (
-              <div key={row.id} className="grid gap-4 sm:grid-cols-[1fr_1fr_1fr_auto]">
+              <div key={row.id} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
                 <SelectField
-                  label="Country"
+                  label="Choose a country"
                   name="regionCountry"
-                  options={COUNTRIES.map((entry) => ({ value: entry.code, label: entry.name }))}
-                  value={country}
-                  onChange={(event) =>
-                    setRegions((current) => current.map((item) => (item.id === row.id ? { ...item, country: event.target.value, province: "" } : item)))
-                  }
-                  error={errors[`regions.${index}.country`]}
+                  options={choices(TARGET_COUNTRIES)}
+                  value={row.country}
+                  onChange={(event) => changeRegion(row.id, "country", event.target.value)}
+                  error={error("country")}
                 />
                 <SelectField
-                  key={country}
-                  label={regionLabel}
-                  name="regionProvince"
-                  placeholder={`Choose a ${regionLabel.toLowerCase()}`}
-                  options={REGIONS[country].map((region) => ({ value: region.code, label: region.name }))}
-                  defaultValue={row.province}
-                  error={errors[`regions.${index}.province`]}
-                />
-                <TextField
-                  label="Region or city (optional)"
+                  label={areaLabel(row.country)}
                   name="regionArea"
-                  placeholder="e.g. Lower Mainland"
-                  maxLength={100}
-                  defaultValue={row.area}
+                  placeholder={index > 0 ? "Choose one (or remove this row)" : "Choose one"}
+                  options={choices(areasFor(row.country))}
+                  value={row.area}
+                  onChange={(event) => changeRegion(row.id, "area", event.target.value)}
+                  error={error("area")}
+                />
+                <SelectField
+                  label="Choose a region"
+                  name="regionRegion"
+                  placeholder="Choose a region"
+                  options={choices(regionsFor(row.country, row.area))}
+                  value={row.region}
+                  onChange={(event) => changeRegion(row.id, "region", event.target.value)}
+                  error={error("region")}
+                />
+                <SelectField
+                  label="Choose a subdivision"
+                  name="regionSubdivision"
+                  placeholder="Choose a subdivision"
+                  options={choices(subdivisionsFor(row.area, row.region))}
+                  value={row.subdivision}
+                  onChange={(event) => changeRegion(row.id, "subdivision", event.target.value)}
+                  error={error("subdivision")}
                 />
                 {index > 0 ? (
                   <button
@@ -345,7 +353,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
                     Remove
                   </button>
                 ) : (
-                  <span className="hidden sm:block sm:w-[76px]" />
+                  <span className="hidden lg:block lg:w-[76px]" />
                 )}
               </div>
             );
@@ -355,31 +363,22 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
               type="button"
               className={`${addButtonClass} self-start`}
               aria-label="Add another region"
-              onClick={() => setRegions((current) => [...current, ...withIds([{ country: "CA", province: "", area: "" }])])}
+              onClick={() => setRegions((current) => [...current, ...withIds([{ country: "Canada", area: "", region: "", subdivision: "" }])])}
             >
               Add another
             </button>
           )}
-          <fieldset className="mt-4" aria-describedby={errors.audiences ? "audiences-error" : undefined}>
-            <legend className={h3Class}>Which general audience do you want to reach?</legend>
-            <p className={`mt-1 mb-2 ${groupLabelClass}`}>Choose all that apply</p>
-            <div className="flex flex-wrap gap-2" role="presentation">
-              {AUDIENCES.map((audience) => (
-                <ChipCheckbox
-                  key={`${audience}-${submitted.audiences.includes(audience)}`}
-                  name="audience"
-                  value={audience}
-                  label={audience}
-                  defaultChecked={submitted.audiences.includes(audience)}
-                />
-              ))}
-            </div>
-            {errors.audiences && (
-              <p id="audiences-error" className={`mt-2 ${errorTextClass}`}>
-                {errors.audiences}
-              </p>
-            )}
-          </fieldset>
+          <h3 className={`mt-4 ${h3Class}`}>Which general audience do you want to reach?</h3>
+          <SelectField
+            key={`audience-${submitted.audience}`}
+            className="sm:max-w-[420px]"
+            label="Choose a category"
+            name="audience"
+            placeholder="Choose a category"
+            options={AUDIENCES.map((value) => ({ value, label: value }))}
+            defaultValue={submitted.audience}
+            error={errors.audience}
+          />
         </Section>
 
         <section className="flex flex-col gap-4">
