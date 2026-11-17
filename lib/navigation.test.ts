@@ -73,7 +73,6 @@ describe("SIDEBAR_ITEMS", () => {
       "Audience Trends",
       "Competitors",
       "Content Creation",
-      "Campaigns",
       "AI Management",
       "Reports",
     ]);

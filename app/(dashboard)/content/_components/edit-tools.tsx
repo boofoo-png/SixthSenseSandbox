@@ -15,6 +15,8 @@ import {
   type FileFocus,
   type RepurposePlatform,
 } from "@/lib/hub/content/edit";
+import { LIBRARY_SAMPLES, fromSaved, libraryText } from "@/lib/hub/content/library";
+import type { SavedContent } from "@/lib/hub/content/saved";
 import { THEMES, themeOf } from "@/lib/hub/content/themes";
 import { useRun } from "./create-tools";
 import {
@@ -158,10 +160,20 @@ export function ImproveCopyTool() {
 
 const PLATFORM_ICONS: Record<RepurposePlatform, "message" | "content"> = { Instagram: "message", Facebook: "message", TikTok: "message", Blog: "content" };
 
-export function RepurposeTool() {
+const EXAMPLE_SOURCE = "Refillable amenities help independent hotels reduce everyday waste while improving the guest experience.";
+
+/** Repurpose content; `from` is a My Content item to start from (its Reuse link). */
+export function RepurposeTool({ from }: { from?: string }) {
   const { items } = useSavedContent();
+  const source = from ? [...fromSaved(items), ...LIBRARY_SAMPLES].find((item) => item.id === from) : undefined;
+  const text = source ? libraryText(source) : null;
+  // Saved content appears once the browser has read it, so the editor starts again with that text.
+  return <RepurposeEditor key={text ? from : "example"} items={items} initialText={text?.slice(0, 2000) ?? EXAMPLE_SOURCE} />;
+}
+
+function RepurposeEditor({ items, initialText }: { items: SavedContent[]; initialText: string }) {
   const { draft, set, run, generate, regenerate } = useRun({
-    text: "Refillable amenities help independent hotels reduce everyday waste while improving the guest experience.",
+    text: initialText,
     platforms: ["Instagram", "Blog"] as RepurposePlatform[],
     instructions: "Make each version native to its platform.",
   });

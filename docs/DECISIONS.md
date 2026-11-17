@@ -401,3 +401,11 @@ Context: The team's Figma Make replaced the Audience page with a "Live audience 
 Decision: /explore follows the Make and the sidebar says "Audience Trends". Trends and suggested audiences are the Make's sample data (lib/hub/audience-trends.ts). Saved audiences, which ones are selected, and the watchlist are kept in this browser under "sixthsense.audience-trends" (version 1); a first visit starts with the Make's Hospitality buyers and Conscious travellers selected and Direct booking value watched. The old filters (industry, age, region, interest), Set as default audience, and competitor-based suggestions are gone from the page. Content Creation and Campaigns still read a saved default audience (lib/hub/audience.ts), which now falls back to the sign-up audience because the page can no longer set one.
 
 Alternatives considered: Saving the audiences in the business profile cookie was not chosen: that cookie is capped at about 3.8 KB and already holds the sign-up answers, so descriptions of up to 240 characters would not fit. A real profile store comes with the real backend.
+
+## 2026-11-16 - My Content library, and Campaigns opens from Content Creation
+
+Context: The team's Figma Make added a My Content library (search, type filters, Campaigns folders, sort, grid or list) and a Campaign card at the top of Content Creation, and dropped Campaigns from the sidebar.
+
+Decision: My Content lives at /content/my-content and lists content saved in this browser (newest first) before the Make's twelve sample items, whose photos reuse the five images in public/content. Saved results are sorted into the Make's five types by the tool that made them. Any item with text has a Reuse link that opens Repurpose content with that text (?from=<item id>); photos and videos have none, since nothing can be done with a sample photo yet. The sidebar no longer lists Campaigns; the hub's Campaign card and Audience Trends' Use in Campaigns open it, and Content Creation stays highlighted there. The Make's per-card "more options" button does nothing in the Make, so it is not copied.
+
+Alternatives considered: Keeping Campaigns in the sidebar as well was not chosen, to match the Make. Showing only the samples, as the Make does, was not chosen: the functionality list says My Content opens the content library, and saved results already exist.

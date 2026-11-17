@@ -14,7 +14,7 @@ beforeEach(() => {
 const nav = () => screen.getByRole("navigation", { name: "Main" });
 
 describe("Sidebar", () => {
-  it("has the Figma Make's seven destinations, linked to this app's pages", () => {
+  it("has the Figma Make's six destinations, linked to this app's pages", () => {
     render(<Sidebar />);
     const links = within(nav()).getAllByRole("link");
     expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
@@ -22,7 +22,6 @@ describe("Sidebar", () => {
       ["Audience Trends", "/explore"],
       ["Competitors", "/competitors"],
       ["Content Creation", "/content"],
-      ["Campaigns", "/campaigns"],
       ["AI Management", "/ai-management"],
       ["Reports", "/insights"],
     ]);
@@ -35,6 +34,15 @@ describe("Sidebar", () => {
       .filter((link) => link.getAttribute("aria-current") === "page");
     expect(active).toHaveLength(1);
     expect(active[0].textContent).toBe("Competitors");
+  });
+
+  it("keeps Content Creation active on Campaigns, which is opened from it", () => {
+    vi.mocked(usePathname).mockReturnValue("/campaigns");
+    render(<Sidebar />);
+    const active = within(nav())
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("aria-current") === "page");
+    expect(active.map((link) => link.textContent)).toEqual(["Content Creation"]);
   });
 
   it("keeps the chosen dates in every link", () => {

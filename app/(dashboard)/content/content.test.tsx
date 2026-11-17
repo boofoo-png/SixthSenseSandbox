@@ -6,6 +6,7 @@ import { resetSchedulesForTests } from "../ai-management/_components/use-schedul
 import { CalendarTargetProvider } from "./_components/calendar-target";
 import { AdCopyTool, BlogTool, SocialPostTool, VideoTool } from "./_components/create-tools";
 import { EditPostsTool, ImproveCopyTool, RepurposeTool, UploadTool } from "./_components/edit-tools";
+import { ToolHeader } from "./_components/tool-ui";
 import { resetSavedContentForTests } from "./_components/use-saved-content";
 import ContentPage from "./page";
 
@@ -43,6 +44,22 @@ describe("Content Creation hub (Figma Make)", () => {
       "/content/repurpose",
       "/content/upload",
     ]);
+  });
+
+  it("opens My Content and, with Campaigns out of the sidebar, starts a campaign", () => {
+    render(<ContentPage />);
+    expect(screen.getByRole("link", { name: "My Content" }).getAttribute("href")).toBe("/content/my-content");
+    const campaign = screen.getByRole("link", { name: /^Campaign\s*Build an editable campaign plan/ });
+    expect(campaign.getAttribute("href")).toBe("/campaigns");
+    expect(within(campaign).getByText("Create campaign")).toBeDefined();
+  });
+});
+
+describe("Tool header", () => {
+  it("opens My Content, which comes back to the tool", () => {
+    render(<ToolHeader slug="blog" title="Create a Blog Post" description="Titles and outlines." />);
+    expect(screen.getByRole("link", { name: "Back to Content Creation" }).getAttribute("href")).toBe("/content");
+    expect(screen.getByRole("link", { name: "My Content" }).getAttribute("href")).toBe("/content/my-content?from=blog");
   });
 });
 
@@ -178,6 +195,25 @@ describe("Repurpose content", () => {
     fireEvent.click(screen.getByRole("button", { name: "Blog" }));
     fireEvent.click(screen.getByRole("button", { name: "Enhance with AI" }));
     expect(screen.getByRole("alert").textContent).toBe("Choose at least one platform to repurpose for.");
+  });
+
+  it("starts from a sample reused from My Content", () => {
+    render(<RepurposeTool from="sample-8" />);
+    expect(box("Paste your content").value).toBe("Travel lighter.\n\nRefill. Reuse. Respect. Five habits for mindful travel.");
+  });
+
+  it("starts from saved content reused from My Content", () => {
+    window.localStorage.setItem(
+      SAVED_CONTENT_KEY,
+      JSON.stringify({ version: 2, items: [{ id: "abc", tool: "blog", title: "Saved blog", text: "My saved blog text.", savedAt: 1 }] }),
+    );
+    render(<RepurposeTool from="saved-abc" />);
+    expect(box("Paste your content").value).toBe("My saved blog text.");
+  });
+
+  it("ignores an unknown item", () => {
+    render(<RepurposeTool from="sample-999" />);
+    expect(box("Paste your content").value).toMatch(/^Refillable amenities help independent hotels/);
   });
 });
 

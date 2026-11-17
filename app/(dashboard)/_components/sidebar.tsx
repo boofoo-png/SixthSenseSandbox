@@ -53,7 +53,7 @@ export function Sidebar({ query = "" }: { query?: string }) {
         <nav aria-label="Main" className="min-h-0 min-[621px]:overflow-y-auto">
           <ul className="flex gap-2 overflow-x-auto pb-1.5 min-[621px]:flex-col min-[621px]:gap-[7px] min-[621px]:overflow-visible min-[621px]:pb-0">
             {SIDEBAR_ITEMS.map((item) => {
-              const active = isActivePath(item.href, pathname);
+              const active = [item.href, ...(item.also ?? [])].some((href) => isActivePath(href, pathname));
               return (
                 <li key={item.href} className="shrink-0">
                   <Link

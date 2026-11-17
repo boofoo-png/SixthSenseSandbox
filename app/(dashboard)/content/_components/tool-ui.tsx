@@ -23,14 +23,29 @@ const controlClass =
 const fieldLabelClass = "text-[11px] font-semibold text-[#53676a]";
 const boxClass = "rounded-[10px] border border-brand-teal/10 bg-white/68";
 
-export function ToolHeader({ title, description }: { title: string; description: string }) {
+/** The Make's lime "My Content" button; `from` is the tool to come back to. */
+export function MyContentButton({ from }: { from?: string }) {
   return (
-    <header className="mb-[18px] text-brand-cream">
-      <Link href="/content" className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-brand-cream/88 hover:text-brand-lime-bright">
-        <LineIcon name="chevron" size={16} className="rotate-180" /> Back to Content Creation
-      </Link>
-      <h1 className="text-[clamp(27px,3vw,38px)] font-medium tracking-[-0.035em]">{title}</h1>
-      <p className="mt-2 max-w-[700px] text-[13px] leading-[1.6] text-brand-cream/86">{description}</p>
+    <Link
+      href={from ? `/content/my-content?from=${from}` : "/content/my-content"}
+      className="inline-flex min-h-[42px] w-full shrink-0 items-center justify-center gap-2 rounded-[22px] bg-brand-lime-bright px-[18px] text-[11px] font-extrabold text-brand-navy uppercase shadow-[0_5px_0_rgba(0,31,62,0.17)] transition hover:translate-y-0.5 hover:shadow-[0_3px_0_rgba(0,31,62,0.2)] min-[621px]:w-auto"
+    >
+      <LineIcon name="content" size={16} /> My Content
+    </Link>
+  );
+}
+
+export function ToolHeader({ slug, title, description }: { slug: string; title: string; description: string }) {
+  return (
+    <header className="mb-[18px] flex flex-col items-stretch gap-6 text-brand-cream min-[621px]:flex-row min-[621px]:items-start min-[621px]:justify-between">
+      <div className="min-w-0">
+        <Link href="/content" className="mb-4 inline-flex items-center gap-1.5 text-[12px] font-bold text-brand-cream/88 hover:text-brand-lime-bright">
+          <LineIcon name="chevron" size={16} className="rotate-180" /> Back to Content Creation
+        </Link>
+        <h1 className="text-[clamp(27px,3vw,38px)] font-medium tracking-[-0.035em]">{title}</h1>
+        <p className="mt-2 max-w-[700px] text-[13px] leading-[1.6] text-brand-cream/86">{description}</p>
+      </div>
+      <MyContentButton from={slug} />
     </header>
   );
 }

@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: PageProps<"/content/[tool]">)
   return tool ? { title: tool.pageTitle, description: tool.pageDescription } : { title: "Content Creation" };
 }
 
-const TOOLS: Record<ToolSlug, (props: { audience: string }) => ReactNode> = {
+const TOOLS: Record<ToolSlug, (props: { audience: string; from?: string }) => ReactNode> = {
   "social-post": SocialPostTool,
   video: VideoTool,
   blog: BlogTool,
@@ -30,10 +30,12 @@ const TOOLS: Record<ToolSlug, (props: { audience: string }) => ReactNode> = {
   upload: UploadTool,
 };
 
-// One Content Creation tool (Figma Make, 2026-11-05). Create tools write for the default
-// audience saved on the Audience page.
-export default async function ContentToolPage({ params }: PageProps<"/content/[tool]">) {
+// One Content Creation tool (Figma Make, re-checked 2026-11-16). Create tools write for the default
+// audience (from the sign-up answers).
+export default async function ContentToolPage({ params, searchParams }: PageProps<"/content/[tool]">) {
   const tool = findTool((await params).tool);
+  // Reuse in My Content opens Repurpose content with ?from=<item id>.
+  const from = (await searchParams).from;
   if (!tool) notFound();
   const jar = await cookies();
   const email = jar.get(SESSION_COOKIE)?.value ?? "";
@@ -45,9 +47,9 @@ export default async function ContentToolPage({ params }: PageProps<"/content/[t
 
   return (
     <main className={makePageClass}>
-      <ToolHeader title={tool.pageTitle} description={tool.pageDescription} />
+      <ToolHeader slug={tool.slug} title={tool.pageTitle} description={tool.pageDescription} />
       <CalendarTargetProvider value={{ business, today: todayIsoDate() }}>
-        <Tool audience={audience} />
+        <Tool audience={audience} from={typeof from === "string" ? from : undefined} />
       </CalendarTargetProvider>
     </main>
   );
