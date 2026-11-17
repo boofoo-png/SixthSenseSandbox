@@ -1,68 +1,10 @@
+import { existsSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { ACCOUNT_ITEMS, APP_NAME, NAV_ITEMS, SIDEBAR_ITEMS, isActivePath } from "./navigation";
+import { APP_NAME, SIDEBAR_ITEMS, isActivePath } from "./navigation";
 
 describe("APP_NAME", () => {
   it("is the product name from the mid-fi", () => {
     expect(APP_NAME).toBe("Sixth Sense");
-  });
-});
-
-describe("NAV_ITEMS", () => {
-  it("lists the dashboard, then the areas (Revisit Findings was dropped on 2026-11-06)", () => {
-    expect(NAV_ITEMS.map((item) => item.label)).toEqual([
-      "Dashboard",
-      "Insight Report",
-      "Research Competitors",
-      "Explore Audience and Trend",
-      "AI Management",
-      "Content Creation",
-      "Campaigns",
-    ]);
-  });
-
-  it("gives each area its own address", () => {
-    expect(NAV_ITEMS.map((item) => item.href)).toEqual([
-      "/",
-      "/insights",
-      "/competitors",
-      "/explore",
-      "/ai-management",
-      "/content",
-      "/campaigns",
-    ]);
-  });
-
-  it("marks only built areas as ready", () => {
-    const ready = NAV_ITEMS.filter((item) => item.status === "ready").map((item) => item.href);
-    expect(ready).toEqual(["/", "/insights", "/competitors", "/explore", "/ai-management", "/content", "/campaigns"]);
-  });
-
-  it("describes what is planned for every area that is not built yet", () => {
-    for (const item of [...NAV_ITEMS, ...ACCOUNT_ITEMS]) {
-      if (item.status === "coming-soon") {
-        expect(item.summary.length).toBeGreaterThan(0);
-        expect(item.planned.length).toBeGreaterThan(0);
-      }
-    }
-  });
-});
-
-describe("ACCOUNT_ITEMS", () => {
-  it("has the profile and settings pages from the top bar", () => {
-    expect(ACCOUNT_ITEMS.map((item) => [item.label, item.href])).toEqual([
-      ["Profile", "/profile"],
-      ["Settings", "/settings"],
-    ]);
-  });
-});
-
-describe("all items", () => {
-  it("use unique hrefs that start with a slash", () => {
-    const hrefs = [...NAV_ITEMS, ...ACCOUNT_ITEMS].map((item) => item.href);
-    expect(new Set(hrefs).size).toBe(hrefs.length);
-    for (const href of hrefs) {
-      expect(href.startsWith("/")).toBe(true);
-    }
   });
 });
 
@@ -78,11 +20,12 @@ describe("SIDEBAR_ITEMS", () => {
     ]);
   });
 
-  it("links every item to a page this app has, each to a different one", () => {
-    const known = [...NAV_ITEMS, ...ACCOUNT_ITEMS].map((item) => item.href);
+  it("links every item (and every page it stays active on) to a page this app has, each to a different one", () => {
     const hrefs = SIDEBAR_ITEMS.map((item) => item.href);
     expect(new Set(hrefs).size).toBe(hrefs.length);
-    for (const href of hrefs) expect(known).toContain(href);
+    for (const href of [...hrefs, ...SIDEBAR_ITEMS.flatMap((item) => item.also ?? [])]) {
+      expect(existsSync(`app/(dashboard)${href === "/" ? "" : href}/page.tsx`), href).toBe(true);
+    }
   });
 });
 
