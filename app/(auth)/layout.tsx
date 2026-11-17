@@ -1,17 +1,22 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { APP_NAME } from "@/lib/navigation";
+import { montserrat } from "../fonts";
 
-// Sign-in pages (login, create account, forgot password): no top bar, the product name on top.
-// The mid-fi has a "Sixth Sense Logo" placeholder here; the name stands in until a logo exists.
+// Sign-in pages (create account, onboarding, forgot and reset password) in the Figma Make's glass
+// style: the green gradient (`auth-glass` in globals.css), the logo and "SixthSense" on top, and
+// each page on a frosted card (authCardClass).
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex flex-1 flex-col items-center bg-paper px-4 py-10 sm:py-16">
+    <div className={`auth-glass ${montserrat.className} flex min-h-svh flex-1 flex-col items-center px-4 py-8 sm:px-8 sm:py-12`}>
       <Link
         href="/login"
-        className="mb-8 text-[48px] leading-[1.2] font-light tracking-[-0.5px] text-primary sm:mb-10 sm:text-[60px]"
+        aria-label={APP_NAME}
+        className="mb-6 flex items-center gap-[18px] rounded-lg text-[31px] font-bold text-brand-cream focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-lime-bright"
       >
-        {APP_NAME}
+        <Image src="/brand/sixth-sense-mark.svg" alt="" width={110} height={113} priority className="h-auto w-12" />
+        SixthSense
       </Link>
       {children}
     </div>

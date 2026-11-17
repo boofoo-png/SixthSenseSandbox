@@ -22,6 +22,7 @@ import {
 import { TARGET_COUNTRIES, areaLabel, areasFor, firstTargetRegion, regionsFor, subdivisionsFor, type TargetRegion } from "@/lib/hub/target-regions";
 import { inviteLinkFor } from "@/lib/hub/invite";
 import { goBackToStepOne, saveOnboarding, type OnboardingState } from "../actions";
+import { authCardClass } from "../styles";
 
 // Second Create an Account page ("Tell us about your industry"), from the mid-fi and the team's Figma
 // Make: industry and sub-industry, target regions in four levels, and one general audience as drop-downs.
@@ -254,7 +255,7 @@ export function OnboardingForm({ initialDraft = null, showDevTools = false, comp
   }
 
   return (
-    <section className="w-full max-w-[900px]">
+    <section className={`w-full max-w-[1080px] ${authCardClass}`}>
       <p className="text-[12px] leading-[2.66] tracking-[1px] uppercase text-ink-muted">Step 2 of 2</p>
       <h1 className="text-[34px] leading-[1.235] tracking-[0.25px] font-normal text-ink">Tell us about your industry</h1>
       <p className="mt-2 text-[16px] leading-[1.5] tracking-[0.15px] text-ink-muted">

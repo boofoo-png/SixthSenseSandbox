@@ -8,7 +8,7 @@ import { Button, buttonClassName } from "@/components/button";
 import { SelectField, TextField } from "@/components/text-field";
 import { COUNTRIES, REGIONS, isCountryCode } from "@/lib/hub/regions";
 import { cancelSignUp, createAccount, type CreateAccountState } from "../actions";
-import { sectionHeadingClass } from "../styles";
+import { authCardClass, sectionHeadingClass } from "../styles";
 
 const INITIAL: CreateAccountState = { errors: {}, values: {} };
 const COUNTRY_OPTIONS = COUNTRIES.map((country) => ({ value: country.code, label: country.name }));
@@ -91,7 +91,7 @@ export function CreateAccountForm({
   }
 
   return (
-    <section className="w-full max-w-[624px]">
+    <section className={`w-full max-w-[760px] ${authCardClass}`}>
       <p className="text-[12px] leading-[2.66] tracking-[1px] uppercase text-ink-muted">Step 1 of 2</p>
       <h1 className="text-[34px] leading-[1.235] tracking-[0.25px] font-normal text-ink">Create an Account</h1>
 

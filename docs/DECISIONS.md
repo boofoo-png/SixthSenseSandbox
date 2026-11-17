@@ -433,3 +433,9 @@ Context: The team's Figma Make changed "Tell us about your industry": one Indust
 Decision: The user chose to follow the Make: one industry with a required sub-industry from its list, one audience, and target regions chosen level by level (lib/hub/target-regions.ts; changing a level picks the first choice of the levels under it, as in the Make). Pinterest is added to the social platforms. The business profile keeps its list fields (industries and audiences now hold one item), so the rest of the app reads it as before; regions saved in the old shape are dropped when read. The demo business is Wholesale, Hospitality and restaurant supplies, targeting Canada, British Columbia, Lower Mainland, Richmond. Forgot Password takes the Make's "Account recovery" wording but still shows the reset link on screen, since the prototype sends no email. The Make's glass styling of these pages is a separate, later step.
 
 Supersedes: the "several general audiences" part of the 2026-10-29 onboarding decision.
+
+## 2026-11-16 - Account pages in the Make's glass style
+
+Context: The team's Figma Make shows Create Account, Onboarding, and Forgot Password on its green gradient with frosted glass cards and cream pill fields, like the Login page. Ours still had the October mid-fi look (white page, MUI outlined fields).
+
+Decision: The (auth) layout uses the gradient, Montserrat, and the Make's logo and "SixthSense" lockup; each page sits on a frosted card (authCardClass). Instead of a second set of form components, the design-system colour tokens are re-pointed inside `.auth-glass` (globals.css): text and outlines turn cream, primary turns lime with navy text, and errors and notices get colours that read on the dark background; fields and buttons become pills. The re-pointed tokens only apply inside `.auth-glass`, so the same components elsewhere (Button in the date bar, Alert on Ask, the login form) keep their look.

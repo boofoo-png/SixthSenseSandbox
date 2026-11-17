@@ -12,6 +12,9 @@ import { ONBOARDING_DRAFT_COOKIE, SESSION_COOKIE, SIGNUP_COOKIE } from "@/lib/hu
 import { emptyOnboardingDraft, encodeOnboardingDraft } from "@/lib/hub/onboarding";
 import { inviteLinkFor } from "@/lib/hub/invite";
 
+// next/font only works inside Next.js; the class name is all the layout needs.
+vi.mock("../fonts", () => ({ montserrat: { className: "font-montserrat" } }));
+
 vi.mock("./actions", () => ({
   signIn: vi.fn(),
   createAccount: vi.fn(),
@@ -47,6 +50,18 @@ describe("sign-in pages", () => {
       </AuthLayout>,
     );
     expect(screen.getByRole("link", { name: "Sixth Sense" }).getAttribute("href")).toBe("/login");
+  });
+
+  it("use the Figma Make's glass style with the logo and SixthSense name", () => {
+    const { container } = render(
+      <AuthLayout>
+        <p>Form</p>
+      </AuthLayout>,
+    );
+    expect(container.firstElementChild?.className).toContain("auth-glass");
+    const brand = screen.getByRole("link", { name: "Sixth Sense" });
+    expect(brand.querySelector('img[src*="sixth-sense-mark"]')).not.toBeNull();
+    expect(brand.textContent).toBe("SixthSense");
   });
 
   it("login returns to the page the visitor asked for, but only inside the app", async () => {
