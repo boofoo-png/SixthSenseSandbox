@@ -417,3 +417,11 @@ Context: On 2026-11-05 the user chose not to add the functionality list's Compet
 Decision: The user chose to follow the new Make. /competitors shows the findings filter (non-matching cards are dimmed), three competitor campaign cards, the comparison for the selected card, the evidence note, and Your next move with Create from this insight (to Content Creation). Tracking, audience-based selection, recurring themes, and their code (lib/hub/tracking.ts, the save action) are removed; the profile's old trackedCompetitors value is simply no longer read. The engagement gap and the first target are worked out per card (the Make shows 1.8 pts for every card). The Make names real suppliers with invented figures; the cards use the app's fictional sample suppliers (Coastline Linen Co., Northbay Hospitality Supply, Evergreen Amenities) instead, which also match the Overview.
 
 Supersedes: "Not adding Competitor Performance" (2026-11-05) and the competitor tracking parts of the Research Competitors decisions (2026-10-29).
+
+## 2026-11-16 - Reports: Performance by Country on the Make's world map
+
+Context: Performance by Country was a ranked list with flags (user's choice, 2026-11-05), since the design file had no usable map. The team's Figma Make now ships a world map image (reports-world-map.png) with labels for Canada, the United States, the United Kingdom, Germany, and Australia, and Conversions / Top Countries buttons; the functionality list asks for a map with metric and country filters.
+
+Decision: The panel shows the Make's map (public/reports/world-map.png) with a labelled pin per country at the Make's positions (Germany moved slightly so its label clears the United Kingdom's at this text size), a Metric filter (Revenue or Conversions; the summary and growth follow it), and a Countries filter (top 5 or top 3). The pins are an ordered list, so the ranking still reads without the picture. The revenue chart takes the Make's look (smooth curves, teal Google line over a lime area, green Meta line, gridlines with dollar labels). The Make's single Download PDF button is not copied; Export Report (PDF or spreadsheet) stays, as the functionality list asks.
+
+Supersedes: the "ranked list with flags instead of a map" part of the 2026-11-05 Reports decision.

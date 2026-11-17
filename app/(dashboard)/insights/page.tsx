@@ -77,6 +77,7 @@ export default async function ReportsPage({ searchParams }: PageProps<"/insights
           },
           countries,
           countryGrowth: change(now.revenue, before.revenue),
+          conversionGrowth: change(now.conversions, before.conversions),
           campaigns,
           score: performanceScore(campaigns),
           earned: now.revenue,

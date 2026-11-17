@@ -55,12 +55,31 @@ describe("Reports (design file: Insights / Reports, sample ad data)", () => {
     expect(within(full).getByText("Revenue summary")).toBeDefined();
   });
 
-  it("ranks countries with flags instead of a map", async () => {
+  it("pins the top countries on the Make's world map", async () => {
     await renderPage();
-    const table = within(screen.getByRole("region", { name: "Performance By Country" })).getByRole("table");
-    const rows = within(table).getAllByRole("rowheader").map((cell) => cell.textContent);
-    expect(rows).toHaveLength(5);
-    expect(rows[0]).toMatch(/Canada/);
+    const panel = screen.getByRole("region", { name: "Performance By Country" });
+    const map = within(panel).getByRole("list", { name: "Countries on the map, by revenue" });
+    const pins = within(map).getAllByRole("listitem");
+    expect(pins.map((pin) => pin.textContent?.replace(/\$[\d,]+$/, ""))).toEqual(["1. Canada", "2. United States", "3. United Kingdom", "4. Australia", "5. Germany"]);
+    expect((pins[0] as HTMLElement).style.left).toBe("20%");
+    expect(panel.querySelector('img[src="/reports/world-map.png"]')).not.toBeNull();
+  });
+
+  it("filters the map by metric and number of countries", async () => {
+    await renderPage();
+    const panel = screen.getByRole("region", { name: "Performance By Country" });
+    const pins = () => within(within(panel).getByRole("list", { name: /^Countries on the map/ })).getAllByRole("listitem");
+    const topRevenue = within(panel).getByText("Top Performing").nextSibling?.textContent;
+    expect(topRevenue).toMatch(/^\$[\d,]+Canada$/);
+
+    fireEvent.change(within(panel).getByRole("combobox", { name: "Metric" }), { target: { value: "conversions" } });
+    expect(within(panel).getByRole("list", { name: "Countries on the map, by conversions" })).toBeDefined();
+    expect(pins()[0].textContent).toMatch(/^1\. Canada[\d,]+$/);
+    expect(within(panel).getByText("Top Performing").nextSibling?.textContent).toMatch(/^[\d,]+ conversionsCanada$/);
+    expect(within(panel).getByText("Conversion Growth")).toBeDefined();
+
+    fireEvent.change(within(panel).getByRole("combobox", { name: "Countries" }), { target: { value: "3" } });
+    expect(pins()).toHaveLength(3);
   });
 
   it("shows the chosen campaign's results and a performance score", async () => {
