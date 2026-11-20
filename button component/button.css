@@ -18,22 +18,23 @@ body {
     border-radius: 15px;
 }
 
-.button--secondary {
+.button.button--secondary {
     color: #d6fb00;
     background-color: #00545f;
 }
 
-.button--attach-file {
+.button.button--attach-file {
     color:#00545f;
     background-color: #d6fb00;
 }
 
-.button--cancel {
+.button.button--cancel {
     color:#00545f;
     background-color: #f6f2e8;
 }
 
-.button--log-in {
-    color:#d6fb00;
-    background-color: #001f3f;
+.button.button--log-in {
+    color:#1D4990;
+    background-color: #EAFFAB;
+    font-weight: bold;
 }
