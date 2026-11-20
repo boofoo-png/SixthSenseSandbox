@@ -1,9 +1,6 @@
-.body {
+body {
     text-align: center;
     background-color: #f6f6f6;
-}
-
-.heading {
     color:#d6fb00;
     background-color: #001f3f;
     font-family: Arial, Helvetica, sans-serif;
