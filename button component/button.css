@@ -10,31 +10,31 @@ body {
 }
 
 .button {
-    color: #ecffb6;
-    background-color: #00545f;
+    color: #EAFFAB;
+    background-color: transparent;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 15px;
+    font-weight: bold;
     padding: 10px 20px;
     border-radius: 15px;
 }
 
 .button.button--secondary {
-    color: #d6fb00;
-    background-color: #00545f;
+    color: #F6F8ED;
+    background-color: #00545F;
 }
 
 .button.button--attach-file {
-    color:#00545f;
-    background-color: #d6fb00;
+    color:#001F3E;
+    background-color: #DDFE56;
 }
 
 .button.button--cancel {
-    color:#00545f;
-    background-color: #f6f2e8;
+    color:#EAFFAB;
+    background-color: #03525E;
 }
 
 .button.button--log-in {
     color:#1D4990;
     background-color: #EAFFAB;
-    font-weight: bold;
 }
