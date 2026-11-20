@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   AUDIENCE_TRENDS_KEY,
   MAX_SAVED_AUDIENCES,
+  PLATFORM_FILTERS,
   STARTER_STATE,
   TRENDS,
   addAudience,
@@ -36,12 +37,12 @@ function memoryStorage(initial: Record<string, string> = {}): Storage {
 
 describe("visibleTrends", () => {
   it("shows every trend with no audience selected and no filters", () => {
-    expect(visibleTrends([], "All", "All platforms")).toHaveLength(TRENDS.length);
+    expect(visibleTrends([], "All platforms")).toHaveLength(TRENDS.length);
   });
 
   it("keeps trends for a selected audience by name or by its depth (the Make's rule)", () => {
     // Hospitality buyers is niche, so every niche trend matches too.
-    expect(names(visibleTrends([buyers], "All", "All platforms"))).toEqual([
+    expect(names(visibleTrends([buyers], "All platforms"))).toEqual([
       "Proof over promises",
       "Direct booking value",
       "Low-waste room resets",
@@ -50,16 +51,17 @@ describe("visibleTrends", () => {
   });
 
   it("combines several selected audiences", () => {
-    expect(visibleTrends([buyers, travellers], "All", "All platforms")).toHaveLength(TRENDS.length);
+    expect(visibleTrends([buyers, travellers], "All platforms")).toHaveLength(TRENDS.length);
   });
 
-  it("filters by depth and source", () => {
-    expect(names(visibleTrends([], "Broad", "TikTok"))).toEqual(["Small luxury moments", "Budget travel swaps"]);
-    expect(names(visibleTrends([], "Niche", "LinkedIn"))).toEqual(["Proof over promises", "Direct booking value"]);
+  it("filters by source", () => {
+    expect(names(visibleTrends([], "TikTok"))).toEqual(["Small luxury moments", "Low-waste room resets", "Budget travel swaps"]);
+    expect(names(visibleTrends([travellers], "Instagram"))).toEqual(["Experience-first travel"]);
   });
 
-  it("can match nothing", () => {
-    expect(visibleTrends([travellers], "Niche", "LinkedIn")).toEqual([]);
+  it("only uses Instagram and TikTok (LinkedIn is not used)", () => {
+    expect(PLATFORM_FILTERS).toEqual(["All platforms", "Instagram", "TikTok"]);
+    expect(TRENDS.every((trend) => trend.platform === "Instagram" || trend.platform === "TikTok")).toBe(true);
   });
 });
 

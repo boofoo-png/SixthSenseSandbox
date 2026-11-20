@@ -439,3 +439,9 @@ Supersedes: the "several general audiences" part of the 2026-10-29 onboarding de
 Context: The team's Figma Make shows Create Account, Onboarding, and Forgot Password on its green gradient with frosted glass cards and cream pill fields, like the Login page. Ours still had the October mid-fi look (white page, MUI outlined fields).
 
 Decision: The (auth) layout uses the gradient, Montserrat, and the Make's logo and "SixthSense" lockup; each page sits on a frosted card (authCardClass). Instead of a second set of form components, the design-system colour tokens are re-pointed inside `.auth-glass` (globals.css): text and outlines turn cream, primary turns lime with navy text, and errors and notices get colours that read on the dark background; fields and buttons become pills. The re-pointed tokens only apply inside `.auth-glass`, so the same components elsewhere (Button in the date bar, Alert on Ask, the login form) keep their look.
+
+## 2026-11-16 - Audience Trends without the depth bar or LinkedIn
+
+Context: The user asked to remove the Audience depth bar (All, Broad, Niche) and LinkedIn from Audience Trends, because the team is not using LinkedIn.
+
+Decision: The page filters by source only (All platforms, Instagram, TikTok). The Make's two LinkedIn trends (Proof over promises, Direct booking value) are kept as Instagram trends, since their formats (a data-led carousel and a talking-head video) suit Instagram and they are the page's opening trend and watchlist item. Saved audiences keep their broad or niche type, which still decides which trends match them. LinkedIn elsewhere in the app (Campaigns channels, AI Management) is unchanged.

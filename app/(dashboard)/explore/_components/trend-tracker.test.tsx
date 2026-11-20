@@ -34,22 +34,17 @@ describe("Audience Trends tracker (Figma Make)", () => {
     expect(stored().selected).toEqual(["starter-hospitality-buyers"]);
   });
 
-  it("filters by audience depth and source", () => {
+  it("filters by source, with no audience depth bar and no LinkedIn", () => {
     render(<TrendTracker />);
-    fireEvent.click(within(screen.getByRole("group", { name: "Audience depth" })).getByRole("button", { name: "Niche" }));
-    fireEvent.click(within(screen.getByRole("group", { name: "Source" })).getByRole("button", { name: "LinkedIn" }));
+    expect(screen.queryByRole("group", { name: "Audience depth" })).toBeNull();
+    const source = screen.getByRole("group", { name: "Source" });
+    expect(within(source).getAllByRole("button").map((button) => button.textContent)).toEqual(["All platforms", "Instagram", "TikTok"]);
+    fireEvent.click(within(source).getByRole("button", { name: "TikTok" }));
     expect(trendRows().map((row) => row.getAttribute("aria-label"))).toEqual([
-      "Investigate Proof over promises",
-      "Investigate Direct booking value",
+      "Investigate Small luxury moments",
+      "Investigate Low-waste room resets",
+      "Investigate Budget travel swaps",
     ]);
-  });
-
-  it("shows an empty state when nothing matches", () => {
-    render(<TrendTracker />);
-    fireEvent.click(within(savedAudiences()).getByRole("checkbox", { name: "Hospitality buyers (niche)" }));
-    fireEvent.click(within(screen.getByRole("group", { name: "Audience depth" })).getByRole("button", { name: "Niche" }));
-    fireEvent.click(within(screen.getByRole("group", { name: "Source" })).getByRole("button", { name: "LinkedIn" }));
-    expect(within(trendList()).getByText("No trends match these filters")).toBeDefined();
   });
 
   it("suggests audiences while searching and adds one to the profile", () => {

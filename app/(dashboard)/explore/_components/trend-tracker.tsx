@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useId, useState, type SubmitEvent } from "react";
 import { LineIcon } from "@/components/line-icons";
 import {
-  DEPTH_FILTERS,
   MAX_DESCRIPTION,
   MAX_NAME,
   PLATFORM_FILTERS,
@@ -14,7 +13,6 @@ import {
   matchingSuggestions,
   visibleTrends,
   type AudienceDepth,
-  type DepthFilter,
   type PlatformFilter,
   type Trend,
   type TrendAdvice,
@@ -80,14 +78,13 @@ export function TrendTracker() {
   const [showForm, setShowForm] = useState(false);
   const [draft, setDraft] = useState<{ name: string; type: AudienceDepth; description: string }>({ name: "", type: "niche", description: "" });
   const [message, setMessage] = useState("");
-  const [depth, setDepth] = useState<DepthFilter>("All");
   const [platform, setPlatform] = useState<PlatformFilter>("All platforms");
   // A trend picked from the watchlist stays chosen even when the filters hide it, as in the Make;
   // otherwise the first matching trend takes over when the filters leave the chosen one out.
   const [chosen, setChosen] = useState<{ name: string; pinned: boolean }>({ name: TRENDS[0].name, pinned: false });
 
   const selected = state.audiences.filter((audience) => state.selected.includes(audience.id));
-  const visible = visibleTrends(selected, depth, platform);
+  const visible = visibleTrends(selected, platform);
   const activeName = chosen.pinned || visible.some((trend) => trend.name === chosen.name) ? chosen.name : (visible[0]?.name ?? chosen.name);
   const active = TRENDS.find((trend) => trend.name === activeName) ?? TRENDS[0];
   const suggestions = matchingSuggestions(search, state.audiences);
@@ -355,17 +352,7 @@ export function TrendTracker() {
         )}
 
         <div className="mt-3 flex flex-wrap items-center gap-2.5 border-t border-brand-teal/12 pt-3 min-[621px]:flex-nowrap">
-          <span className="w-full text-[10px] font-bold text-[#888c8f] uppercase min-[621px]:w-auto">Audience depth</span>
-          <Segmented
-            label="Audience depth"
-            options={DEPTH_FILTERS}
-            value={depth}
-            onChange={(value) => {
-              unpin();
-              setDepth(value);
-            }}
-          />
-          <span className="w-full text-[10px] font-bold text-[#888c8f] uppercase min-[621px]:ml-2 min-[621px]:w-auto">Source</span>
+          <span className="w-full text-[10px] font-bold text-[#888c8f] uppercase min-[621px]:w-auto">Source</span>
           <Segmented
             label="Source"
             options={PLATFORM_FILTERS}
@@ -557,7 +544,7 @@ export function TrendTracker() {
               <div className="mt-3 grid justify-items-center gap-1.5 rounded-[9px] border border-dashed border-[#cdd6d5] px-5 py-10 text-center text-[#85888d]">
                 <LineIcon name="search" size={22} />
                 <strong className="text-[13px] text-brand-navy">No trends match these filters</strong>
-                <p className="text-[11px]">Try a broader audience, depth, or source.</p>
+                <p className="text-[11px]">Try another audience or source.</p>
               </div>
             )}
           </div>

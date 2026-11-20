@@ -1,11 +1,10 @@
 // The Audience Trends tracker from the team's Figma Make "Marketing Intelligence Hub": audiences
-// saved to the profile, depth and source filters, a momentum-versus-fit radar, a watchlist, and
+// saved to the profile, a source filter, a momentum-versus-fit radar, a watchlist, and
 // campaign direction for the chosen trend. Trends and suggestions are the Make's sample data, not
 // live signals. Saved audiences and the watchlist are kept in this browser (see DECISIONS.md).
 
 export type AudienceDepth = "broad" | "niche";
-export type DepthFilter = "All" | "Broad" | "Niche";
-export type TrendPlatform = "LinkedIn" | "Instagram" | "TikTok";
+export type TrendPlatform = "Instagram" | "TikTok";
 export type PlatformFilter = "All platforms" | TrendPlatform;
 export type TrendAdvice = "Act now" | "Use with care" | "Watch" | "Skip";
 
@@ -28,8 +27,9 @@ export type Trend = {
   why: string;
 };
 
-export const DEPTH_FILTERS: readonly DepthFilter[] = ["All", "Broad", "Niche"];
-export const PLATFORM_FILTERS: readonly PlatformFilter[] = ["All platforms", "LinkedIn", "Instagram", "TikTok"];
+// The Make also has an Audience depth filter and LinkedIn; the team removed both on 2026-11-16
+// (LinkedIn is not used), so the Make's two LinkedIn trends are shown as Instagram trends.
+export const PLATFORM_FILTERS: readonly PlatformFilter[] = ["All platforms", "Instagram", "TikTok"];
 
 export const MAX_NAME = 80;
 export const MAX_DESCRIPTION = 240;
@@ -40,7 +40,7 @@ export const TRENDS: readonly Trend[] = [
     name: "Proof over promises",
     audience: "Hospitality buyers",
     scope: "Niche",
-    platform: "LinkedIn",
+    platform: "Instagram",
     format: "Data-led carousel",
     momentum: 88,
     fit: 96,
@@ -68,7 +68,7 @@ export const TRENDS: readonly Trend[] = [
     name: "Direct booking value",
     audience: "Hospitality buyers",
     scope: "Niche",
-    platform: "LinkedIn",
+    platform: "Instagram",
     format: "Talking-head video",
     momentum: 79,
     fit: 91,
@@ -146,12 +146,11 @@ export const AUDIENCE_SUGGESTIONS: readonly Omit<TrendAudience, "id">[] = [
 
 const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
-/** Trends for the selected audiences (by name or depth), depth filter, and source, in the Make's order. */
-export function visibleTrends(selected: readonly TrendAudience[], depth: DepthFilter, platform: PlatformFilter): Trend[] {
+/** Trends for the selected audiences (by name or their broad or niche type) and source, in the Make's order. */
+export function visibleTrends(selected: readonly TrendAudience[], platform: PlatformFilter): Trend[] {
   return TRENDS.filter(
     (trend) =>
       (selected.length === 0 || selected.some((audience) => same(audience.name, trend.audience) || audience.type === trend.scope.toLowerCase())) &&
-      (depth === "All" || trend.scope === depth) &&
       (platform === "All platforms" || trend.platform === platform),
   );
 }
